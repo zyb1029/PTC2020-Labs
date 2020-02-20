@@ -1,0 +1,13 @@
+*/**
+
+*.o
+*.d
+
+parser
+lex.yy.c
+*.lex.yy.c
+*.lex.yy.h
+syntax.tab.c
+syntax.tab.h
+syntax.output
+*.syntax.tab.c

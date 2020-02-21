@@ -12,3 +12,4 @@ syntax.tab.h
 !*.h
 !*.l
 !*.y
+!Makefile

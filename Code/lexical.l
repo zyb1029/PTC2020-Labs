@@ -2,9 +2,11 @@
     /* Copyright, Tianyun Zhang @ Nanjing University. 2020-02-21 */
 %}
 
+%option yylineno
+
 %{
     #include <stdio.h>
-    int chars = 0, words = 0, lines = 0;
+    yylineno = 1;
 %}
 
 digit  [0-9]

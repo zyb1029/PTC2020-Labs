@@ -1,5 +1,10 @@
-*/**
 *
+
+!*.c
+!*.h
+!*.l
+!*.y
+!Makefile
 
 lex.yy.c
 *.lex.yy.c
@@ -7,9 +12,3 @@ lex.yy.c
 syntax.tab.c
 syntax.tab.h
 *.syntax.tab.c
-
-!*.c
-!*.h
-!*.l
-!*.y
-!Makefile

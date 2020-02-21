@@ -6,20 +6,52 @@
 
 %{
     #include <stdio.h>
-    yylineno = 1;
+    void printType(const char*);
 %}
 
-digit  [0-9]
-letter [a-zA-Z]
+digit      [0-9]
+letter     [a-zA-Z]
+character  [a-zA-Z0-9]
+character_ {character}|_
+relop      >|<|>=|<=|==|!=
+type       int|float
+whitespace [ \r\n\t]
 
 %%
 
-{letter}+ { chars += yyleng; ++words; }
-\n        { ++chars; ++lines; }
-.         { ++chars; }
+{whitespace} { /* do nothing */ }
+; { printType("SEMI"); }
+, { printType("COMMA"); }
+= { printType("ASSIGNOP"); }
+{relop} { printType("RELOP"); }
+\+ { printType("PLUS"); }
+- { printType("MINUS"); }
+\* { printType("STAR"); }
+\/ { printType("DIV"); }
+&& { printType("AND"); }
+\|\| { printType("OR"); }
+\. { printType("DOT"); }
+! { printType("NOT"); }
+{type} { printType("TYPE"); }
+\( { printType("LP"); }
+\) { printType("RP"); }
+\[ { printType("LB"); }
+\] { printType("RB"); }
+\{ { printType("LC"); }
+\} { printType("RC"); }
+struct { printType("STRUCT"); }
+return { printType("RETURN"); }
+if { printType("IF"); }
+else { printType("ELSE"); }
+while { printType("WHILE"); }
+
+. {
+    printf("Error type A at Line %d: unknown characters \'%s\'\n", yylineno, yytext);
+  }
 
 %%
 
+void printType(const char* type) { printf("%s ", type); }
 int main(int argc, char* argv[]) {
     if (argc != 2) {
         printf("Usage: wc file");
@@ -30,7 +62,6 @@ int main(int argc, char* argv[]) {
             return -2;
         } else {
             yylex();
-            printf("%d %d %d\n", chars, words, lines);
             return 0;
         }
     }

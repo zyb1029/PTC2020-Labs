@@ -6,7 +6,10 @@
 
 %{
     #include <stdio.h>
+    #include <stdlib.h>
+    #include <stdbool.h>
     void printType(const char*);
+    void printErrorA(const char*, bool);
 %}
 
 decdigit   [0-9]
@@ -29,12 +32,27 @@ floatE     ({decdigit}+\.{decdigit}*|\.{decdigit}+)[eE][+-]?{decdigit}+
 float      {floatN}|{floatE}
 id         {letter_}{character_}*
 commentl   \/\/.*$
-commentb   \/\*(([^\*]|\n)*|(\*[^\/]))*\*\/
+commentb   \/\*
 
 %%
 
 {commentl} { printType("COMMENT-LINE"); }
-{commentb} { printType("COMMENT-BLOCK"); }
+{commentb} {
+    printType("COMMENT-BLOCK");
+    int ch;
+    while (true) {
+        ch = input();
+        if (!ch || ch == EOF) {
+            printErrorA("unterminated comment", false);
+            yyterminate();
+        } else if (ch == '*') {
+            do {
+                ch = input();
+            } while (ch == '*');
+            if (ch == '/') break;
+        }
+    }
+}
 {newline}    { printf("\n"); }
 {whitespace} { /* do nothing */ }
 struct { printType("STRUCT"); }
@@ -64,14 +82,18 @@ while { printType("WHILE"); }
 \] { printType("RB"); }
 \{ { printType("LC"); }
 \} { printType("RC"); }
-
-. {
-    printf("Error type A at Line %d: unknown characters \'%s\'\n", yylineno, yytext);
-  }
+. { printErrorA("unknown character", true); }
 
 %%
 
 void printType(const char* type) { printf("%s ", type); }
+void printErrorA(const char* message, bool showText) {
+    printf("Error type A at Line %d: %s", yylineno, message);
+    if (showText) {
+        printf(" \'%s\'", yytext);
+    }
+    printf("\n");
+}
 int main(int argc, char* argv[]) {
     if (argc != 2) {
         printf("Usage: wc file");

@@ -40,6 +40,3 @@ clean:
 	rm -f $(OBJS) $(OBJS:.o=.d)
 	rm -f $(LFC) $(YFC) $(YFC:.c=.h)
 	rm -f *~
-
-lextest: lexical
-	gcc -lfl -o lexical $(LFC)

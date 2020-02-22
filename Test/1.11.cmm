@@ -1,0 +1,26 @@
+// Test for int and float.
+int main() {
+  /* VALID NUMBERS */
+  int a = 0;
+  int b = 123;
+  int c = 1145141919810;
+  int d = 0x233333;
+  int e = 0x123456;
+  int f = 0x7890AB;
+  int g = 0xabcdef;
+  int h = 0xABCDEF;
+  int i = 01234567;
+  float j = 0.123;
+  float k = 0.23333;
+  float l = 12.450;
+  float m = .5E03;
+  float n = 023.8e-88;
+  float o = 78.9E+2;
+
+  /* INVALID NUMBERS */
+  int z = 0xFJX;
+  int y = 09999;
+  float x = .5;
+  float w = .3e;
+  float v = .3e+2FE+111;
+}

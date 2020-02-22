@@ -23,18 +23,20 @@ relop      >|<|>=|<=|==|!=
 type       int|float
 newline    \n
 whitespace [ \r\n\t]
-int        -?({decdigit}+|0{octdigit}+|0x{hexdigit}+)
-float      {decdigit}*\.{decdigit}+([eE][+-]?{decdigit}+)?
+int        -?(0|{decdigit0}{decdigit}*|0{octdigit}+|0[xX]{hexdigit}+)
+floatN     {decdigit}+\.{decdigit}+
+floatE     ({decdigit}+\.{decdigit}*|\.{decdigit}+)[eE][+-]?{decdigit}+
+float      {floatN}|{floatE}
 id         {letter_}{character_}*
-commentl   \/\/[.^\n]*
-commentb   \/\*([.^\*]|(\*[.^\/]))*\*\/
+commentl   \/\/.*$
+commentb   \/\*(([^\*]|\n)*|(\*[^\/]))*\*\/
 
 %%
 
-{newline}    { printf("\n"); }
-{whitespace} { /* do nothing */ }
 {commentl} { printType("COMMENT-LINE"); }
 {commentb} { printType("COMMENT-BLOCK"); }
+{newline}    { printf("\n"); }
+{whitespace} { /* do nothing */ }
 struct { printType("STRUCT"); }
 return { printType("RETURN"); }
 if { printType("IF"); }

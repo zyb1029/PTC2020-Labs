@@ -24,13 +24,17 @@ type       int|float
 newline    \n
 whitespace [ \r\n\t]
 int        -?({decdigit}+|0{octdigit}+|0x{hexdigit}+)
-float      {int}\.{decdigit}+
+float      {decdigit}*\.{decdigit}+([eE][+-]?{decdigit}+)?
 id         {letter_}{character_}*
+commentl   \/\/[.^\n]*
+commentb   \/\*([.^\*]|(\*[.^\/]))*\*\/
 
 %%
 
 {newline}    { printf("\n"); }
 {whitespace} { /* do nothing */ }
+{commentl} { printType("COMMENT-LINE"); }
+{commentb} { printType("COMMENT-BLOCK"); }
 struct { printType("STRUCT"); }
 return { printType("RETURN"); }
 if { printType("IF"); }

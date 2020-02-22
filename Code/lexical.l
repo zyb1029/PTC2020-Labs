@@ -9,17 +9,37 @@
     void printType(const char*);
 %}
 
-digit      [0-9]
+decdigit   [0-9]
+decdigit0  [1-9]
+octdigit   [0-7]
+octdigit0  [1-7]
+hexdigit   {decdigit}|[a-fA-F]
+hexdigit0  {decdigit0}|[a-fA-F]
 letter     [a-zA-Z]
+letter_    {letter}|_
 character  [a-zA-Z0-9]
 character_ {character}|_
 relop      >|<|>=|<=|==|!=
 type       int|float
+newline    \n
 whitespace [ \r\n\t]
+int        -?({decdigit}+|0{octdigit}+|0x{hexdigit}+)
+float      {int}\.{decdigit}+
+id         {letter_}{character_}*
 
 %%
 
+{newline}    { printf("\n"); }
 {whitespace} { /* do nothing */ }
+struct { printType("STRUCT"); }
+return { printType("RETURN"); }
+if { printType("IF"); }
+else { printType("ELSE"); }
+while { printType("WHILE"); }
+{type} { printType("TYPE"); }
+{id} { printType("ID"); }
+{int} { printType("INT"); }
+{float} { printType("FLOAT"); }
 ; { printType("SEMI"); }
 , { printType("COMMA"); }
 = { printType("ASSIGNOP"); }
@@ -32,18 +52,12 @@ whitespace [ \r\n\t]
 \|\| { printType("OR"); }
 \. { printType("DOT"); }
 ! { printType("NOT"); }
-{type} { printType("TYPE"); }
 \( { printType("LP"); }
 \) { printType("RP"); }
 \[ { printType("LB"); }
 \] { printType("RB"); }
 \{ { printType("LC"); }
 \} { printType("RC"); }
-struct { printType("STRUCT"); }
-return { printType("RETURN"); }
-if { printType("IF"); }
-else { printType("ELSE"); }
-while { printType("WHILE"); }
 
 . {
     printf("Error type A at Line %d: unknown characters \'%s\'\n", yylineno, yytext);

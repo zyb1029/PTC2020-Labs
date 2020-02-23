@@ -31,7 +31,7 @@ floatN     {decdigit}+\.{decdigit}+
 floatE     ({decdigit}+\.{decdigit}*|\.{decdigit}+)[eE][+-]?{decdigit}+
 float      {floatN}|{floatE}
 id         {letter_}{character_}*
-commentl   \/\/.*$
+commentl   \/\/.*
 commentb   \/\*
 
 %%
@@ -82,6 +82,7 @@ while { printType("WHILE"); }
 \] { printType("RB"); }
 \{ { printType("LC"); }
 \} { printType("RC"); }
+<<EOF>> { printType("EOF"); printf("\n"); yyterminate(); }
 . { printErrorA("unknown character", true); }
 
 %%

@@ -26,7 +26,7 @@ relop      >|<|>=|<=|==|!=
 type       int|float
 newline    \n
 whitespace [ \r\n\t]
-int        -?(0|{decdigit0}{decdigit}*|0{octdigit}+|0[xX]{hexdigit}+)
+int        (0|{decdigit0}{decdigit}*|0{octdigit}+|0[xX]{hexdigit}+)
 floatN     {decdigit}+\.{decdigit}+
 floatE     ({decdigit}+\.{decdigit}*|\.{decdigit}+)[eE][+-]?{decdigit}+
 float      {floatN}|{floatE}

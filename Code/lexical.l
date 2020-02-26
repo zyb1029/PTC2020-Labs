@@ -61,9 +61,9 @@ if { printType("IF"); }
 else { printType("ELSE"); }
 while { printType("WHILE"); }
 {type} { printType("TYPE"); }
-{id} { printType("ID"); }
 {int} { printType("INT"); }
 {float} { printType("FLOAT"); }
+{id} { printType("ID"); }
 ; { printType("SEMI"); }
 , { printType("COMMA"); }
 = { printType("ASSIGNOP"); }

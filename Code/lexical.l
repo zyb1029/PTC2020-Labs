@@ -1,15 +1,21 @@
 %{
-    /* Copyright, Tianyun Zhang @ Nanjing University. 2020-02-21 */
+  /* Copyright, Tianyun Zhang @ Nanjing University. 2020-02-21 */
+  // #define FLEXDEBUG <- debugging switch for flex
 %}
 
 %option yylineno
 
 %{
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <stdbool.h>
-    void printType(const char*);
-    void printErrorA(const char*, bool);
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <stdbool.h>
+  #include "syntax.tab.h"
+  #ifdef FLEXDEBUG
+  void printType(const char*);
+  #else
+  #define printType(c) /* c */
+  #endif
+  void printErrorA(const char*, bool);
 %}
 
 decdigit   [0-9]
@@ -39,20 +45,20 @@ commentb   \/\*
 
 {commentl} { printType("COMMENT-LINE"); }
 {commentb} {
-    printType("COMMENT-BLOCK");
-    int ch;
-    while (true) {
+  printType("COMMENT-BLOCK");
+  int ch;
+  while (true) {
+    ch = input();
+    if (!ch || ch == EOF) {
+      printErrorA("unterminated comment", false);
+      yyterminate();
+    } else if (ch == '*') {
+      do {
         ch = input();
-        if (!ch || ch == EOF) {
-            printErrorA("unterminated comment", false);
-            yyterminate();
-        } else if (ch == '*') {
-            do {
-                ch = input();
-            } while (ch == '*');
-            if (ch == '/') break;
-        }
+      } while (ch == '*');
+      if (ch == '/') break;
     }
+  }
 }
 {newline}    { printf("\n"); }
 {whitespace} { /* do nothing */ }
@@ -62,8 +68,8 @@ if { printType("IF"); }
 else { printType("ELSE"); }
 while { printType("WHILE"); }
 {type} { printType("TYPE"); }
-{int} { printType("INT"); }
-{float} { printType("FLOAT"); }
+{int} { printType("INT"); return INT; }
+{float} { printType("FLOAT"); return FLOAT; }
 {invalidnum} { printErrorA("invalid number", true); }
 {id} { printType("ID"); }
 ; { printType("SEMI"); }
@@ -89,25 +95,29 @@ while { printType("WHILE"); }
 
 %%
 
+#ifdef FLEXDEBUG
 void printType(const char* type) { printf("%s ", type); }
+#endif
 void printErrorA(const char* message, bool showText) {
-    printf("Error type A at Line %d: %s", yylineno, message);
-    if (showText) {
-        printf(" \'%s\'", yytext);
-    }
-    printf("\n");
+  printf("Error type A at Line %d: %s", yylineno, message);
+  if (showText) {
+    printf(" \'%s\'", yytext);
+  }
+  printf("\n");
 }
+/*
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        printf("Usage: wc file");
-        return -1;
+  if (argc != 2) {
+    printf("Usage: lexical file");
+    return -1;
+  } else {
+    if (!(yyin = fopen(argv[1], "r"))) {
+      perror(argv[1]);
+      return -2;
     } else {
-        if (!(yyin = fopen(argv[1], "r"))) {
-            perror(argv[1]);
-            return -2;
-        } else {
-            yylex();
-            return 0;
-        }
+      yylex();
+      return 0;
     }
+  }
 }
+*/

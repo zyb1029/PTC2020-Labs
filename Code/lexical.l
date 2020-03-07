@@ -30,6 +30,7 @@ int        0|{decdigit0}{decdigit}*|0{octdigit}+|0[xX]{hexdigit}+
 floatN     {decdigit}+\.{decdigit}+
 floatE     ({decdigit}+\.{decdigit}*|\.{decdigit}+)[eE][+-]?{decdigit}+
 float      {floatN}|{floatE}
+invalidnum \.?{decdigit}({character}|\.)*
 id         {letter_}{character_}*
 commentl   \/\/.*
 commentb   \/\*
@@ -63,6 +64,7 @@ while { printType("WHILE"); }
 {type} { printType("TYPE"); }
 {int} { printType("INT"); }
 {float} { printType("FLOAT"); }
+{invalidnum} { printErrorA("invalid number", true); }
 {id} { printType("ID"); }
 ; { printType("SEMI"); }
 , { printType("COMMA"); }

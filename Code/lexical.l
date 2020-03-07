@@ -60,14 +60,14 @@ commentb   \/\*
     }
   }
 }
-{newline}    { printf("\n"); }
+{newline}    { printType("\n"); }
 {whitespace} { /* do nothing */ }
-struct { printType("STRUCT"); }
-return { printType("RETURN"); }
-if { printType("IF"); }
-else { printType("ELSE"); }
-while { printType("WHILE"); }
-{type} { printType("TYPE"); }
+struct { printType("STRUCT"); return STRUCT; }
+return { printType("RETURN"); return RETURN; }
+if { printType("IF"); return IF; }
+else { printType("ELSE"); return ELSE; }
+while { printType("WHILE"); return WHILE; }
+{type} { printType("TYPE"); return TYPE; }
 {int} { printType("INT"); return INT; }
 {float} { printType("FLOAT"); return FLOAT; }
 {invalidnum} { printErrorA("invalid number", true); }

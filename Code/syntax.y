@@ -8,7 +8,8 @@
   void yyerror(char *);
 %}
 
-%token INT FLOAT
+%token STRUCT RETURN IF ELSE WHILE
+%token TYPE INT FLOAT
 %token ADD SUB MUL DIV
 
 %%

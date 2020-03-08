@@ -12,12 +12,21 @@
 %}
 
 %token TYPE INT FLOAT ID
-%token ASSIGNOP RELOP
-%token PLUS MINUS STAR DIV
-%token AND OR DOT NOT
 %token SEMI COMMA
-%token LP RP LB RB LC RC
-%token STRUCT RETURN IF ELSE WHILE
+%token LC RC
+%token STRUCT RETURN IF WHILE
+
+%nonassoc LOWER_THAN_ELSE
+%nonassoc ELSE
+
+%right ASSIGNOP
+%left  OR
+%left  AND
+%left  RELOP
+%left  PLUS MINUS
+%left  STAR DIV
+%right NOT
+%left  DOT LB RB LP RP
 
 %%
 /* A.1.2 High-level Definitions */
@@ -69,7 +78,7 @@ StmtList: Stmt StmtList
 Stmt: Exp SEMI
   | CompSt
   | RETURN Exp SEMI
-  | IF LP Exp RP Stmt
+  | IF LP Exp RP Stmt %prec LOWER_THAN_ELSE
   | IF LP Exp RP Stmt ELSE Stmt
   | WHILE LP Exp RP Stmt
   ;

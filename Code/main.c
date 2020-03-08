@@ -1,5 +1,8 @@
 #include <stdio.h>
 
+extern void yyrestart(FILE *);
+extern int _warp_yyparse(); // defined in syntax.y
+
 int main(int argc, char *argv[]) {
   if (argc <= 1) {
     fprintf(stderr, "Usage: parser file\n");
@@ -11,6 +14,6 @@ int main(int argc, char *argv[]) {
     return 2;
   }
   yyrestart(f);
-  yyparse();
+  _warp_yyparse();
   return 0;
 }

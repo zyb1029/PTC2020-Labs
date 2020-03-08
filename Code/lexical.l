@@ -1,6 +1,6 @@
 %{
   /* Copyright, Tianyun Zhang @ Nanjing University. 2020-02-21 */
-  //#define FLEXDEBUG <- debugging switch for flex
+  #define FLEXDEBUG false // <- debugging switch for flex
 %}
 
 %option yylineno
@@ -10,12 +10,12 @@
   #include <stdlib.h>
   #include <stdbool.h>
   #include "syntax.tab.h"
-  #ifdef FLEXDEBUG
+  #if FLEXDEBUG
   void printType(const char*);
-  #define flexReturn(t) /* t */
+  #define TOKENIFY(t) printType("t")
   #else
-  #define printType(c) /* c */
-  #define flexReturn(t) return t
+  #define printType(t) /* t */
+  #define TOKENIFY(t) return t
   #endif
   void printErrorA(const char*, bool);
 %}
@@ -63,45 +63,51 @@ commentb   \/\*
   }
 }
 {newline} { 
-#ifdef FLEXDEBUG
+#if FLEXDEBUG
   printf("\n");
 #endif
 }
 {whitespace} { /* do nothing */ }
-struct { printType("STRUCT"); flexReturn(STRUCT); }
-return { printType("RETURN"); flexReturn(RETURN); }
-if { printType("IF"); flexReturn(IF); }
-else { printType("ELSE"); flexReturn(ELSE); }
-while { printType("WHILE"); flexReturn(WHILE); }
-{type} { printType("TYPE"); flexReturn(TYPE); }
-{int} { printType("INT"); flexReturn(INT); }
-{float} { printType("FLOAT"); flexReturn(FLOAT); }
+struct { TOKENIFY(STRUCT); }
+return { TOKENIFY(RETURN); }
+if { TOKENIFY(IF); }
+else { TOKENIFY(ELSE); }
+while { TOKENIFY(WHILE); }
+{type} { TOKENIFY(TYPE); }
+{int} { TOKENIFY(INT); }
+{float} { TOKENIFY(FLOAT); }
 {invalidnum} { printErrorA("invalid number", true); }
-{id} { printType("ID"); }
-; { printType("SEMI"); }
-, { printType("COMMA"); }
-= { printType("ASSIGNOP"); }
-{relop} { printType("RELOP"); }
-\+ { printType("PLUS"); }
-- { printType("MINUS"); }
-\* { printType("STAR"); }
-\/ { printType("DIV"); }
-&& { printType("AND"); }
-\|\| { printType("OR"); }
-\. { printType("DOT"); }
-! { printType("NOT"); }
-\( { printType("LP"); }
-\) { printType("RP"); }
-\[ { printType("LB"); }
-\] { printType("RB"); }
-\{ { printType("LC"); }
-\} { printType("RC"); }
-<<EOF>> { printType("EOF"); printf("\n"); yyterminate(); }
+{id} { TOKENIFY(ID); }
+; { TOKENIFY(SEMI); }
+, { TOKENIFY(COMMA); }
+= { TOKENIFY(ASSIGNOP); }
+{relop} { TOKENIFY(RELOP); }
+\+ { TOKENIFY(PLUS); }
+- { TOKENIFY(MINUS); }
+\* { TOKENIFY(STAR); }
+\/ { TOKENIFY(DIV); }
+&& { TOKENIFY(AND); }
+\|\| { TOKENIFY(OR); }
+\. { TOKENIFY(DOT); }
+! { TOKENIFY(NOT); }
+\( { TOKENIFY(LP); }
+\) { TOKENIFY(RP); }
+\[ { TOKENIFY(LB); }
+\] { TOKENIFY(RB); }
+\{ { TOKENIFY(LC); }
+\} { TOKENIFY(RC); }
+<<EOF>> {
+  TOKENIFY(EOF);
+#if FLEXDEBUG
+  printf("\n");
+#endif
+  yyterminate();
+}
 . { printErrorA("unknown character", true); }
 
 %%
 
-#ifdef FLEXDEBUG
+#if FLEXDEBUG
 void printType(const char* type) { printf("%s ", type); }
 #endif
 void printErrorA(const char* message, bool showText) {
@@ -111,7 +117,7 @@ void printErrorA(const char* message, bool showText) {
   }
   printf("\n");
 }
-#ifdef FLEXDEBUG
+#if FLEXDEBUG
 int main(int argc, char* argv[]) {
   if (argc != 2) {
     printf("Usage: lexical file");

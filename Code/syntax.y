@@ -1,5 +1,6 @@
 %{
   /* Copyright, Tianyun Zhang @ Nanjing University. 2020-03-07 */
+  #define YYDEBUG true // <- parser debugger switch
 %}
 
 %{
@@ -22,4 +23,10 @@ Term : INT | FLOAT;
 %%
 void yyerror(char *msg) {
   fprintf(stderr, "yyerror: %s\n", msg);
+}
+int _warp_yyparse() {
+#if YYDEBUG
+  yydebug = 1;
+#endif
+  return yyparse();
 }

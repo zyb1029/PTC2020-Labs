@@ -10,7 +10,20 @@
   #include "tree.h"
   #include "relop.h"
 
-  /* Custom YYLTYPE and action */
+  /* Custom YYSTYPE, use struct instead of union */
+  #define YYSTYPE YYSTYPE
+  typedef struct YYSTYPE {
+    int type;
+    union {
+      int             ival;
+      float           fval;
+      enum ENUM_RELOP rval;
+    };
+  } YYSTYPE;
+  #define YYSTYPE_IS_DECLARED true
+  #define YYSTYPE_IS_TRIVIAL  true
+
+  /* Custom YYLTYPE, add a pointer to STNode */
   #define YYLTYPE YYLTYPE
   typedef struct YYLTYPE {
     int first_line, first_column;
@@ -19,6 +32,8 @@
   } YYLTYPE;
   #define YYLTYPE_IS_DECLARED true
   #define YYLTYPE_IS_TRIVIAL  true
+
+  /* Macro function to create STNodes for nterms */
   #define YYLLOC_DEFAULT(Cur, Rhs, N)                                          \
     do {                                                                       \
       if (N) {                                                                 \
@@ -29,48 +44,32 @@
       } else {                                                                 \
         (Cur).first_line   = (Cur).last_line  = YYRHSLOC(Rhs, 0).last_line;    \
         (Cur).first_column = (Cur).last_column = YYRHSLOC(Rhs, 0).last_column; \
-      }     /*                                                                 \
+      }                                                                        \
       STNode *node = (STNode *)malloc(sizeof(STNode));                         \
       node->line = (Cur).first_line;                                           \
       node->column = (Cur).first_column;                                       \
       node->type = yytoken;                                                    \
-      switch (yytoken) {                                                       \
-        case INT:                                                              \
-          node->ival = yylval.ival;                                            \
-          break;                                                               \
-        case FLOAT:                                                            \
-          node->fval = yylval.fval;                                            \
-          break;                                                               \
-        case RELOP:                                                            \
-          node->rval = yylval.rval;                                            \
-          break;                                                               \
-        default:                                                               \
-          break;                                                               \
-      }                                                                        \
       if (N) {                                                                 \
         for (int st_child = 1; st_child < N - 1; ++st_child) {                 \
-          (YYRHSLOC(Rhs, st_child).st_node)->next = YYRHSLOC(Rhs, st_child + 1).st_node; \
+        if (YYRHSLOC(Rhs, st_child).st_node == NULL) { \
+        printf("SHIT@!!!!\n"); \
         } \
-        node->child = YYRHSLOC(Rhs, 1).st_node, node->next = NULL; \
-      } else { \
-        node->child = node->next = NULL; \
-      } \
-      (Cur).st_node = node;      */                                            \
+          (YYRHSLOC(Rhs, st_child).st_node)->next = YYRHSLOC(Rhs, st_child + 1).st_node;  \
+        }                                                                                 \
+        node->child = YYRHSLOC(Rhs, 1).st_node, node->next = NULL;                        \
+      } else {                                                                            \
+        node->child = node->next = NULL;                                                  \
+      }                                                                                   \
+      (Cur).st_node = node;                                                               \
     } while (0)
 
   #include "lex.yy.c"
   void yyerror(char *);
 %}
 
-%union {
-  int             ival;
-  float           fval;
-  enum ENUM_RELOP rval;
-}
-
 %token TYPE ID
-%token <ival> INT
-%token <fval> FLOAT
+%token INT
+%token FLOAT
 %token SEMI COMMA
 %token LC RC
 %token STRUCT RETURN IF WHILE
@@ -81,14 +80,14 @@
 %right ASSIGNOP
 %left  OR
 %left  AND
-%left  <rval> RELOP
+%left  RELOP
 %left  PLUS MINUS
 %left  STAR DIV
 %right NOT
 %left  DOT LB RB LP RP
 
-%printer { fprintf(stderr, "%d", $$); }     INT
-%printer { fprintf(stderr, "%f", $$); }     FLOAT
+%printer { fprintf(stderr, "%d", yylval.ival); }     INT
+%printer { fprintf(stderr, "%f", yylval.fval); }     FLOAT
 %printer { fprintf(stderr, "%s", yytext); } RELOP
 
 %%

@@ -15,7 +15,7 @@
   #define TOKENIFY(t) printType("t")
   #else
   #define printType(t) /* t */
-  #define TOKENIFY(t) return t
+  #define TOKENIFY(t) return yylval.type = t
   #endif
   #define YY_USER_ACTION \
     yylloc.first_line = yylloc.last_line = yylineno; \

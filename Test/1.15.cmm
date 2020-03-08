@@ -1,0 +1,12 @@
+// Basic numbers
+int a = 5;       // OK
+float b = 0.5E1; // OK
+float c = 0.5E;  /* ERROR */
+float d = .5;    /* ERROR */
+float e = .5e1;  // OK
+
+// Star operator
+float f = foo.bar; // OK
+int g = foo.5;     /* ERROR */
+int h = foo+.5;    /* ERROR */
+int i = foo+.5e-2; // OK

@@ -7,11 +7,20 @@
 
 %{
   #include <stdio.h>
+  #include "relop.h"
   #include "lex.yy.c"
   void yyerror(char *);
 %}
 
-%token TYPE INT FLOAT ID
+%union {
+  int             ival;
+  float           fval;
+  enum ENUM_RELOP rval;
+}
+
+%token TYPE ID
+%token <ival> INT
+%token <fval> FLOAT
 %token SEMI COMMA
 %token LC RC
 %token STRUCT RETURN IF WHILE
@@ -22,7 +31,7 @@
 %right ASSIGNOP
 %left  OR
 %left  AND
-%left  RELOP
+%left  <rval> RELOP
 %left  PLUS MINUS
 %left  STAR DIV
 %right NOT
@@ -113,8 +122,8 @@ Exp: Exp ASSIGNOP Exp
   | Exp LB Exp RB
   | Exp DOT ID
   | ID
-  | INT
-  | FLOAT
+  | INT { printf("%d\n", $1); }
+  | FLOAT { printf("%f\n", $1); }
   ;
 Args: Exp COMMA Args
   | Exp

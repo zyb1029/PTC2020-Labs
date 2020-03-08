@@ -57,15 +57,18 @@ commentb   \/\*
   int ch;
   while (true) {
     ch = input();
+    ++yycolumn;
     if (!ch || ch == EOF) {
       printErrorA("unterminated comment", false);
       yyterminate();
     } else if (ch == '*') {
       do {
         ch = input();
+        ++yycolumn;
       } while (ch == '*');
       if (ch == '/') break;
     }
+    if (ch == '\n') yycolumn = 1;
   }
 }
 {newline} { 
@@ -81,14 +84,30 @@ if { TOKENIFY(IF); }
 else { TOKENIFY(ELSE); }
 while { TOKENIFY(WHILE); }
 {type} { TOKENIFY(TYPE); }
-{int} { TOKENIFY(INT); }
-{float} { TOKENIFY(FLOAT); }
+{int} { yylval.ival = atoi(yytext); TOKENIFY(INT); }
+{float} { yylval.fval = atof(yytext); TOKENIFY(FLOAT); }
 {invalidnum} { printErrorA("invalid number", true); }
 {id} { TOKENIFY(ID); }
 ; { TOKENIFY(SEMI); }
 , { TOKENIFY(COMMA); }
 = { TOKENIFY(ASSIGNOP); }
-{relop} { TOKENIFY(RELOP); }
+{relop} {
+  switch (yytext[0]) {
+    case '=':
+      yylval.rval = RELOP_EQ;
+      break;
+    case '!':
+      yylval.rval = RELOP_NE;
+      break;
+    case '<':
+      yylval.rval = yyleng == 1 ? RELOP_LT : RELOP_LE;
+      break;
+    case '>':
+    default:
+      yylval.rval = yyleng == 1 ? RELOP_GT : RELOP_GE;
+  }
+  TOKENIFY(RELOP);
+}
 \+ { TOKENIFY(PLUS); }
 - { TOKENIFY(MINUS); }
 \* { TOKENIFY(STAR); }

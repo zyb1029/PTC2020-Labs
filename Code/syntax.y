@@ -3,6 +3,8 @@
   #define YYDEBUG true // <- parser debugger switch
 %}
 
+%locations
+
 %{
   #include <stdio.h>
   #include "lex.yy.c"

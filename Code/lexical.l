@@ -17,6 +17,12 @@
   #define printType(t) /* t */
   #define TOKENIFY(t) return t
   #endif
+  #define YY_USER_ACTION \
+    yylloc.first_line = yylloc.last_line = yylineno; \
+    yylloc.first_column = yycolumn; \
+    yylloc.last_column = yycolumn + yyleng - 1; \
+    yycolumn += yyleng;
+  int yycolumn = 1;
   void printErrorA(const char*, bool);
 %}
 
@@ -66,6 +72,7 @@ commentb   \/\*
 #if FLEXDEBUG
   printf("\n");
 #endif
+  yycolumn = 1;
 }
 {whitespace} { /* do nothing */ }
 struct { TOKENIFY(STRUCT); }

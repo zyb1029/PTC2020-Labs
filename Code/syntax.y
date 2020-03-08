@@ -8,9 +8,13 @@
   void yyerror(char *);
 %}
 
+%token TYPE INT FLOAT ID
+%token ASSIGNOP RELOP
+%token PLUS MINUS STAR DIV
+%token AND OR DOT NOT
+%token SEMI COMMA
+%token LP RP LB RB LC RC
 %token STRUCT RETURN IF ELSE WHILE
-%token TYPE INT FLOAT
-%token ADD SUB MUL DIV
 
 %%
 Term : INT | FLOAT;

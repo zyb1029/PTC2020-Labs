@@ -1,6 +1,6 @@
 %{
   /* Copyright, Tianyun Zhang @ Nanjing University. 2020-02-21 */
-  // #define FLEXDEBUG <- debugging switch for flex
+  //#define FLEXDEBUG <- debugging switch for flex
 %}
 
 %option yylineno
@@ -12,8 +12,10 @@
   #include "syntax.tab.h"
   #ifdef FLEXDEBUG
   void printType(const char*);
+  #define flexReturn(t) /* t */
   #else
   #define printType(c) /* c */
+  #define flexReturn(t) return t
   #endif
   void printErrorA(const char*, bool);
 %}
@@ -60,16 +62,20 @@ commentb   \/\*
     }
   }
 }
-{newline}    { printType("\n"); }
+{newline} { 
+#ifdef FLEXDEBUG
+  printf("\n");
+#endif
+}
 {whitespace} { /* do nothing */ }
-struct { printType("STRUCT"); return STRUCT; }
-return { printType("RETURN"); return RETURN; }
-if { printType("IF"); return IF; }
-else { printType("ELSE"); return ELSE; }
-while { printType("WHILE"); return WHILE; }
-{type} { printType("TYPE"); return TYPE; }
-{int} { printType("INT"); return INT; }
-{float} { printType("FLOAT"); return FLOAT; }
+struct { printType("STRUCT"); flexReturn(STRUCT); }
+return { printType("RETURN"); flexReturn(RETURN); }
+if { printType("IF"); flexReturn(IF); }
+else { printType("ELSE"); flexReturn(ELSE); }
+while { printType("WHILE"); flexReturn(WHILE); }
+{type} { printType("TYPE"); flexReturn(TYPE); }
+{int} { printType("INT"); flexReturn(INT); }
+{float} { printType("FLOAT"); flexReturn(FLOAT); }
 {invalidnum} { printErrorA("invalid number", true); }
 {id} { printType("ID"); }
 ; { printType("SEMI"); }
@@ -105,7 +111,7 @@ void printErrorA(const char* message, bool showText) {
   }
   printf("\n");
 }
-/*
+#ifdef FLEXDEBUG
 int main(int argc, char* argv[]) {
   if (argc != 2) {
     printf("Usage: lexical file");
@@ -120,4 +126,4 @@ int main(int argc, char* argv[]) {
     }
   }
 }
-*/
+#endif

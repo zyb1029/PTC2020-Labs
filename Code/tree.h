@@ -8,14 +8,16 @@
 
 #include "relop.h"
 
-typedef struct Tree {
-  int line, type;
+typedef struct STNode {
+  int line, column, type;
   union {
     int             ival;
     float           fval;
-    enum ENUM_RELOP eval;
+    enum ENUM_RELOP rval;
   };
-  struct Tree *child, *next;
-} Tree;
+  struct STNode *child, *next;
+} STNode;
+
+extern STNode *stroot;
 
 #endif

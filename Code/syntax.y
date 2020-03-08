@@ -7,7 +7,57 @@
 
 %{
   #include <stdio.h>
+  #include "tree.h"
   #include "relop.h"
+
+  /* Custom YYLTYPE and action */
+  #define YYLTYPE YYLTYPE
+  typedef struct YYLTYPE {
+    int first_line, first_column;
+    int last_line, last_column;
+    STNode *st_node;
+  } YYLTYPE;
+  #define YYLTYPE_IS_DECLARED true
+  #define YYLTYPE_IS_TRIVIAL  true
+  #define YYLLOC_DEFAULT(Cur, Rhs, N)                                          \
+    do {                                                                       \
+      if (N) {                                                                 \
+        (Cur).first_line   = YYRHSLOC(Rhs, 1).first_line;                      \
+        (Cur).first_column = YYRHSLOC(Rhs, 1).first_column;                    \
+        (Cur).last_line    = YYRHSLOC(Rhs, N).last_line;                       \
+        (Cur).last_column  = YYRHSLOC(Rhs, N).last_column;                     \
+      } else {                                                                 \
+        (Cur).first_line   = (Cur).last_line  = YYRHSLOC(Rhs, 0).last_line;    \
+        (Cur).first_column = (Cur).last_column = YYRHSLOC(Rhs, 0).last_column; \
+      }     /*                                                                 \
+      STNode *node = (STNode *)malloc(sizeof(STNode));                         \
+      node->line = (Cur).first_line;                                           \
+      node->column = (Cur).first_column;                                       \
+      node->type = yytoken;                                                    \
+      switch (yytoken) {                                                       \
+        case INT:                                                              \
+          node->ival = yylval.ival;                                            \
+          break;                                                               \
+        case FLOAT:                                                            \
+          node->fval = yylval.fval;                                            \
+          break;                                                               \
+        case RELOP:                                                            \
+          node->rval = yylval.rval;                                            \
+          break;                                                               \
+        default:                                                               \
+          break;                                                               \
+      }                                                                        \
+      if (N) {                                                                 \
+        for (int st_child = 1; st_child < N - 1; ++st_child) {                 \
+          (YYRHSLOC(Rhs, st_child).st_node)->next = YYRHSLOC(Rhs, st_child + 1).st_node; \
+        } \
+        node->child = YYRHSLOC(Rhs, 1).st_node, node->next = NULL; \
+      } else { \
+        node->child = node->next = NULL; \
+      } \
+      (Cur).st_node = node;      */                                            \
+    } while (0)
+
   #include "lex.yy.c"
   void yyerror(char *);
 %}

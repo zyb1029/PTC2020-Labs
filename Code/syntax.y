@@ -37,6 +37,10 @@
 %right NOT
 %left  DOT LB RB LP RP
 
+%printer { fprintf(stderr, "%d", $$); }     INT
+%printer { fprintf(stderr, "%f", $$); }     FLOAT
+%printer { fprintf(stderr, "%s", yytext); } RELOP
+
 %%
 /* A.1.2 High-level Definitions */
 Program: ExtDefList
@@ -122,8 +126,8 @@ Exp: Exp ASSIGNOP Exp
   | Exp LB Exp RB
   | Exp DOT ID
   | ID
-  | INT { printf("%d\n", $1); }
-  | FLOAT { printf("%f\n", $1); }
+  | INT
+  | FLOAT
   ;
 Args: Exp COMMA Args
   | Exp

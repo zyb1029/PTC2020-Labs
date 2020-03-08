@@ -46,14 +46,32 @@
         (Cur).first_column = (Cur).last_column = YYRHSLOC(Rhs, 0).last_column; \
       }                                                                        \
       STNode *node = (STNode *)malloc(sizeof(STNode));                         \
-      node->line = (Cur).first_line;                                           \
+      node->line   = (Cur).first_line;                                         \
       node->column = (Cur).first_column;                                       \
-      node->type = yytoken;                                                    \
+      node->type   = yytoken;                                                  \
       if (N) {                                                                 \
         for (int st_child = 1; st_child < N - 1; ++st_child) {                 \
-        if (YYRHSLOC(Rhs, st_child).st_node == NULL) { \
-        printf("SHIT@!!!!\n"); \
-        } \
+          if (YYRHSLOC(Rhs, st_child).st_node == NULL) {                       \
+            YYSTYPE *child_vsp = yyvsa + st_child; /* semantic value stack */  \
+            STNode *child = (STNode *)malloc(sizeof(STNode));                  \
+            child->line   = YYRHSLOC(Rhs, st_child).first_line;                \
+            child->column = YYRHSLOC(Rhs, st_child).first_column;              \
+            child->type   = child_vsp->type;                                   \
+            switch (child_vsp->type) {                                         \
+              case INT:                                                        \
+                child->ival = child_vsp->ival;                                 \
+                break;                                                         \
+              case FLOAT:                                                      \
+                child->fval = child_vsp->fval;                                 \
+                break;                                                         \
+              case RELOP:                                                                 \
+                child->rval = child_vsp->rval;                                            \
+                break;                                                                    \
+              default:                                                                    \
+                break; /* value undefined */                                              \
+            }                                                                             \
+            YYRHSLOC(Rhs, st_child).st_node = child;                                      \
+          }                                                                               \
           (YYRHSLOC(Rhs, st_child).st_node)->next = YYRHSLOC(Rhs, st_child + 1).st_node;  \
         }                                                                                 \
         node->child = YYRHSLOC(Rhs, 1).st_node, node->next = NULL;                        \

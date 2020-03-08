@@ -1,6 +1,6 @@
 %{
   /* Copyright, Tianyun Zhang @ Nanjing University. 2020-03-07 */
-  #define YYDEBUG false // <- parser debugger switch
+  #define YYDEBUG true // <- parser debugger switch
 %}
 
 %locations
@@ -50,8 +50,8 @@
       STNode *node = (STNode *)malloc(sizeof(STNode));                                    \
       node->line   = (Cur).first_line;                                                    \
       node->column = (Cur).first_column;                                                  \
-      node->type   = yytoken;                                                             \
-      node->name   = yytname[yytoken];                                                    \
+      node->type   = yyr1[yyn];                                                           \
+      node->name   = yytname[node->type];                                                 \
       if (N) {                                                                            \
         for (int st_child = 1; st_child < N - 1; ++st_child) {                            \
           if (YYRHSLOC(Rhs, st_child).st_node == NULL) {                                  \
@@ -111,9 +111,9 @@
 %right NOT
 %left  DOT LB RB LP RP
 
-%printer { fprintf(stderr, "%d", yylval.ival); }     INT
-%printer { fprintf(stderr, "%f", yylval.fval); }     FLOAT
-%printer { fprintf(stderr, "%s", yytext); } RELOP
+%printer { fprintf(stderr, "%d", yylval.ival); } INT
+%printer { fprintf(stderr, "%f", yylval.fval); } FLOAT
+%printer { fprintf(stderr, "%s", yytext); }      RELOP
 
 %%
 /* A.1.2 High-level Definitions */
@@ -211,7 +211,7 @@ Args: Exp COMMA Args
 void yyerror(char *msg) {
   fprintf(stderr, "yyerror: %s\n", msg);
 }
-int _warp_yyparse() {
+int yyparse_wrap() {
 #if YYDEBUG
   yydebug = 1;
 #endif

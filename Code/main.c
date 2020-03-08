@@ -2,7 +2,7 @@
 #include "tree.h"
 
 extern void yyrestart(FILE *);
-extern int _warp_yyparse(); // defined in syntax.y
+extern int yyparse_wrap(); // defined in syntax.y
 
 STNode* stroot;
 
@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
     return 2;
   }
   yyrestart(f);
-  _warp_yyparse();
+  yyparse_wrap();
   printSyntaxTree();
   return 0;
 }

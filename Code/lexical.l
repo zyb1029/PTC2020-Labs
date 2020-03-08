@@ -14,7 +14,7 @@
   void printType(const char*);
   #define TOKENIFY(t) printType("t")
   #else
-  #define printType(t) /* t */
+  #define printType(t) do { /* t */ } while (0)
   #define TOKENIFY(t) return yylval.type = t
   #endif
   #define YY_USER_ACTION \

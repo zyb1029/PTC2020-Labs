@@ -87,7 +87,7 @@ while { TOKENIFY(WHILE); }
 {int} { yylval.ival = atoi(yytext); TOKENIFY(INT); }
 {float} { yylval.fval = atof(yytext); TOKENIFY(FLOAT); }
 {invalidnum} { printErrorA("invalid number", true); }
-{id} { TOKENIFY(ID); }
+{id} { strcpy(yylval.sval, yytext); TOKENIFY(ID); }
 ; { TOKENIFY(SEMI); }
 , { TOKENIFY(COMMA); }
 = { TOKENIFY(ASSIGNOP); }

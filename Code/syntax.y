@@ -1,14 +1,15 @@
 %{
   /* Copyright, Tianyun Zhang @ Nanjing University. 2020-03-07 */
-  #define YYDEBUG true // <- parser debugger switch
+  #define YYDEBUG false // <- parser debugger switch
 %}
 
 %locations
+%token-table
 
 %{
   #include <stdio.h>
-  #include "tree.h"
   #include "relop.h"
+  #include "tree.h"
 
   /* Custom YYSTYPE, use struct instead of union */
   #define YYSTYPE YYSTYPE
@@ -18,6 +19,7 @@
       int             ival;
       float           fval;
       enum ENUM_RELOP rval;
+      char            sval[64];
     };
   } YYSTYPE;
   #define YYSTYPE_IS_DECLARED true
@@ -34,38 +36,43 @@
   #define YYLTYPE_IS_TRIVIAL  true
 
   /* Macro function to create STNodes for nterms */
-  #define YYLLOC_DEFAULT(Cur, Rhs, N)                                          \
-    do {                                                                       \
-      if (N) {                                                                 \
-        (Cur).first_line   = YYRHSLOC(Rhs, 1).first_line;                      \
-        (Cur).first_column = YYRHSLOC(Rhs, 1).first_column;                    \
-        (Cur).last_line    = YYRHSLOC(Rhs, N).last_line;                       \
-        (Cur).last_column  = YYRHSLOC(Rhs, N).last_column;                     \
-      } else {                                                                 \
-        (Cur).first_line   = (Cur).last_line  = YYRHSLOC(Rhs, 0).last_line;    \
-        (Cur).first_column = (Cur).last_column = YYRHSLOC(Rhs, 0).last_column; \
-      }                                                                        \
-      STNode *node = (STNode *)malloc(sizeof(STNode));                         \
-      node->line   = (Cur).first_line;                                         \
-      node->column = (Cur).first_column;                                       \
-      node->type   = yytoken;                                                  \
-      if (N) {                                                                 \
-        for (int st_child = 1; st_child < N - 1; ++st_child) {                 \
-          if (YYRHSLOC(Rhs, st_child).st_node == NULL) {                       \
-            YYSTYPE *child_vsp = yyvsa + st_child; /* semantic value stack */  \
-            STNode *child = (STNode *)malloc(sizeof(STNode));                  \
-            child->line   = YYRHSLOC(Rhs, st_child).first_line;                \
-            child->column = YYRHSLOC(Rhs, st_child).first_column;              \
-            child->type   = child_vsp->type;                                   \
-            switch (child_vsp->type) {                                         \
-              case INT:                                                        \
-                child->ival = child_vsp->ival;                                 \
-                break;                                                         \
-              case FLOAT:                                                      \
-                child->fval = child_vsp->fval;                                 \
-                break;                                                         \
+  #define YYLLOC_DEFAULT(Cur, Rhs, N)                                                     \
+    do {                                                                                  \
+      if (N) {                                                                            \
+        (Cur).first_line   = YYRHSLOC(Rhs, 1).first_line;                                 \
+        (Cur).first_column = YYRHSLOC(Rhs, 1).first_column;                               \
+        (Cur).last_line    = YYRHSLOC(Rhs, N).last_line;                                  \
+        (Cur).last_column  = YYRHSLOC(Rhs, N).last_column;                                \
+      } else {                                                                            \
+        (Cur).first_line   = (Cur).last_line  = YYRHSLOC(Rhs, 0).last_line;               \
+        (Cur).first_column = (Cur).last_column = YYRHSLOC(Rhs, 0).last_column;            \
+      }                                                                                   \
+      STNode *node = (STNode *)malloc(sizeof(STNode));                                    \
+      node->line   = (Cur).first_line;                                                    \
+      node->column = (Cur).first_column;                                                  \
+      node->type   = yytoken;                                                             \
+      node->name   = yytname[yytoken];                                                    \
+      if (N) {                                                                            \
+        for (int st_child = 1; st_child < N - 1; ++st_child) {                            \
+          if (YYRHSLOC(Rhs, st_child).st_node == NULL) {                                  \
+            YYSTYPE *child_vsp = yyvsa + st_child; /* semantic value stack */             \
+            STNode *child = (STNode *)malloc(sizeof(STNode));                             \
+            child->line   = YYRHSLOC(Rhs, st_child).first_line;                           \
+            child->column = YYRHSLOC(Rhs, st_child).first_column;                         \
+            child->type   = child_vsp->type;                                              \
+            child->name   = yytname[child_vsp->type];                                     \
+            switch (child_vsp->type) {                                                    \
+              case INT:                                                                   \
+                child->ival = child_vsp->ival;                                            \
+                break;                                                                    \
+              case FLOAT:                                                                 \
+                child->fval = child_vsp->fval;                                            \
+                break;                                                                    \
               case RELOP:                                                                 \
                 child->rval = child_vsp->rval;                                            \
+                break;                                                                    \
+              case ID:                                                                    \
+                strcpy(child->sval, child_vsp->sval);                                     \
                 break;                                                                    \
               default:                                                                    \
                 break; /* value undefined */                                              \
@@ -110,7 +117,7 @@
 
 %%
 /* A.1.2 High-level Definitions */
-Program: ExtDefList
+Program: ExtDefList { stroot = @$.st_node; }
   ;
 ExtDefList: ExtDef ExtDefList
   | /* empty */

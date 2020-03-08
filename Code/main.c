@@ -1,7 +1,10 @@
 #include <stdio.h>
+#include "tree.h"
 
 extern void yyrestart(FILE *);
 extern int _warp_yyparse(); // defined in syntax.y
+
+STNode* stroot;
 
 int main(int argc, char *argv[]) {
   if (argc <= 1) {
@@ -15,5 +18,6 @@ int main(int argc, char *argv[]) {
   }
   yyrestart(f);
   _warp_yyparse();
+  printSyntaxTree();
   return 0;
 }

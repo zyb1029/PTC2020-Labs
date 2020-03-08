@@ -10,14 +10,20 @@
 
 typedef struct STNode {
   int line, column, type;
+  const char* name;
   union {
     int             ival;
     float           fval;
     enum ENUM_RELOP rval;
+    char            sval[64];
   };
   struct STNode *child, *next;
 } STNode;
 
 extern STNode *stroot;
 
+void printSyntaxTree();
+void printSyntaxTreeAux(STNode *, int);
+
 #endif
+

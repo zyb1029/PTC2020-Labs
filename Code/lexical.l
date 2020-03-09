@@ -15,24 +15,41 @@
   #define TOKENIFY(t) printType("t")
   #else
   #define printType(t) do { /* t */ } while (0)
-  #define TOKENIFY(t)                                  \
-    do {                                               \
-      STNode *node = (STNode *)malloc(sizeof(STNode)); \
-      node->line   = yylineno;                         \
-      node->column = yycolumn;                         \
-      node->type   = 0; /* to be handled in bison */   \
-      node->name   = NULL;                             \
-      fprintf(stderr, "/* new st node */\n");          \
-      yylloc.st_node = node;                           \
-      return yylval.type = t;                          \
+  #define TOKENIFY(t)                                   \
+    do {                                                \
+      STNode *node = (STNode *)malloc(sizeof(STNode));  \
+      node->line   = yylineno;                          \
+      node->column = yycolumn;                          \
+      node->token  = t;                                 \
+      node->symbol = -1;     /* to be translated */     \
+      node->name   = NULL;                              \
+      switch (t) {                                      \
+        case INT:                                       \
+          node->ival = yylval.ival;                     \
+          break;                                        \
+        case FLOAT:                                     \
+          node->fval = yylval.fval;                     \
+          break;                                        \
+        case RELOP:                                     \
+          node->rval = yylval.rval;                     \
+          break;                                        \
+        case ID:                                        \
+        case TYPE:                                      \
+          strcpy(node->sval, yylval.sval);              \
+          break;                                        \
+        default:                                        \
+          break; /* undefined value */                  \
+      }                                                 \
+      fprintf(stderr, "/* new st node ##t## */\n");     \
+      yylloc.st_node = node;                            \
+      return yylval.type = t;                           \
     } while (0)
   #endif
-  #define YY_USER_ACTION                               \
-    yylloc.first_line   = yylloc.last_line = yylineno; \
-    yylloc.first_column = yycolumn;                    \
-    yylloc.last_column  = yycolumn + yyleng - 1;       \
-    yylloc.st_node      = NULL;                        \
-    yylloc.translated   = false;                       \
+  #define YY_USER_ACTION                                \
+    yylloc.first_line   = yylloc.last_line = yylineno;  \
+    yylloc.first_column = yycolumn;                     \
+    yylloc.last_column  = yycolumn + yyleng - 1;        \
+    yylloc.st_node      = NULL;                         \
     yycolumn += yyleng;
   int yycolumn = 1;
   void printErrorA(const char*, bool);
@@ -95,7 +112,7 @@ return { TOKENIFY(RETURN); }
 if { TOKENIFY(IF); }
 else { TOKENIFY(ELSE); }
 while { TOKENIFY(WHILE); }
-{type} { TOKENIFY(TYPE); }
+{type} { strcpy(yylval.sval, yytext); TOKENIFY(TYPE); }
 {int} { yylval.ival = atoi(yytext); TOKENIFY(INT); }
 {float} { yylval.fval = atof(yytext); TOKENIFY(FLOAT); }
 {invalidnum} { printErrorA("invalid number", true); }

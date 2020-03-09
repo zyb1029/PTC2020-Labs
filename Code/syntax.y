@@ -31,7 +31,6 @@
   typedef struct YYLTYPE {
     int first_line, first_column;
     int last_line, last_column;
-    bool translated;
     STNode *st_node;
   } YYLTYPE;
   #define YYLTYPE_IS_DECLARED true
@@ -49,37 +48,20 @@
         (Cur).first_line   = (Cur).last_line  = YYRHSLOC(Rhs, 0).last_line;               \
         (Cur).first_column = (Cur).last_column = YYRHSLOC(Rhs, 0).last_column;            \
       }                                                                                   \
-      (Cur).translated = true;                                                            \
       STNode *node = (STNode *)malloc(sizeof(STNode));                                    \
       node->line   = (Cur).first_line;                                                    \
       node->column = (Cur).first_column;                                                  \
-      node->type   = yyr1[yyn];                                                           \
-      node->name   = yytname[node->type];                                                 \
+      node->token  = -1;                                                                  \
+      node->symbol = yyr1[yyn];                                                           \
+      node->name   = yytname[node->symbol];                                               \
       if (N) {                                                                            \
         for (int child = 1; child <= N; ++child) {                                        \
-          if (!(YYRHSLOC(Rhs, child).translated)) {                                       \
+          if ((YYRHSLOC(Rhs, child).st_node)->symbol == -1) {                             \
             YYSTYPE *cvsp = yyvsp - N + child;    /* access to semantic value stack */    \
-            int type = YYTRANSLATE(cvsp->type);   /* translate from token to symbol */    \
-            (YYRHSLOC(Rhs, child).st_node)->type = type;                                  \
-            (YYRHSLOC(Rhs, child).st_node)->name = yytname[type];                         \
-            fprintf(stderr, "Translating st node of type %d:%s\n", type, yytname[type]);  \
-            switch (type) {                                                               \
-              case INT:                                                                   \
-                (YYRHSLOC(Rhs, child).st_node)->ival = cvsp->ival;                        \
-                break;                                                                    \
-              case FLOAT:                                                                 \
-                (YYRHSLOC(Rhs, child).st_node)->fval = cvsp->fval;                        \
-                break;                                                                    \
-              case RELOP:                                                                 \
-                (YYRHSLOC(Rhs, child).st_node)->rval = cvsp->rval;                        \
-                break;                                                                    \
-              case ID:                                                                    \
-                strcpy((YYRHSLOC(Rhs, child).st_node)->sval, cvsp->sval);                 \
-                break;                                                                    \
-              default:                                                                    \
-                break; /* undefined value */                                              \
-            }                                                                             \
-            YYRHSLOC(Rhs, child).translated = true;                                       \
+            int symbol = YYTRANSLATE(cvsp->type); /* translate from token to symbol */    \
+            (YYRHSLOC(Rhs, child).st_node)->symbol = symbol;                              \
+            (YYRHSLOC(Rhs, child).st_node)->name   = yytname[symbol];                     \
+            fprintf(stderr, "/* translate st node %d:%s */\n", symbol, yytname[symbol]);  \
           }                                                                               \
         }                                                                                 \
         for (int child = 1; child <= N - 1; ++child) { /* Link all but the last child */  \

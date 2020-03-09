@@ -9,7 +9,7 @@
 #include "relop.h"
 
 typedef struct STNode {
-  int line, column, type;
+  int line, column, token, symbol;
   const char* name;
   union {
     int             ival;

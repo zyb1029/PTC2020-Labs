@@ -23,6 +23,7 @@
       node->token  = t;                                 \
       node->symbol = -1;     /* to be translated */     \
       node->name   = NULL;                              \
+      node->empty  = false;                             \
       switch (t) {                                      \
         case INT:                                       \
           node->ival = yylval.ival;                     \

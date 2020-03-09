@@ -8,6 +8,7 @@ void printSyntaxTree() {
 }
 
 void printSyntaxTreeAux(STNode *node, int indent) {
+  if (node->empty) return;
   for (int i = 0; i < indent; ++i) printf("  ");
 
   assert(node->name != NULL);

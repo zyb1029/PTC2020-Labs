@@ -54,6 +54,7 @@
       node->token  = -1; /* nterm is not a token */                                       \
       node->symbol = yyr1[yyn];                                                           \
       node->name   = yytname[node->symbol];                                               \
+      node->empty  = N == 0;                                                              \
       if (N) {                                                                            \
         for (int child = 1; child <= N; ++child) {                                        \
           if ((YYRHSLOC(Rhs, child).st_node)->symbol == -1) {                             \

@@ -6,11 +6,14 @@
 #ifndef TREE_H
 #define TREE_H
 
+#include <stdbool.h>
 #include "relop.h"
 
 typedef struct STNode {
-  int line, column, token, symbol;
+  int line, column;
+  int token, symbol;
   const char* name;
+  bool empty;
   union {
     int             ival;
     float           fval;

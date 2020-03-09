@@ -17,7 +17,8 @@ int main(int argc, char *argv[]) {
     return 2;
   }
   yyrestart(f);
-  yyparse_wrap();
+  int res = yyparse_wrap();
+  fprintf(stderr, "=== Parser returned %d. ===\n", res);
   printSyntaxTree();
   return 0;
 }

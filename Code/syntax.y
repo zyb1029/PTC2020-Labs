@@ -176,9 +176,12 @@ Args: Exp COMMA Args
   ;
 
 %%
+extern int  errLineno;
 extern bool hasErrorB;
 void yyerror(char *msg) {
   hasErrorB = true;
+  if (errLineno == yylineno) return; // one error per line
+  else errLineno = yylineno;
   printf("Error type B at Line %d: %s.\n", yylineno, msg);
 }
 int yyparse_wrap() {

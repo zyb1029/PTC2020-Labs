@@ -5,6 +5,7 @@
 extern void yyrestart(FILE *);
 extern int yyparse_wrap(); // defined in syntax.y
 
+int  errLineno = 0;
 bool hasErrorA = false;
 bool hasErrorB = false;
 STNode* stroot = NULL;

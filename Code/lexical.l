@@ -151,9 +151,12 @@ while { TOKENIFY(WHILE); }
 #if FLEXDEBUG
 void printType(const char* type) { printf("%s ", type); }
 #endif
+extern int  errLineno;
 extern bool hasErrorA;
 void throwErrorA(const char* message, bool showText) {
   hasErrorA = true;
+  if (errLineno == yylineno) return; // one error per line
+  else errLineno = yylineno;
   printf("Error type A at Line %d: %s", yylineno, message);
   if (showText) {
     printf(" \'%s\'", yytext);

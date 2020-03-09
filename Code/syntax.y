@@ -8,6 +8,7 @@
 
 %{
   #include <stdio.h>
+  #include <stdbool.h>
   #include "relop.h"
   #include "tree.h"
 
@@ -30,6 +31,7 @@
   typedef struct YYLTYPE {
     int first_line, first_column;
     int last_line, last_column;
+    bool translated;
     STNode *st_node;
   } YYLTYPE;
   #define YYLTYPE_IS_DECLARED true
@@ -47,6 +49,7 @@
         (Cur).first_line   = (Cur).last_line  = YYRHSLOC(Rhs, 0).last_line;               \
         (Cur).first_column = (Cur).last_column = YYRHSLOC(Rhs, 0).last_column;            \
       }                                                                                   \
+      (Cur).translated = true;                                                            \
       STNode *node = (STNode *)malloc(sizeof(STNode));                                    \
       node->line   = (Cur).first_line;                                                    \
       node->column = (Cur).first_column;                                                  \
@@ -54,30 +57,11 @@
       node->name   = yytname[node->type];                                                 \
       if (N) {                                                                            \
         for (int st_child = 1; st_child < N - 1; ++st_child) {                            \
-          if (YYRHSLOC(Rhs, st_child).st_node == NULL) {                                  \
-            YYSTYPE *child_vsp = yyvsa + st_child; /* semantic value stack */             \
-            STNode *child = (STNode *)malloc(sizeof(STNode));                             \
-            child->line   = YYRHSLOC(Rhs, st_child).first_line;                           \
-            child->column = YYRHSLOC(Rhs, st_child).first_column;                         \
-            child->type   = yytranslate[child_vsp->type];                                 \
-            child->name   = yytname[child->type];                                         \
-            switch (child_vsp->type) {                                                    \
-              case INT:                                                                   \
-                child->ival = child_vsp->ival;                                            \
-                break;                                                                    \
-              case FLOAT:                                                                 \
-                child->fval = child_vsp->fval;                                            \
-                break;                                                                    \
-              case RELOP:                                                                 \
-                child->rval = child_vsp->rval;                                            \
-                break;                                                                    \
-              case ID:                                                                    \
-                strcpy(child->sval, child_vsp->sval);                                     \
-                break;                                                                    \
-              default:                                                                    \
-                break; /* value undefined */                                              \
-            }                                                                             \
-            YYRHSLOC(Rhs, st_child).st_node = child;                                      \
+          if (!(YYRHSLOC(Rhs, st_child).translated)) {                                    \
+            int type = YYTRANSLATE((yyvsa + st_child)->type); /* semantic value stack */  \
+            (YYRHSLOC(Rhs, st_child).st_node)->type = type;                               \
+            (YYRHSLOC(Rhs, st_child).st_node)->name = yytname[type];                      \
+            YYRHSLOC(Rhs, st_child).translated = true;                                    \
           }                                                                               \
           (YYRHSLOC(Rhs, st_child).st_node)->next = YYRHSLOC(Rhs, st_child + 1).st_node;  \
         }                                                                                 \

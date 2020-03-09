@@ -9,32 +9,8 @@
 %{
   #include <stdio.h>
   #include <stdbool.h>
-  #include "relop.h"
+  #include "token.h"
   #include "tree.h"
-
-  /* Custom YYSTYPE, use struct instead of union */
-  #define YYSTYPE YYSTYPE
-  typedef struct YYSTYPE {
-    int type;
-    union {
-      int             ival;
-      float           fval;
-      enum ENUM_RELOP rval;
-      char            sval[64];
-    };
-  } YYSTYPE;
-  #define YYSTYPE_IS_DECLARED true
-  #define YYSTYPE_IS_TRIVIAL  true
-
-  /* Custom YYLTYPE, add a pointer to STNode */
-  #define YYLTYPE YYLTYPE
-  typedef struct YYLTYPE {
-    int first_line, first_column;
-    int last_line, last_column;
-    STNode *st_node;
-  } YYLTYPE;
-  #define YYLTYPE_IS_DECLARED true
-  #define YYLTYPE_IS_TRIVIAL  true
 
   /* Macro function to create STNodes for nterms */
   #define YYLLOC_DEFAULT(Cur, Rhs, N)                                                     \
@@ -152,6 +128,7 @@ StmtList: Stmt StmtList
   | /* EMPTY */
   ;
 Stmt: Exp SEMI
+  | error SEMI
   | CompSt
   | RETURN Exp SEMI
   | IF LP Exp RP Stmt %prec LOWER_THAN_ELSE
@@ -164,6 +141,7 @@ DefList: Def DefList
   | /* EMPTY */
   ;
 Def: Specifier DecList SEMI
+  | error SEMI
   ;
 DecList: Dec
   | Dec COMMA DecList
@@ -182,6 +160,7 @@ Exp: Exp ASSIGNOP Exp
   | Exp STAR Exp
   | Exp DIV Exp
   | LP Exp RP
+  | LP error RP
   | MINUS Exp
   | NOT Exp
   | ID LP Args RP
@@ -197,7 +176,9 @@ Args: Exp COMMA Args
   ;
 
 %%
+extern bool hasErrorB;
 void yyerror(char *msg) {
+  hasErrorB = true;
   printf("Error type B at Line %d: %s.\n", yylineno, msg);
 }
 int yyparse_wrap() {

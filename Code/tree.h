@@ -9,7 +9,7 @@
 #define STDEBUG false // <- syntax tree debugger switch
 
 #include <stdbool.h>
-#include "relop.h"
+#include "token.h"
 
 typedef struct STNode {
   int line, column;

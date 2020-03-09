@@ -21,8 +21,7 @@ int main(int argc, char *argv[]) {
   }
 
   yyrestart(f);
-  int res = yyparse_wrap();
-  hasErrorB = res != 0;
+  yyparse_wrap();
 
   if (!hasErrorA && !hasErrorB) printSyntaxTree();
 

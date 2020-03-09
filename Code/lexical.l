@@ -9,6 +9,8 @@
   #include <stdio.h>
   #include <stdlib.h>
   #include <stdbool.h>
+  #include "token.h"
+  #include "tree.h"
   #include "syntax.tab.h"
   #if FLEXDEBUG
   void printType(const char*);
@@ -112,33 +114,15 @@ return { TOKENIFY(RETURN); }
 if { TOKENIFY(IF); }
 else { TOKENIFY(ELSE); }
 while { TOKENIFY(WHILE); }
-{type} { strcpy(yylval.sval, yytext); TOKENIFY(TYPE); }
-{int} { yylval.ival = atoi(yytext); TOKENIFY(INT); }
-{float} { yylval.fval = atof(yytext); TOKENIFY(FLOAT); }
+{type} { ACTYYLVAL(s); TOKENIFY(TYPE); }
+{int} { SETYYLVAL(i); TOKENIFY(INT); }
+{float} { SETYYLVAL(f); TOKENIFY(FLOAT); }
 {invalidnum} { throwErrorA("invalid number", true); }
-{id} { strcpy(yylval.sval, yytext); TOKENIFY(ID); }
+{id} { ACTYYLVAL(s); TOKENIFY(ID); }
 ; { TOKENIFY(SEMI); }
 , { TOKENIFY(COMMA); }
 = { TOKENIFY(ASSIGNOP); }
-{relop} {
-  switch (yytext[0]) {
-    case '=':
-      yylval.rval = RELOP_EQ;
-      break;
-    case '!':
-      yylval.rval = RELOP_NE;
-      break;
-    case '<':
-      yylval.rval = yyleng == 1 ? RELOP_LT : RELOP_LE;
-      break;
-    case '>':
-      yylval.rval = yyleng == 1 ? RELOP_GT : RELOP_GE;
-      break;
-    default:
-      break; /* undefined value */
-  }
-  TOKENIFY(RELOP);
-}
+{relop} { SETYYLVAL(r); TOKENIFY(RELOP); }
 \+ { TOKENIFY(PLUS); }
 - { TOKENIFY(MINUS); }
 \* { TOKENIFY(STAR); }

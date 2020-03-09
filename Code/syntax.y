@@ -56,17 +56,40 @@
       node->type   = yyr1[yyn];                                                           \
       node->name   = yytname[node->type];                                                 \
       if (N) {                                                                            \
-        for (int st_child = 1; st_child < N - 1; ++st_child) {                            \
-          if (!(YYRHSLOC(Rhs, st_child).translated)) {                                    \
-            int type = YYTRANSLATE((yyvsa + st_child)->type); /* semantic value stack */  \
-            (YYRHSLOC(Rhs, st_child).st_node)->type = type;                               \
-            (YYRHSLOC(Rhs, st_child).st_node)->name = yytname[type];                      \
-            YYRHSLOC(Rhs, st_child).translated = true;                                    \
+        for (int child = 1; child <= N; ++child) {                                        \
+          if (!(YYRHSLOC(Rhs, child).translated)) {                                       \
+            YYSTYPE *cvsp = yyvsa + child;        /* access to semantic value stack */    \
+            int type = YYTRANSLATE(cvsp->type);   /* translate from token to symbol */    \
+            (YYRHSLOC(Rhs, child).st_node)->type = type;                                  \
+            (YYRHSLOC(Rhs, child).st_node)->name = yytname[type];                         \
+            fprintf(stderr, "Translating st node of type %d:%s\n", type, yytname[type]);  \
+            switch (type) {                                                               \
+              case INT:                                                                   \
+                (YYRHSLOC(Rhs, child).st_node)->ival = cvsp->ival;                        \
+                break;                                                                    \
+              case FLOAT:                                                                 \
+                (YYRHSLOC(Rhs, child).st_node)->fval = cvsp->fval;                        \
+                break;                                                                    \
+              case RELOP:                                                                 \
+                (YYRHSLOC(Rhs, child).st_node)->rval = cvsp->rval;                        \
+                break;                                                                    \
+              case ID:                                                                    \
+                strcpy((YYRHSLOC(Rhs, child).st_node)->sval, cvsp->sval);                 \
+                break;                                                                    \
+              default:                                                                    \
+                break; /* undefined value */                                              \
+            }                                                                             \
+            YYRHSLOC(Rhs, child).translated = true;                                       \
           }                                                                               \
-          (YYRHSLOC(Rhs, st_child).st_node)->next = YYRHSLOC(Rhs, st_child + 1).st_node;  \
         }                                                                                 \
+        for (int child = 1; child <= N - 1; ++child) { /* Link all but the last child */  \
+          fprintf(stderr, "/* linking %s -> %s */\n", (YYRHSLOC(Rhs, child).st_node)->name, (YYRHSLOC(Rhs, child + 1).st_node)->name); \
+          (YYRHSLOC(Rhs, child).st_node)->next = YYRHSLOC(Rhs, child + 1).st_node;        \
+        }                                                                                 \
+        fprintf(stderr, "/* linking %s -> %s */\n", node->name, (YYRHSLOC(Rhs, 1).st_node)->name); \
         node->child = YYRHSLOC(Rhs, 1).st_node, node->next = NULL;                        \
       } else {                                                                            \
+        fprintf(stderr, "/* no child to link */\n");                                      \
         node->child = node->next = NULL;                                                  \
       }                                                                                   \
       (Cur).st_node = node;                                                               \

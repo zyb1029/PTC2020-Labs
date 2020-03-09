@@ -11,7 +11,5 @@ void printSyntaxTreeAux(STNode *node, int indent) {
   for (STNode *child = node->child; child != NULL; child = child->next) {
     printSyntaxTreeAux(child, indent + 1);
   }
-  for (int i = 0; i < indent; ++i) printf("<-");
-  printf("\n");
 }
 

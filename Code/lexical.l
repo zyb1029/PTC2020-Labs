@@ -15,18 +15,24 @@
   #define TOKENIFY(t) printType("t")
   #else
   #define printType(t) do { /* t */ } while (0)
-  #define TOKENIFY(t) return yylval.type = t
+  #define TOKENIFY(t)                                  \
+    do {                                               \
+      STNode *node = (STNode *)malloc(sizeof(STNode)); \
+      node->line   = yylineno;                         \
+      node->column = yycolumn;                         \
+      node->type   = 0; /* to be handled in bison */   \
+      node->name   = NULL;                             \
+      fprintf(stderr, "/* new st node */\n");          \
+      yylloc.st_node = node;                           \
+      return yylval.type = t;                          \
+    } while (0)
   #endif
-  #define YY_USER_ACTION                                 \
-    yylloc.first_line   = yylloc.last_line = yylineno;   \
-    yylloc.first_column = yycolumn;                      \
-    yylloc.last_column  = yycolumn + yyleng - 1;         \
-    yylloc.st_node = (STNode *)malloc(sizeof(STNode));   \
-    (yylloc.st_node)->line   = yylineno;                 \
-    (yylloc.st_node)->column = yycolumn;                 \
-    (yylloc.st_node)->type   = 0; /* handled in bison */ \
-    (yylloc.st_node)->name   = NULL;                     \
-    fprintf(stderr, "Creating new ST node in flex\n");   \
+  #define YY_USER_ACTION                               \
+    yylloc.first_line   = yylloc.last_line = yylineno; \
+    yylloc.first_column = yycolumn;                    \
+    yylloc.last_column  = yycolumn + yyleng - 1;       \
+    yylloc.st_node      = NULL;                        \
+    yylloc.translated   = false;                       \
     yycolumn += yyleng;
   int yycolumn = 1;
   void printErrorA(const char*, bool);
@@ -90,26 +96,26 @@ if { TOKENIFY(IF); }
 else { TOKENIFY(ELSE); }
 while { TOKENIFY(WHILE); }
 {type} { TOKENIFY(TYPE); }
-{int} { yylval.ival = (yylloc.st_node)->ival = atoi(yytext); TOKENIFY(INT); }
-{float} { yylval.fval = (yylloc.st_node)->fval = atof(yytext); TOKENIFY(FLOAT); }
+{int} { yylval.ival = atoi(yytext); TOKENIFY(INT); }
+{float} { yylval.fval = atof(yytext); TOKENIFY(FLOAT); }
 {invalidnum} { printErrorA("invalid number", true); }
-{id} { strcpy(yylval.sval, yytext); strcpy((yylloc.st_node)->sval, yytext); TOKENIFY(ID); }
+{id} { strcpy(yylval.sval, yytext); TOKENIFY(ID); }
 ; { TOKENIFY(SEMI); }
 , { TOKENIFY(COMMA); }
 = { TOKENIFY(ASSIGNOP); }
 {relop} {
   switch (yytext[0]) {
     case '=':
-      yylval.rval = (yylloc.st_node)->rval = RELOP_EQ;
+      yylval.rval = RELOP_EQ;
       break;
     case '!':
-      yylval.rval = (yylloc.st_node)->rval = RELOP_NE;
+      yylval.rval = RELOP_NE;
       break;
     case '<':
-      yylval.rval = (yylloc.st_node)->rval = yyleng == 1 ? RELOP_LT : RELOP_LE;
+      yylval.rval = yyleng == 1 ? RELOP_LT : RELOP_LE;
       break;
     case '>':
-      yylval.rval = (yylloc.st_node)->rval = yyleng == 1 ? RELOP_GT : RELOP_GE;
+      yylval.rval = yyleng == 1 ? RELOP_GT : RELOP_GE;
       break;
     default:
       break; /* undefined value */

@@ -59,8 +59,8 @@
             STNode *child = (STNode *)malloc(sizeof(STNode));                             \
             child->line   = YYRHSLOC(Rhs, st_child).first_line;                           \
             child->column = YYRHSLOC(Rhs, st_child).first_column;                         \
-            child->type   = child_vsp->type;                                              \
-            child->name   = yytname[child_vsp->type];                                     \
+            child->type   = yytranslate[child_vsp->type];                                 \
+            child->name   = yytname[child->type];                                         \
             switch (child_vsp->type) {                                                    \
               case INT:                                                                   \
                 child->ival = child_vsp->ival;                                            \

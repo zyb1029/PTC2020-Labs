@@ -51,7 +51,7 @@
       STNode *node = (STNode *)malloc(sizeof(STNode));                                    \
       node->line   = (Cur).first_line;                                                    \
       node->column = (Cur).first_column;                                                  \
-      node->token  = -1;                                                                  \
+      node->token  = -1; /* nterm is not a token */                                       \
       node->symbol = yyr1[yyn];                                                           \
       node->name   = yytname[node->symbol];                                               \
       if (N) {                                                                            \

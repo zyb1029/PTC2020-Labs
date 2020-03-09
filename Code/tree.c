@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 #include "tree.h"
 #include "syntax.tab.h"
 
@@ -8,22 +9,31 @@ void printSyntaxTree() {
 
 void printSyntaxTreeAux(STNode *node, int indent) {
   for (int i = 0; i < indent; ++i) printf("  ");
-  if (node->name) printf("%s", node->name);
-  switch (node->token) {
-    case INT:
-      printf(": %d\n", node->ival);
-      break;
-    case FLOAT:
-      printf(": %f\n", node->fval);
-      break;
-    case ID:
-    case TYPE:
-      printf(": %s\n", node->sval);
-      break;
-    default:
-      printf("\n");
-      break;
+
+  assert(node->name != NULL);
+  printf("%s", node->name);
+  if (node->token == -1) {
+    /* print lineno for symbols */
+    printf(" (%d)", node->line);
+  } else /* (node->token != -1) */ {
+    /* print value/name for tokens */
+    switch (node->token) {
+      case INT:
+        printf(": %d", node->ival);
+        break;
+      case FLOAT:
+        printf(": %f", node->fval);
+        break;
+      case ID:
+      case TYPE:
+        printf(": %s", node->sval);
+        break;
+      default:
+        break;
+    }
   }
+  printf("\n");
+
   for (STNode *child = node->child; child != NULL; child = child->next) {
     printSyntaxTreeAux(child, indent + 1);
   }

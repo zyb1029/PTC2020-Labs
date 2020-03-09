@@ -74,6 +74,9 @@
       (Cur).st_node = node;                                                               \
     } while (0)
 
+  /* Custom error template */
+  #define YY_(Msg) Msg
+
   #include "lex.yy.c"
   void yyerror(char *);
 %}
@@ -195,7 +198,7 @@ Args: Exp COMMA Args
 
 %%
 void yyerror(char *msg) {
-  fprintf(stderr, "yyerror: %s\n", msg);
+  printf("Error type B at Line %d: %s.\n", yylineno, msg);
 }
 int yyparse_wrap() {
 #if YYDEBUG

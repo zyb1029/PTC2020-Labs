@@ -1,6 +1,6 @@
 %{
   /* Copyright, Tianyun Zhang @ Nanjing University. 2020-03-07 */
-  #define YYDEBUG true // <- parser debugger switch
+  #define YYDEBUG false // <- parser debugger switch
 %}
 
 %locations
@@ -62,17 +62,13 @@
             int symbol = YYTRANSLATE(cvsp->type); /* translate from token to symbol */    \
             (YYRHSLOC(Rhs, child).st_node)->symbol = symbol;                              \
             (YYRHSLOC(Rhs, child).st_node)->name   = yytname[symbol];                     \
-            fprintf(stderr, "/* translate st node %d:%s */\n", symbol, yytname[symbol]);  \
           }                                                                               \
         }                                                                                 \
         for (int child = 1; child <= N - 1; ++child) { /* Link all but the last child */  \
-          fprintf(stderr, "/* linking %s -> %s */\n", (YYRHSLOC(Rhs, child).st_node)->name, (YYRHSLOC(Rhs, child + 1).st_node)->name); \
           (YYRHSLOC(Rhs, child).st_node)->next = YYRHSLOC(Rhs, child + 1).st_node;        \
         }                                                                                 \
-        fprintf(stderr, "/* linking %s -> %s */\n", node->name, (YYRHSLOC(Rhs, 1).st_node)->name); \
         node->child = YYRHSLOC(Rhs, 1).st_node, node->next = NULL;                        \
       } else {                                                                            \
-        fprintf(stderr, "/* no child to link */\n");                                      \
         node->child = node->next = NULL;                                                  \
       }                                                                                   \
       (Cur).st_node = node;                                                               \

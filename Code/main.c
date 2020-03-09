@@ -1,10 +1,13 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include "tree.h"
 
 extern void yyrestart(FILE *);
 extern int yyparse_wrap(); // defined in syntax.y
 
-STNode* stroot;
+bool hasErrorA = false;
+bool hasErrorB = false;
+STNode* stroot = NULL;
 
 int main(int argc, char *argv[]) {
   if (argc <= 1) {
@@ -16,9 +19,12 @@ int main(int argc, char *argv[]) {
     perror(argv[1]);
     return 2;
   }
+
   yyrestart(f);
   int res = yyparse_wrap();
-  fprintf(stderr, "=== Parser returned %d. ===\n", res);
-  printSyntaxTree();
+  hasErrorB = res != 0;
+
+  if (!hasErrorA && !hasErrorB) printSyntaxTree();
+
   return 0;
 }

@@ -41,7 +41,6 @@
         default:                                        \
           break; /* undefined value */                  \
       }                                                 \
-      fprintf(stderr, "/* new st node " #t " */\n");    \
       yylloc.st_node = node;                            \
       return yylval.type = t;                           \
     } while (0)
@@ -53,7 +52,7 @@
     yylloc.st_node      = NULL;                         \
     yycolumn += yyleng;
   int yycolumn = 1;
-  void printErrorA(const char*, bool);
+  void throwErrorA(const char*, bool);
 %}
 
 decdigit   [0-9]
@@ -89,7 +88,7 @@ commentb   \/\*
     ch = input();
     ++yycolumn;
     if (!ch || ch == EOF) {
-      printErrorA("unterminated comment", false);
+      throwErrorA("unterminated comment", false);
       yyterminate();
     } else if (ch == '*') {
       do {
@@ -116,7 +115,7 @@ while { TOKENIFY(WHILE); }
 {type} { strcpy(yylval.sval, yytext); TOKENIFY(TYPE); }
 {int} { yylval.ival = atoi(yytext); TOKENIFY(INT); }
 {float} { yylval.fval = atof(yytext); TOKENIFY(FLOAT); }
-{invalidnum} { printErrorA("invalid number", true); }
+{invalidnum} { throwErrorA("invalid number", true); }
 {id} { strcpy(yylval.sval, yytext); TOKENIFY(ID); }
 ; { TOKENIFY(SEMI); }
 , { TOKENIFY(COMMA); }
@@ -161,14 +160,16 @@ while { TOKENIFY(WHILE); }
 #endif
   yyterminate();
 }
-. { printErrorA("unknown character", true); }
+. { throwErrorA("unknown character", true); }
 
 %%
 
 #if FLEXDEBUG
 void printType(const char* type) { printf("%s ", type); }
 #endif
-void printErrorA(const char* message, bool showText) {
+extern bool hasErrorA;
+void throwErrorA(const char* message, bool showText) {
+  hasErrorA = true;
   printf("Error type A at Line %d: %s", yylineno, message);
   if (showText) {
     printf(" \'%s\'", yytext);

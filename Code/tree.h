@@ -6,6 +6,8 @@
 #ifndef TREE_H
 #define TREE_H
 
+#define STDEBUG false // <- syntax tree debugger switch
+
 #include <stdbool.h>
 #include "relop.h"
 

@@ -41,7 +41,7 @@
         default:                                        \
           break; /* undefined value */                  \
       }                                                 \
-      fprintf(stderr, "/* new st node ##t## */\n");     \
+      fprintf(stderr, "/* new st node " #t " */\n");    \
       yylloc.st_node = node;                            \
       return yylval.type = t;                           \
     } while (0)

@@ -1,0 +1,14 @@
+/* Multiple syntax errors! */
+int 0main (
+  int , float x
+) {
+  struct X {
+    int X - 0;
+    float Y;
+  };
+  float Z = .5X;
+  struct X foo = bar.bar.bar;
+  return 114514;
+  /* EXPLODE */*/
+  int main() {}
+}

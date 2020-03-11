@@ -75,7 +75,7 @@
 %left  RELOP
 %left  PLUS MINUS
 %left  STAR DIV
-%right NOT
+%right NOT UNARY_MINUS
 %left  DOT LB RB LP RP
 
 %printer { fprintf(stderr, "%d", yylval.ival); } INT
@@ -163,7 +163,7 @@ Exp: Exp ASSIGNOP Exp
   | Exp DIV Exp
   | LP Exp RP
   | LP error RP
-  | MINUS Exp
+  | MINUS Exp %prec UNARY_MINUS
   | NOT Exp
   | ID LP Args RP
   | ID LP RP

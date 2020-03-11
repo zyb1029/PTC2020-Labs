@@ -20,7 +20,7 @@ void printSyntaxTreeAux(STNode *node, int indent) {
     /* print value/name for tokens */
     switch (node->token) {
       case INT:
-        printf(": %d", node->ival);
+        printf(": %u", node->ival);
         break;
       case FLOAT:
         printf(": %f", node->fval);

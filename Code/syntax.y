@@ -78,7 +78,7 @@
 %right NOT NEG
 %left  DOT LB RB LP RP
 
-%printer { fprintf(stderr, "%d", yylval.ival); } INT
+%printer { fprintf(stderr, "%u", yylval.ival); } INT
 %printer { fprintf(stderr, "%f", yylval.fval); } FLOAT
 %printer { fprintf(stderr, "%s", yytext); }      RELOP
 

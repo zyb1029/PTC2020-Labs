@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include "token.h"
 
-GETYYLVAL(int, i) {
-  return (int)strtol(str, (char **)NULL, 0);
+GETYYLVAL(unsigned int, i) {
+  return (unsigned int)strtol(str, (char **)NULL, 0);
 }
 
 GETYYLVAL(float, f) {

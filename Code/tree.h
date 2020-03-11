@@ -17,7 +17,7 @@ typedef struct STNode {
   const char* name;
   bool empty;
   union {
-    int             ival;
+    unsigned int    ival;
     float           fval;
     enum ENUM_RELOP rval;
     char            sval[64];

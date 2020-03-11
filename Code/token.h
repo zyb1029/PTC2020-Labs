@@ -27,7 +27,7 @@ enum ENUM_RELOP {
 typedef struct YYSTYPE {
   int type;
   union {
-    int             ival;
+    unsigned        ival;
     float           fval;
     enum ENUM_RELOP rval;
     char            sval[64];
@@ -53,7 +53,7 @@ extern YYLTYPE yylloc;
 #define SETYYLVAL(TYPE) yylval.TYPE##val = get##TYPE##Token(yytext, (size_t)yyleng)
 #define ACTYYLVAL(TYPE) get##TYPE##Token(yytext, (size_t)yyleng)
 
-GETYYLVAL(int, i);
+GETYYLVAL(unsigned int, i);
 GETYYLVAL(float, f);
 GETYYLVAL(enum ENUM_RELOP, r);
 GETYYLVAL(void, s);

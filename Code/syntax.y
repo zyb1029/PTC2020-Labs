@@ -1,6 +1,6 @@
 %{
   /* Copyright, Tianyun Zhang @ Nanjing University. 2020-03-07 */
-  #define YYDEBUG false // <- parser debugger switch
+  #define YYDEBUG true // <- parser debugger switch
 %}
 
 %locations
@@ -90,6 +90,7 @@ ExtDefList: ExtDef ExtDefList
 ExtDef: Specifier ExtDecList SEMI
   | Specifier SEMI
   | Specifier FunDec CompSt
+  | Specifier error CompSt
   ;
 ExtDecList: VarDec
   | VarDec COMMA ExtDecList
@@ -114,6 +115,7 @@ VarDec: ID
   ;
 FunDec: ID LP VarList RP
   | ID LP RP
+  | error LP VarList RP
   ;
 VarList: ParamDec COMMA VarList
   | ParamDec
@@ -125,10 +127,11 @@ ParamDec: Specifier VarDec
 CompSt: LC DefList StmtList RC
   ;
 StmtList: Stmt StmtList
+  | error SEMI StmtList
+  | error RC StmtList
   | /* EMPTY */
   ;
 Stmt: Exp SEMI
-  | error SEMI
   | CompSt
   | RETURN Exp SEMI
   | IF LP Exp RP Stmt %prec LOWER_THAN_ELSE
@@ -141,7 +144,6 @@ DefList: Def DefList
   | /* EMPTY */
   ;
 Def: Specifier DecList SEMI
-  | error SEMI
   ;
 DecList: Dec
   | Dec COMMA DecList

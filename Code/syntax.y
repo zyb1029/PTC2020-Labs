@@ -1,6 +1,6 @@
 %{
   /* Copyright, Tianyun Zhang @ Nanjing University. 2020-03-07 */
-  #define YYDEBUG true // <- parser debugger switch
+  #define YYDEBUG false // <- parser debugger switch
 %}
 
 %locations
@@ -90,8 +90,8 @@ ExtDefList: ExtDef ExtDefList
 ExtDef: Specifier ExtDecList SEMI
   | Specifier SEMI
   | Specifier FunDec CompSt
-  | Specifier error SEMI
-  | Specifier error LC DefList StmtList RC
+  | error SEMI
+  | error FunDec CompSt
   ;
 ExtDecList: VarDec
   | VarDec COMMA ExtDecList
@@ -118,8 +118,8 @@ VarDec: ID
   ;
 FunDec: ID LP VarList RP
   | ID LP RP
-  | error LP VarList RP
   | ID LP error RP
+  | error LP VarList RP
   ;
 VarList: ParamDec COMMA VarList
   | ParamDec
@@ -130,10 +130,9 @@ ParamDec: Specifier VarDec
 
 /* A.1.5 Statements */
 CompSt: LC DefList StmtList RC
+  | LC DefList error RC
   ;
 StmtList: Stmt StmtList
-  | error SEMI StmtList
-  | error RC StmtList
   | /* EMPTY */
   ;
 Stmt: Exp SEMI
@@ -142,6 +141,11 @@ Stmt: Exp SEMI
   | IF LP Exp RP Stmt %prec LOWER_THAN_ELSE
   | IF LP Exp RP Stmt ELSE Stmt
   | WHILE LP Exp RP Stmt
+  | error SEMI
+  | IF LP error RP Stmt
+  | IF LP error RP Stmt ELSE Stmt
+  | IF LP Exp RP error ELSE Stmt
+  | WHILE LP error RP Stmt
   ;
 
 /* A.1.6 Local Definitions */
@@ -153,9 +157,11 @@ Def: Specifier DecList SEMI
   ;
 DecList: Dec
   | Dec COMMA DecList
+  | error COMMA DecList
   ;
 Dec: VarDec
   | VarDec ASSIGNOP Exp
+  | error ASSIGNOP Exp
   ;
 
 /* A.1.7 Expressions */
@@ -172,14 +178,17 @@ Exp: Exp ASSIGNOP Exp
   | MINUS Exp %prec NEG
   | NOT Exp
   | ID LP Args RP
+  | ID LP error RP
   | ID LP RP
   | Exp LB Exp RB
+  | Exp LB error RB
   | Exp DOT ID
   | ID
   | INT
   | FLOAT
   ;
 Args: Exp COMMA Args
+  | error COMMA Args
   | Exp
   ;
 

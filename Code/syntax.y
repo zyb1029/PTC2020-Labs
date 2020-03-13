@@ -1,6 +1,6 @@
 %{
   /* Copyright, Tianyun Zhang @ Nanjing University. 2020-03-07 */
-  #define YYDEBUG true // <- parser debugger switch
+  #define YYDEBUG false // <- parser debugger switch
 %}
 
 %locations
@@ -184,7 +184,7 @@ void yyerror(char *msg) {
   hasErrorB = true;
   if (errLineno == yylineno) return; // one error per line
   else errLineno = yylineno;
-  printf("Error type B at Line %d: %s.\n", yylineno, msg);
+  fprintf(stderr, "Error type B at Line %d: %s.\n", yylineno, msg);
 }
 int yyparse_wrap() {
 #if YYDEBUG

@@ -117,7 +117,7 @@ VarDec: ID
   ;
 FunDec: ID LP VarList RP
   | ID LP RP
-  | error RP
+  | error RP /* either ID or VarList */
   ;
 VarList: ParamDec COMMA VarList
   | ParamDec

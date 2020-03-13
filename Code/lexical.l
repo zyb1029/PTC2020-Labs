@@ -75,7 +75,7 @@ int        0|{decdigit0}{decdigit}*|0{octdigit}+|0[xX]{hexdigit}+
 floatN     {decdigit}+\.{decdigit}+
 floatE     ({decdigit}+\.{decdigit}*|\.{decdigit}+)[eE][+-]?{decdigit}+
 float      {floatN}|{floatE}
-invalidnum \.?{decdigit}({character}|\.)*
+invalidnum {decdigit}({character}|\.)*
 id         {letter_}{character_}*
 commentl   \/\/.*
 commentb   \/\*

@@ -95,7 +95,6 @@ ExtDef: Specifier ExtDecList SEMI
   ;
 ExtDecList: VarDec
   | VarDec COMMA ExtDecList
-  | error COMMA ExtDecList
   ;
 
 /* A.1.3 Specifiers */
@@ -118,12 +117,10 @@ VarDec: ID
   ;
 FunDec: ID LP VarList RP
   | ID LP RP
-  | ID LP error RP
-  | error LP VarList RP
+  | error RP
   ;
 VarList: ParamDec COMMA VarList
   | ParamDec
-  | error COMMA VarList
   ;
 ParamDec: Specifier VarDec
   ;
@@ -157,7 +154,6 @@ Def: Specifier DecList SEMI
   ;
 DecList: Dec
   | Dec COMMA DecList
-  | error COMMA DecList
   ;
 Dec: VarDec
   | VarDec ASSIGNOP Exp
@@ -188,7 +184,6 @@ Exp: Exp ASSIGNOP Exp
   | FLOAT
   ;
 Args: Exp COMMA Args
-  | error COMMA Args
   | Exp
   ;
 

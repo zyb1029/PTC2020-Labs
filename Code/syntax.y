@@ -21,11 +21,9 @@
         (Cur).last_line    = YYRHSLOC(Rhs, N).last_line;                                  \
         (Cur).last_column  = YYRHSLOC(Rhs, N).last_column;                                \
       } else {                                                                            \
-        (Cur).first_line   = (Cur).last_line  = YYRHSLOC(Rhs, 0).last_line;               \
-        (Cur).first_column = (Cur).last_column = YYRHSLOC(Rhs, 0).last_column;            \
+        (Cur).first_line   = (Cur).last_line  = yylineno;                                 \
+        (Cur).first_column = (Cur).last_column = yycolumn;                                \
       }                                                                                   \
-      if (!(Cur).first_line) (Cur).first_line = yylineno; /* A SPECIAL TRICKY CASE:   */  \
-      if (!(Cur).last_line)  (Cur).last_line  = yylineno; /* no symbols in input file */  \
       STNode *node = (STNode *)malloc(sizeof(STNode));                                    \
       node->line   = (Cur).first_line;                                                    \
       node->column = (Cur).first_column;                                                  \

@@ -5,11 +5,15 @@ int 0main ( int a, int b,       // bad FunDec ID
   struct X {
     int X - 0;                  // bad Dec
     float Y;
-  }                             // forget SEMI
+    magic boom;                 // bad TYPE
+    int a, b, c;
+  } xx                          // forget SEMI
+  int a = 0;
   float Z = .5X;                // Bad FLOAT
   struct X foo = bar.bar.bar;
   return 114514;
-  ; ;; ; ; ;;;; ;; ;;
+  return 233333;
+  return 810810;
   /* EXPLODE */*/               // strange comment
   int main() {}                 // WTF
 }

@@ -141,8 +141,8 @@ while { TOKENIFY(WHILE); }
   TOKENIFY(EOF);
 #if FLEXDEBUG
   printf("EOF on line %d\n", yylineno);
-#endif
   yyterminate();
+#endif
 }
 . { throwErrorA("unknown character", true); }
 

@@ -1,14 +1,31 @@
 /* Multiple syntax errors! */
-int 0main (
-  int , float x
+int 0main ( int a, int b,       // bad FunDec ID
+  int , float x                 // bad VarList
 ) {
   struct X {
-    int X - 0;
+    int X - 0;                  // bad Dec
     float Y;
-  };
-  float Z = .5X;
+  }                             // forget SEMI
+  float Z = .5X;                // Bad FLOAT
   struct X foo = bar.bar.bar;
   return 114514;
-  /* EXPLODE */*/
-  int main() {}
+  ; ;; ; ; ;;;; ;; ;;
+  /* EXPLODE */*/               // strange comment
+  int main() {}                 // WTF
 }
+
+int BadStmt( {                  // forget RP
+  while (>=) {                  // bad Exp
+    bo oo oo m!!!;              // bad Exp
+    boooooooo                   // forget SEMI
+  }
+  if (happy) {
+    X = array[4;                // forget RB
+  else {                        // forget RC
+    X = array[3][1]             // forget RC
+  }
+}
+
+/************************************
+ * BOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOM *
+ ************************************

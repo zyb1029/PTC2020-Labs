@@ -140,7 +140,7 @@ while { TOKENIFY(WHILE); }
 <<EOF>> {
   TOKENIFY(EOF);
 #if FLEXDEBUG
-  printf("\n");
+  printf("EOF on line %d\n", yylineno);
 #endif
   yyterminate();
 }

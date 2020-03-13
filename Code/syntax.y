@@ -139,7 +139,7 @@ Stmt: Exp SEMI
   | IF LP Exp RP Stmt ELSE Stmt
   | WHILE LP Exp RP Stmt
   | error SEMI
-  | IF LP error RP Stmt
+  | IF LP error RP Stmt %prec LOWER_THAN_ELSE
   | IF LP error RP Stmt ELSE Stmt
   | IF LP Exp RP error ELSE Stmt
   | WHILE LP error RP Stmt

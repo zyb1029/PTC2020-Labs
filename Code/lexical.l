@@ -161,7 +161,7 @@ void throwErrorA(const char* message, bool showText) {
   if (showText) {
     fprintf(stderr, " \'%s\'", yytext);
   }
-  fprintf(stderr, "\n");
+  fprintf(stderr, ".\n");
 }
 #if FLEXDEBUG
 int main(int argc, char* argv[]) {

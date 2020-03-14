@@ -159,9 +159,9 @@ void throwErrorA(const char* message, bool showText) {
   else errLineno = yylineno;
   fprintf(stderr, "Error type A at Line %d: %s", yylineno, message);
   if (showText) {
-    printf(" \'%s\'", yytext);
+    fprintf(stderr, " \'%s\'", yytext);
   }
-  printf("\n");
+  fprintf(stderr, "\n");
 }
 #if FLEXDEBUG
 int main(int argc, char* argv[]) {

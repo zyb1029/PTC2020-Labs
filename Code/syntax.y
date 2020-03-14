@@ -38,6 +38,8 @@
             int symbol = YYTRANSLATE(cvsp->type); /* translate from token to symbol */    \
             (YYRHSLOC(Rhs, child).st_node)->symbol = symbol;                              \
             (YYRHSLOC(Rhs, child).st_node)->name   = yytname[symbol];                     \
+            (YYRHSLOC(Rhs, child).st_node)->child  = NULL;                                \
+            (YYRHSLOC(Rhs, child).st_node)->next   = NULL;                                \
           }                                                                               \
         }                                                                                 \
         for (int child = 1; child <= N - 1; ++child) { /* Link all but the last child */  \

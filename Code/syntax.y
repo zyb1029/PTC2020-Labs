@@ -173,16 +173,19 @@ Exp: Exp ASSIGNOP Exp
   | Exp DIV Exp
   | LP Exp RP
   | LP error RP
-  | LP error SEMI /* worst case */
+  | LP error SEMI
+  | LP error RC
   | MINUS Exp %prec NEG
   | NOT Exp
   | ID LP Args RP
   | ID LP RP
   | ID LP error RP
-  | ID LP error SEMI /* worst case */
+  | ID LP error SEMI
+  | ID LP error RC
   | Exp LB Exp RB
   | Exp LB error RB
-  | Exp LB error SEMI /* worst case */
+  | Exp LB error SEMI
+  | Exp LB error RC
   | Exp DOT ID
   | ID
   | INT

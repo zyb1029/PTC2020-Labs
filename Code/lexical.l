@@ -117,7 +117,7 @@ while { TOKENIFY(WHILE); }
 {type} { ACTYYLVAL(s); TOKENIFY(TYPE); }
 {int} { SETYYLVAL(i); TOKENIFY(INT); }
 {float} { SETYYLVAL(f); TOKENIFY(FLOAT); }
-{invalidnum} { throwErrorA("invalid number", true); }
+{invalidnum} { throwErrorA("invalid ID or number", true); TOKENIFY(ID); }
 {id} { ACTYYLVAL(s); TOKENIFY(ID); }
 ; { TOKENIFY(SEMI); }
 , { TOKENIFY(COMMA); }

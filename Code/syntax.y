@@ -34,8 +34,8 @@
       if (N) {                                                                            \
         for (int child = 1; child <= N; ++child) {                                        \
           if ((YYRHSLOC(Rhs, child).st_node)->symbol == -1) {                             \
-            YYSTYPE *cvsp = yyvsp - N + child;    /* access to semantic value stack */    \
-            int symbol = YYTRANSLATE(cvsp->type); /* translate from token to symbol */    \
+            /* translate from token to symbol */                                          \
+            int symbol = YYTRANSLATE((YYRHSLOC(Rhs, child).st_node)->token);              \
             (YYRHSLOC(Rhs, child).st_node)->symbol = symbol;                              \
             (YYRHSLOC(Rhs, child).st_node)->name   = yytname[symbol];                     \
             (YYRHSLOC(Rhs, child).st_node)->child  = NULL;                                \

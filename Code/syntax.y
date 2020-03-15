@@ -210,7 +210,7 @@ void yyerror(char *msg) {
   hasErrorB = true;
   if (errLineno == yylineno) return; // one error per line
   else errLineno = yylineno;
-  fprintf(stderr, "Error type B at Line %d: %s.\n", yylineno, msg);
+  fprintf(stderr, "Error type B at Line %d: %s, near '%s'.\n", yylineno, msg, yytext);
 }
 int yyparse_wrap() {
 #if YYDEBUG

@@ -33,6 +33,7 @@
       node->empty  = N == 0;                                                              \
       if (N) {                                                                            \
         for (int child = 1; child <= N; ++child) {                                        \
+          if ((YYRHSLOC(Rhs, child).st_node) == NULL) break; /* error detected case */    \
           if ((YYRHSLOC(Rhs, child).st_node)->symbol == -1) {                             \
             /* translate from token to symbol */                                          \
             int symbol = YYTRANSLATE((YYRHSLOC(Rhs, child).st_node)->token);              \

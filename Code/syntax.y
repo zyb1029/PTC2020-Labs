@@ -15,7 +15,15 @@
   /* Macro function to create STNodes for nterms */
   #define YYLLOC_DEFAULT(Cur, Rhs, N)                                                     \
     do {                                                                                  \
-      if (N) {                                                                            \
+      /* check that all children are healthy */                                           \
+      bool healthy = true;                                                                \
+      for (int child = 1; child <= N; ++child) {                                          \
+        if ((YYRHSLOC(Rhs, child).st_node) == NULL) {                                     \
+          healthy = false;                                                                \
+          break;                                                                          \
+        }                                                                                 \
+      }                                                                                   \
+      if (N != 0 && healthy) {                                                            \
         (Cur).first_line   = YYRHSLOC(Rhs, 1).first_line;                                 \
         (Cur).first_column = YYRHSLOC(Rhs, 1).first_column;                               \
         (Cur).last_line    = YYRHSLOC(Rhs, N).last_line;                                  \
@@ -31,9 +39,8 @@
       node->symbol = yyr1[yyn];                                                           \
       node->name   = yytname[node->symbol];                                               \
       node->empty  = N == 0;                                                              \
-      if (N) {                                                                            \
+      if (N != 0 && healthy) {                                                            \
         for (int child = 1; child <= N; ++child) {                                        \
-          if ((YYRHSLOC(Rhs, child).st_node) == NULL) break; /* error detected case */    \
           if ((YYRHSLOC(Rhs, child).st_node)->symbol == -1) {                             \
             /* translate from token to symbol */                                          \
             int symbol = YYTRANSLATE((YYRHSLOC(Rhs, child).st_node)->token);              \
@@ -43,7 +50,7 @@
             (YYRHSLOC(Rhs, child).st_node)->next   = NULL;                                \
           }                                                                               \
         }                                                                                 \
-        for (int child = 1; child <= N - 1; ++child) { /* Link all but the last child */  \
+        for (int child = 1; child <= N - 1; ++child) { /* link all but the last child */  \
           (YYRHSLOC(Rhs, child).st_node)->next = YYRHSLOC(Rhs, child + 1).st_node;        \
         }                                                                                 \
         node->child = YYRHSLOC(Rhs, 1).st_node, node->next = NULL;                        \

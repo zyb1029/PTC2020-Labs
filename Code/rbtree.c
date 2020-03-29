@@ -29,6 +29,18 @@ RBNode *RBGetSibling(RBNode *node) {
   }
 }
 
+void RBSwapColors(RBNode *n1, RBNode *n2) {
+  enum RBColor temp = n1->color;
+	n1->color = n2->color;
+	n2->color = temp;
+}
+
+void RBSwapValues(RBNode *n1, RBNode *n2) {
+	void *temp = n1->value;
+	n1->value = n2->value;
+	n2->value = temp;
+}
+
 void RBMoveDown(RBNode *node, RBNode *newParent) {
   if (node->parent) {
 		if (RBIsLeftChild(node)) {

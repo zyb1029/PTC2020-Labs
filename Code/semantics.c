@@ -5,8 +5,15 @@
 extern bool hasErrorS;
 extern STNode *stroot;
 
+STStack *baseStack = NULL;
+STStack *currStack = NULL;
+
 // main entry of semantic scan
 void semanticScan() {
+  // prepare the base stack
+  baseStack = (STStack *)malloc(sizeof(STStack));
+  baseStack->root = baseStack->prev = NULL;
+  currStack = baseStack;
   checkSemantics(stroot, stroot);
 }
 

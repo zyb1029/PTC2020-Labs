@@ -314,3 +314,10 @@ void RBDelete(RBNode **root, void *value, int (*cmp)(const void *, const void *)
   printf("node with value %d found\n", *(int*)value);
   RBDeleteNode(root, node);
 }
+
+void RBDestroy(RBNode **root) {
+  if ((*root)->left)  RBDestroy(&(*root)->left);
+  if ((*root)->right) RBDestroy(&(*root)->right);
+  free(*root);
+  root = NULL;
+}

@@ -1,0 +1,19 @@
+/* test missing RB, RP, RC */
+int main() {
+  int a = b[3;
+  int c = 0;
+
+  a = a + 1;
+  b = b + 1
+  c = c + 1;
+  d = d + 1;
+
+  int foo(;
+  int bar();
+
+  while (true) {
+    while (false) {
+
+  
+  }
+}

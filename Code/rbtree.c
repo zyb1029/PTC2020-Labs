@@ -29,6 +29,14 @@ RBNode *RBGetSibling(RBNode *node) {
   }
 }
 
+RBNode *RBGetSuccessor(RBNode *node) {
+	RBNode *cur = node;
+	while (cur->left) {
+    cur = cur->left;
+  }
+	return cur;
+}
+
 void RBSwapColors(RBNode *n1, RBNode *n2) {
   enum RBColor temp = n1->color;
 	n1->color = n2->color;

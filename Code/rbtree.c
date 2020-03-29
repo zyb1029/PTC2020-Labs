@@ -194,3 +194,41 @@ void RBFixBlackBlack(RBNode **root, RBNode *node) {
 		}
 	}
 }
+
+void RBInsert(RBNode **root, void *value, int (*cmp)(const void *, const void *)) {
+	RBNode *node = malloc(sizeof(RBNode));
+	node->value = value;
+	node->color = RED;
+	node->left = node->right = node->parent = NULL;
+
+	if (*root == NULL) {
+		node->color = BLACK;
+		*root = node;
+	} else {
+		RBNode *parent = RBSearch(root, value, cmp);
+		int result = cmp(value, parent->value);
+		if (result != 0) {
+			node->parent = parent;
+			if (result < 0) {
+				parent->left = node;
+			} else {
+				parent->right = node;
+			}
+		}
+	}
+}
+
+RBNode *RBSearch(RBNode **root, void *value, int (*cmp)(const void *, const void *)) {
+	RBNode *cur = *root;
+	while (cur != NULL) {
+		int result = cmp(value, cur->value);
+		if (result == 0) {
+			return cur;
+		} else if (result < 0) {
+			cur = cur->left;
+		} else {
+			cur = cur->right;
+		}
+	}
+	return NULL;
+}

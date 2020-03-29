@@ -2,6 +2,7 @@
 #define RBTREE_H
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
 enum RBColor {
@@ -27,9 +28,12 @@ void RBSwapValues(RBNode *n1, RBNode *n2);
 void RBMoveDown(RBNode *node, RBNode *newParent);
 void RBRotateLeft(RBNode **root, RBNode *node);
 void RBRotateRight(RBNode **root, RBNode *node);
-
 void RBFixRedRed(RBNode **root, RBNode *node);
 void RBFixBlackBlack(RBNode **root, RBNode *node);
+
+void RBInsert(RBNode **root, void *value, int(*cmp)(const void *, const void *));
+RBNode *RBSearch(RBNode **root, void *value, int (*cmp)(const void *, const void *));
+void RBDelete(RBNode **root, void *value, int (*cmp)(const void *, const void *));
 
 
 #endif // RBTREE_H

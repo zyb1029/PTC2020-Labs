@@ -11,9 +11,9 @@ enum RBColor {
 };
 
 typedef struct RBNode {
-	void *value;
-	enum RBColor color;
-	struct RBNode *left, *right, *parent;
+  void *value;
+  enum RBColor color;
+  struct RBNode *left, *right, *parent;
 } RBNode;
 
 bool RBHasRedChild(RBNode *node);

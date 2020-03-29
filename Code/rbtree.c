@@ -86,3 +86,42 @@ void RBRotateRight(RBNode **root, RBNode *node) {
 	node->left = newParent->right;
 	newParent->right = node;
 }
+
+void RBFixRedRed(RBNode **root, RBNode *node) {
+	// If node is root, color it black.
+	if (node = *root) {
+		node->color = BLACK;
+    return;
+  }
+
+	RBNode *parent = node->parent;
+	RBNode *grandParent = parent->parent;
+  RBNode *uncle = RBGetUncle(node);
+	if (parent->color != BLACK) {
+		if (uncle && uncle->color == RED) {
+      parent->color = BLACK;
+      uncle->color = BLACK;
+      grandParent->color = RED;
+      RBFixRedRed(root, grandParent);
+    } else {
+			if (RBIsLeftChild(parent)) {
+				if (RBIsLeftChild(node)) {
+					RBSwapColors(parent, grandParent);
+				} else {
+					RBRotateLeft(root, parent);
+					RBSwapColors(node, grandParent);
+				}
+				RBRotateRight(root, grandParent);
+			} else {
+				if (RBIsLeftChild(node)) {
+					RBRotateRight(root, parent);
+					RBSwapColors(node, grandParent);
+				} else {
+					RBSwapColors(parent, grandParent);
+				}
+				RBRotateLeft(root, grandParent);
+			}
+		}
+	}
+}
+

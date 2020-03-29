@@ -125,3 +125,58 @@ void RBFixRedRed(RBNode **root, RBNode *node) {
 	}
 }
 
+void RBFixBlackBlack(RBNode **root, RBNode *node) {
+	if (node == *root) return;
+	
+	RBNode *sibling = RBGetSibling(node);
+  RBNode *parent = node->parent;
+	if (!sibling) {
+    RBFixBlackBlack(root, parent);
+  } else {
+		if (sibling->color = RED) {
+			parent->color = RED;
+			sibling->color = BLACK;
+			if (RBIsLeftChild(sibling)) {
+				RBRotateRight(root, parent);
+			} else {
+				RBRotateLeft(root, parent);
+			}
+			RBFixBlackBlack(root, node);
+		} else {
+			if (RBHasRedChild(sibling)) {
+				if (sibling->left && sibling->left->color == RED) {
+					// left child red
+					if (RBIsLeftChild(sibling)) {
+						sibling->left->color = sibling->color;
+						sibling->color = parent->color;
+						RBRotateRight(root, parent);
+					} else {
+						sibling->left->color = parent->color;
+						RBRotateRight(root, sibling);
+						RBRotateLeft(root, parent);
+					}
+				} else {
+					// right child red
+					if (RBIsLeftChild(sibling)) {
+						sibling->right->color = parent->color;
+						RBRotateLeft(root, sibling);
+						RBRotateRight(root, parent);
+					} else {
+						sibling->right->color = sibling->color;
+						sibling->color = parent->color;
+						RBRotateLeft(root, parent);
+					}
+				}
+				parent->color = BLACK;
+			} else {
+				// 2 black children
+				sibling->color = RED;
+				if (parent->color == BLACK) {
+					RBFixBlackBlack(root, parent);
+				} else {
+					parent->color = BLACK;
+				}
+			}
+		}
+	}
+}

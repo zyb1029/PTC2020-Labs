@@ -5,6 +5,13 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+/**
+ * This Red-Black Tree implementation is manually adapted from
+ * https://www.geeksforgeeks.org/red-black-tree-set-3-delete-2/
+ * which was implemented in C++. The adapated version is an
+ * abstract RB tree, requiring user providing a cmp function.
+ */
+
 enum RBColor {
   RED,
   BLACK

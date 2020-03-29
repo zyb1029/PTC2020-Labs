@@ -1,6 +1,13 @@
 #include "rbtree.h"
 #include <assert.h>
 
+/**
+ * This Red-Black Tree implementation is manually adapted from
+ * https://www.geeksforgeeks.org/red-black-tree-set-3-delete-2/
+ * which was implemented in C++. The adapated version is an
+ * abstract RB tree, requiring user providing a cmp function.
+ */
+
 bool RBHasRedChild(RBNode *node) {
   if (node->left  && node->left->color  == RED) return true;
   if (node->right && node->right->color == RED) return true;

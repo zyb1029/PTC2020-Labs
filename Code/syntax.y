@@ -10,7 +10,7 @@
   #include <stdio.h>
   #include <stdbool.h>
   #include "token.h"
-  #include "tree.h"
+  #include "sytree.h"
 
   /* Macro function to create STNodes for nterms */
   #define YYLLOC_DEFAULT(Cur, Rhs, N)                                                     \

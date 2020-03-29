@@ -37,6 +37,20 @@ RBNode *RBGetSuccessor(RBNode *node) {
 	return cur;
 }
 
+RBNode *RBGetReplacement(RBNode *node) {
+	if (node->left && node->right) {
+		// has 2 children
+		return RBGetSuccessor(node->right);
+	} else if (!node->left && !node->right) {
+		// a leaf
+		return NULL;
+	} else if (node->left) {
+		return node->left;
+	} else {
+		return node->right;
+	}
+}
+
 void RBSwapColors(RBNode *n1, RBNode *n2) {
   enum RBColor temp = n1->color;
 	n1->color = n2->color;

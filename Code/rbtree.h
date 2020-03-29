@@ -20,6 +20,7 @@ bool RBIsLeftChild(RBNode *node);
 RBNode *RBGetUncle(RBNode *node);
 RBNode *RBGetSibling(RBNode *node);
 RBNode *RBGetSuccessor(RBNode *node);
+RBNode *RBGetReplacement(RBNode *node);
 void RBSwapColors(RBNode *n1, RBNode *n2);
 void RBSwapValues(RBNode *n1, RBNode *n2);
 

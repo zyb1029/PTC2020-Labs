@@ -1,4 +1,5 @@
 #include "rbtree.h"
+#include <assert.h>
 
 bool RBHasRedChild(RBNode *node) {
   if (node->left  && node->left->color  == RED) return true;
@@ -7,7 +8,7 @@ bool RBHasRedChild(RBNode *node) {
 }
 
 bool RBIsLeftChild(RBNode *node) {
-  if (!node->parent) return false;
+  if (!node->parent) assert(0);
   return node == node->parent->left;
 }
 
@@ -67,8 +68,8 @@ void RBMoveDown(RBNode *node, RBNode *newParent) {
   if (node->parent) {
     if (RBIsLeftChild(node)) {
       node->parent->left = newParent;
-     } else {
-       node->parent->right = newParent;
+    } else {
+      node->parent->right = newParent;
     }
   }
   newParent->parent = node->parent;
@@ -103,7 +104,7 @@ void RBRotateRight(RBNode **root, RBNode *node) {
 
 void RBFixRedRed(RBNode **root, RBNode *node) {
   // If node is root, color it black.
-  if (node = *root) {
+  if (node == *root) {
     node->color = BLACK;
     return;
   }
@@ -198,7 +199,7 @@ void RBFixBlackBlack(RBNode **root, RBNode *node) {
 void RBDeleteNode(RBNode **root, RBNode *node) {
   RBNode *rep = RBGetReplacement(node);
 
-  bool bothBlack = ((rep == NULL || rep->color == BLACK) && node->color == BLACK);
+  bool bothBlack = ((!rep || rep->color == BLACK) && node->color == BLACK);
   RBNode *parent = node->parent;
   
   if (rep == NULL) {
@@ -209,16 +210,15 @@ void RBDeleteNode(RBNode **root, RBNode *node) {
       if (bothBlack) {
         RBFixBlackBlack(root, node);
       } else {
-        RBNode *sibling = RBGetSibling(rep);
+        RBNode *sibling = RBGetSibling(node);
         if (sibling) {
           sibling->color = RED;
         }
       }
-      
       if (RBIsLeftChild(node)) {
-        node->parent->left = NULL;
+        parent->left = NULL;
       } else {
-        node->parent->right = NULL;
+        parent->right = NULL;
       }
     }
     free(node);
@@ -233,9 +233,9 @@ void RBDeleteNode(RBNode **root, RBNode *node) {
       free(rep);
     } else {
       if (RBIsLeftChild(node)) {
-        node->parent->left = rep;
+        parent->left = rep;
       } else {
-        node->parent->right = rep;
+        parent->right = rep;
       }
       free(node);
       rep->parent = parent;
@@ -253,7 +253,7 @@ void RBDeleteNode(RBNode **root, RBNode *node) {
 
 void RBInsert(RBNode **root, void *value, int (*cmp)(const void *, const void *)) {
   if (!root) return;
-  RBNode *node = malloc(sizeof(RBNode));
+  RBNode *node = (RBNode *)malloc(sizeof(RBNode));
   node->value = value;
   node->color = RED;
   node->left = node->right = node->parent = NULL;
@@ -272,6 +272,7 @@ void RBInsert(RBNode **root, void *value, int (*cmp)(const void *, const void *)
         parent->right = node;
       }
     }
+    RBFixRedRed(root, node);
   }
 }
 
@@ -300,9 +301,9 @@ RBNode *RBSearch(RBNode **root, void *value, int (*cmp)(const void *, const void
 }
 
 void RBDelete(RBNode **root, void *value, int (*cmp)(const void *, const void *)) {
-  if (!root) return;
-  if (!*root) return;
+  if (!root || !*root) return;
   RBNode *node = RBSearch(root, value, cmp);
-  if (!node) return;
+  if (!node || cmp(value, node->value)) return;
+  printf("node with value %d found\n", *(int*)value);
   RBDeleteNode(root, node);
 }

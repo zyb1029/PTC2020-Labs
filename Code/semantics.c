@@ -56,8 +56,9 @@ void printErrorS(int id, STNode *node) {
   hasErrorS = true;
   fprintf(stderr, "Error type %d at Line %d: ", id, node->line);
   if (SETable[id].showId) {
-    fprintf(stderr, "%s \"%s\" %s\n", SETable[id].message1, node->sval, SETable[id].message2);
+    fprintf(stderr, "%s \"%s\" %s", SETable[id].message1, node->sval, SETable[id].message2);
   } else {
-    fprintf(stderr, "%s\n", SETable[id].message1);
+    fprintf(stderr, "%s", SETable[id].message1);
   }
+  fprintf(stderr, ".\n");
 }

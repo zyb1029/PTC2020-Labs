@@ -7,7 +7,12 @@ int cmp(const void *p1, const void *p2) {
   return *i1 - *i2;
 }
 
+RBNode *root = NULL;
 void inorder(RBNode *cur) {
+if (!root) {
+printf("NULL\n");
+return;
+}
   if (cur->left) inorder(cur->left);
   if (cur->right) inorder(cur->right);
   printf("%d ", *((int *)cur->value));
@@ -15,7 +20,6 @@ void inorder(RBNode *cur) {
 
 int val[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
-RBNode *root = NULL;
 
 int main() {
   for (int i = 0; i < 10; ++i) {
@@ -27,7 +31,7 @@ int main() {
     printf("searching %d\n", i + 1);
     RBSearch(&root, &val[i], cmp);
   }
-  RBDelete(&root, &val[3], cmp);
+  RBDelete(&root, &val[4], cmp);
   inorder(root), printf("\n");
   for (int i = 0; i < 10; ++i) {
     printf("deleting %d\n", i + 1);

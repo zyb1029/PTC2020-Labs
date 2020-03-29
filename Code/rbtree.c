@@ -148,7 +148,7 @@ void RBFixBlackBlack(RBNode **root, RBNode *node) {
   if (!sibling) {
     RBFixBlackBlack(root, parent);
   } else {
-    if (sibling->color = RED) {
+    if (sibling->color == RED) {
       parent->color = RED;
       sibling->color = BLACK;
       if (RBIsLeftChild(sibling)) {

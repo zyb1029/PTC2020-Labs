@@ -195,7 +195,64 @@ void RBFixBlackBlack(RBNode **root, RBNode *node) {
 	}
 }
 
+void RBDeleteNode(RBNode **root, RBNode *node) {
+	RBNode *rep = RBGetReplacement(node);
+
+  bool bothBlack = ((rep == NULL || rep->color == BLACK) && node->color == BLACK);
+	RBNode *parent = node->parent;
+  
+  if (rep == NULL) {
+		// node is a leaf
+		if (node == *root) {
+			*root = NULL;
+		} else {
+			if (bothBlack) {
+				RBFixBlackBlack(root, node);
+			} else {
+				RBNode *sibling = RBGetSibling(rep);
+				if (sibling) {
+					sibling->color = RED;
+				}
+			}
+			
+			if (RBIsLeftChild(node)) {
+				node->parent->left = NULL;
+			} else {
+				node->parent->right = NULL;
+			}
+		}
+		free(node);
+		return;
+	}
+  
+  if (!node->left || !node->right) {
+		// node has one child
+		if (node == *root) {
+			node->value = rep->value;
+			node->left = node->right = NULL;
+			free(rep);
+		} else {
+			if (RBIsLeftChild(node)) {
+				node->parent->left = rep;
+			} else {
+				node->parent->right = rep;
+			}
+			free(node);
+			rep->parent = parent;
+			if (bothBlack) {
+				RBFixBlackBlack(root, rep);
+			} else {
+				rep->color = BLACK;
+			}
+		}
+		return;
+	}
+	RBSwapValues(node, rep);
+	RBDeleteNode(root, rep);
+}
+
 void RBInsert(RBNode **root, void *value, int (*cmp)(const void *, const void *)) {
+	if (!root) return;
 	RBNode *node = malloc(sizeof(RBNode));
 	node->value = value;
 	node->color = RED;
@@ -219,6 +276,7 @@ void RBInsert(RBNode **root, void *value, int (*cmp)(const void *, const void *)
 }
 
 RBNode *RBSearch(RBNode **root, void *value, int (*cmp)(const void *, const void *)) {
+	if (!root) return NULL;
 	RBNode *cur = *root;
 	while (cur != NULL) {
 		int result = cmp(value, cur->value);
@@ -231,4 +289,12 @@ RBNode *RBSearch(RBNode **root, void *value, int (*cmp)(const void *, const void
 		}
 	}
 	return NULL;
+}
+
+void RBDelete(RBNode **root, void *value, int (*cmp)(const void *, const void *)) {
+	if (!root) return;
+	if (!*root) return;
+	RBNode *node = RBSearch(root, value, cmp);
+	if (!node) return;
+	RBDeleteNode(root, node);
 }

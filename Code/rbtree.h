@@ -15,45 +15,18 @@ typedef struct RBNode {
 	struct RBNode *left, *right, *parent;
 } RBNode;
 
-inline bool RBHasRedChild(RBNode *node) {
-	if (node->left  && node->left->color  == RED) return true;
-	if (node->right && node->right->color == RED) return true;
-	return false;
-}
+bool RBHasRedChild(RBNode *node);
+bool RBIsLeftChild(RBNode *node);
+RBNode *RBGetUncle(RBNode *node);
+RBNode *RBGetSibling(RBNode *node);
+void RBMoveDown(RBNode *node, RBNode *newParent);
 
-inline bool RBIsLeftChild(RBNode *node) {
-	if (!node->parent) return false;
-  return node == node->parent->left;
-}
+void RBRotateLeft(RBNode **root, RBNode *node);
+void RBRotateRight(RBNode **root, RBNode *node);
+void RBSwapColors(RBNode *n1, RBNode *n2);
+void RBSwapValues(RBNode *n1, RBNode *n2);
+void RBFixRedRed(RBNode **root, RBNode *node);
+void RBFixBlackBlack(RBNode **root, RBNode *node);
 
-inline RBNode *RBGetUncle(RBNode *node) {
-  if (!node->parent || !node->parent->parent) return NULL;
-  if (RBIsLeftChild(node->parent)) {
-    return node->parent->parent->right;
-  } else {
-    return node->parent->parent->left;
-  }
-}
-
-inline RBNode *RBGetSibling(RBNode *node) {
-	if (!node->parent) return NULL;
-  if (RBIsLeftChild(node)) {
-    return node->parent->right;
-  } else {
-    return node->parent->left;
-  }
-}
-
-inline void RBMoveNodeDown(RBNode *node, RBNode *newParent) {
-  if (node->parent) {
-		if (RBIsLeftChild(node)) {
-			node->parent->left = newParent;
- 		} else {
- 			node->parent->right = newParent;
-		}
-  }
-  newParent->parent = node->parent;
-	node->parent = newParent;
-}
 
 #endif // RBTREE_H

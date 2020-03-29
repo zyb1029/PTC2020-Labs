@@ -4,6 +4,13 @@
 #include "sytree.h"
 #include "rbtree.h"
 
+typedef struct STError {
+  int id;
+  bool showId;
+  const char *message1;
+  const char *message2;
+} STError;
+
 // Be careful, STNode is already taken in 'tree.c'.
 typedef struct STEntry {
   int type;
@@ -26,5 +33,6 @@ typedef struct STStack {
 
 void semanticScan();
 void checkSemantics(STNode *node, STNode *parent);
+void printErrorS(int id, STNode *node);
 
 #endif // SEMANTIC_H

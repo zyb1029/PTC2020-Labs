@@ -283,12 +283,20 @@ RBNode *RBSearch(RBNode **root, void *value, int (*cmp)(const void *, const void
     if (result == 0) {
       return cur;
     } else if (result < 0) {
-      cur = cur->left;
+      if (cur->left) {
+        cur = cur->left;
+      } else {
+        break;
+      }
     } else {
-      cur = cur->right;
+      if (cur->right) {
+        cur = cur->right;
+      } else {
+        break;
+      }
     }
   }
-  return NULL;
+  return cur;
 }
 
 void RBDelete(RBNode **root, void *value, int (*cmp)(const void *, const void *)) {

@@ -22,7 +22,7 @@
 #define BG_CYAN   "\033[1;46m"
 #define BG_WHITE  "\033[1;47m"
 
-#if DEBUG
+#ifdef DEBUG
 #define Log(format, ...) \
   printf("\33[0m" FG_BLUE "[%s,%d,%s] " format " \33[0m\n", \
     __FILE__, __LINE__, __func__, ## __VA_ARGS__)

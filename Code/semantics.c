@@ -1,6 +1,6 @@
+#include "setype.h"
 #include "semantics.h"
 #include "syntax.tab.h"
-#define SEMANTIC_DEBUG true // <- debug switch
 
 extern bool hasErrorS;
 extern STNode *stroot;
@@ -43,12 +43,13 @@ void semanticScan() {
 
 void checkSemantics(STNode *node, STNode *parent) {
   if (node->empty) return;
-  if (node->token == ID) {
-    printf("%s %s:%s\n", parent->name, node->name, node->sval);
-    printErrorS(0, node);
-  }
-  for (STNode *child = node->child; child != NULL; child = child->next) {
-    checkSemantics(child, node);
+  if (!strcmp(node->name, "Def")) {
+    STNode *child = node->child;
+    SEType *type = SECreateType(child);
+  } else {
+    for (STNode *child = node->child; child != NULL; child = child->next) {
+      checkSemantics(child, node);
+    }
   }
 }
 

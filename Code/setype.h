@@ -1,5 +1,12 @@
+/**
+ * The semantic type/struct structure.
+ * Copyright, Tianyun Zhang 2020/03/30.
+ * */
+
 #ifndef SE_TYPE_H
 #define SE_TYPE_H
+
+#include <stdbool.h>
 
 enum SEBasicType {
   BASIC,
@@ -8,7 +15,10 @@ enum SEBasicType {
   FUNCTION,
 };
 
-struct SEField; // forward declaration
+// Forward declarations
+struct STNode;
+struct SEField;
+
 typedef struct SEType {
   enum SEBasicType kind;
   union {
@@ -27,8 +37,8 @@ typedef struct SEField {
   struct SEField *next;
 } SEField;
 
-SEType *SECreateType(STNode *node, STNode *parent);
+SEType *SECreateType(struct STNode *node);
 bool SECompareType(const SEType *t1, const SEType *t2);
-void SEDestroyType(SEType *type);
+void SEDestroyType(struct SEType *type);
 
 #endif // SE_TYPE_H

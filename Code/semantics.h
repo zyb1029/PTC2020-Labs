@@ -1,8 +1,14 @@
+/**
+ * The semantic symbol table/stack structure.
+ * Copyright, Tianyun Zhang, 2020/03/30.
+ * */
+
 #ifndef SEMANTIC_H
 #define SEMANTIC_H
 
 #include "sytree.h"
 #include "rbtree.h"
+#define SEMANTIC_DEBUG true // <- debug switch
 
 typedef struct STError {
   int id;

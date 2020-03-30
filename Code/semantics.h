@@ -39,6 +39,6 @@ typedef struct STStack {
 
 void semanticScan();
 void checkSemantics(STNode *node, STNode *parent);
-void printErrorS(int id, STNode *node);
+void throwErrorS(int id, STNode *node);
 
 #endif // SEMANTIC_H

@@ -53,7 +53,7 @@ void checkSemantics(STNode *node, STNode *parent) {
   }
 }
 
-void printErrorS(int id, STNode *node) {
+void throwErrorS(int id, STNode *node) {
   hasErrorS = true;
   fprintf(stderr, "Error type %d at Line %d: ", id, node->line);
   if (SETable[id].showId) {

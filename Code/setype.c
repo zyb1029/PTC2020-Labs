@@ -1,20 +1,19 @@
+#include "debug.h"
 #include "sytree.h"
 #include "setype.h"
 
 SEType *SECreateType(STNode *node, STNode *parent) {
-  // TODO
-  exit(-888);
-  return NULL;
+  Assert(node && parent, "node or parent is null");
 }
 
 bool SECompareType(const SEType *t1, const SEType *t2) {
   // TODO
-  exit(-999);
-  return NULL;
+  Panic("Please implement me");
+  return false;
 }
 
 void SEDestroyType(SEType *type) {
   // TODO
-  exit(-123);
-  return NULL;
+  Panic("Please implement me");
+  return;
 }

@@ -8,7 +8,12 @@
 #define DEBUG
 #include "debug.h"
 
-// Create type from specifier node
+SEType *SEParseExp(STNode *exp) {
+  Assert(exp, "exp is null");
+  Assert(!strcmp(exp->name, "Exp"), "not an exp");
+  
+}
+
 SEType *SEParseSpecifier(STNode *specifier) {
   Assert(specifier, "specifier is null");
   Assert(specifier->next, "specifier at the end");
@@ -30,16 +35,22 @@ SEType *SEParseSpecifier(STNode *specifier) {
     Assert(child->token == STRUCT, "child is not struct");
     STNode *tag = child->next;
     if (tag->next) {
+      // define a new struct
       // STRUCT OptTag LC DefList RC
       const char *structID = tag->sval;
-      Panic("I don't know how to parse deflist");
+      type->kind = STRUCTURE;
+      Panic("not implemented!"); /* FIXME */
+      if (structID != NULL) {
+        STInsert(structID, type);
+      }
+      Log("Define struct %s", structID);
     } else {
       // STRUCT Tag
       STEntry *entry = STSearch(tag->sval);
       if (entry == NULL) {
         if (specifier->next->token == SEMI) {
-          // only declare the struct, OK
-          Log("Declare of struct %s", tag->sval);
+          // only declare the struct
+          Log("Declare struct %s", tag->sval);
           type->kind = STRUCTURE;
           type->structure = NULL;
           STInsert(tag->sval, type);
@@ -68,6 +79,22 @@ SEType *SEParseSpecifier(STNode *specifier) {
     }
   }
   return type; 
+}
+
+SEField *SEParseDefList(STNode *list, bool assignable) {
+  Panic("Not implemented!");
+}
+
+SEField *SEParseDef(STNode *list, bool assignable) {
+  Panic("Not implemented!");
+}
+
+SEField *SEParseDecList(STNode *list, bool assignable) {
+  Panic("Not implemented!");
+}
+
+SEField *SEParseDec(STNode *dec, bool assignable) {
+  Panic("Not implemented!");
 }
 
 bool SECompareType(const SEType *t1, const SEType *t2) {

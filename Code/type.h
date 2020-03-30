@@ -16,8 +16,8 @@ enum SEBasicType {
 };
 
 // Forward declarations
-struct STNode;
-struct SEField;
+typedef struct STNode STNode;
+typedef struct SEField SEField;
 
 typedef struct SEType {
   enum SEBasicType kind;
@@ -37,9 +37,14 @@ typedef struct SEField {
   struct SEField *next;
 } SEField;
 
-SEType *SEParseSpecifier(struct STNode *specifier);
+SEType *SEParseExp(STNode *exp);
+SEType *SEParseSpecifier(STNode *specifier);
+SEField *SEParseDefList(STNode *list, bool assignable);
+SEField *SEParseDef(STNode *def, bool assignable);
+SEField *SEParseDecList(STNode *list, bool assignable);
+SEField *SEParseDec(STNode *dec, bool assignable);
 
 bool SECompareType(const SEType *t1, const SEType *t2);
-void SEDestroyType(struct SEType *type);
+void SEDestroyType(SEType *type);
 
 #endif // SE_TYPE_H

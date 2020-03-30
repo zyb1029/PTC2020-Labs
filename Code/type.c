@@ -44,20 +44,20 @@ SEType *SEParseSpecifier(STNode *specifier) {
           STInsert(tag->sval, type);
         } else {
           // undefined struct, treat as INT
-          throwErrorS(17, tag->child);
+          throwErrorS(SE_STRUCT_UNDEFINED, tag->child);
           type->kind = BASIC;
           type->basic = INT;
         }
       } else if (entry->type->kind != STRUCTURE) {
         // duplicated name of struct, treat as INT
-        throwErrorS(16, tag->child);
+        throwErrorS(SE_STRUCT_DUPLICATE, tag->child);
         type->kind = BASIC;
         type->basic = INT;
       } else {
         // FIXME: what if we declated a struct twice??
         if (entry->type->structure == NULL) {
           // declared but not defined, treat as INT
-          throwErrorS(17, tag->child);
+          throwErrorS(SE_STRUCT_UNDEFINED, tag->child);
           type->kind = BASIC;
           type->basic = INT;
         } else {

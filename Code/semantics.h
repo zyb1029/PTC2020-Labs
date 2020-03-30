@@ -8,6 +8,7 @@
 
 #include "sytree.h"
 #include "rbtree.h"
+#include "setype.h"
 #define SEMANTIC_DEBUG true // <- debug switch
 
 typedef struct STError {
@@ -19,23 +20,21 @@ typedef struct STError {
 
 // Be careful, STNode is already taken in 'tree.c'.
 typedef struct STEntry {
-  int type;
-  const char* name;
-  union {
-    struct {
-      int type;
-    } variable;
-    struct {
-      int returnType;
-      int NRParameters;
-    } function;
-  };
+  const char *id;
+  SEType *type;
 } STEntry;
 
 typedef struct STStack {
-  struct STEntry *root;
+  struct RBNode *root;
   struct STStack *prev; // no next
 } STStack;
+
+void STPushStack();
+void STPopStack();
+void STInsert(const char *id, SEType *type);
+STEntry *STSearch(const char *id);
+int STRBCompare(const void *p1, const void *p2);
+void STRBDestroy(void *p);
 
 void semanticScan();
 void checkSemantics(STNode *node, STNode *parent);

@@ -315,9 +315,10 @@ void RBDelete(RBNode **root, void *value, int (*cmp)(const void *, const void *)
   RBDeleteNode(root, node);
 }
 
-void RBDestroy(RBNode **root) {
-  if ((*root)->left)  RBDestroy(&(*root)->left);
-  if ((*root)->right) RBDestroy(&(*root)->right);
+void RBDestroy(RBNode **root, void (*destroy)(void *)) {
+  if ((*root)->left)  RBDestroy(&(*root)->left,  destroy);
+  if ((*root)->right) RBDestroy(&(*root)->right, destroy);
+  destroy((*root)->value);
   free(*root);
   root = NULL;
 }

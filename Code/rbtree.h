@@ -42,7 +42,7 @@ void RBDeleteNode(RBNode **root, RBNode *node);
 void RBInsert(RBNode **root, void *value, int(*cmp)(const void *, const void *));
 RBNode *RBSearch(RBNode **root, void *value, int (*cmp)(const void *, const void *));
 void RBDelete(RBNode **root, void *value, int (*cmp)(const void *, const void *));
-void RBDestroy(RBNode **root);
+void RBDestroy(RBNode **root, void (*destroy)(void *));
 
 
 #endif // RBTREE_H

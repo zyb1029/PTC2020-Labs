@@ -90,7 +90,7 @@ void checkSemantics(STNode *node, STNode *parent) {
   if (node->empty) return;
   if (!strcmp(node->name, "Def")) {
     STNode *child = node->child;
-    SEType *type = SECreateType(child);
+    SEType *type = SEParseSpecifier(child);
   } else {
     for (STNode *child = node->child; child != NULL; child = child->next) {
       checkSemantics(child, node);

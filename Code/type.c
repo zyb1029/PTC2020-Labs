@@ -8,10 +8,11 @@
 #include "debug.h"
 
 // Create type from specifier node
-SEType *SECreateType(STNode *node) {
-  Assert(node, "node is null");
-  Assert(!strcmp(node->name, "Specifier"), "node is not specifier");
-  STNode *child = node->child;
+SEType *SEParseSpecifier(STNode *specifier) {
+  Assert(specifier, "specifier is null");
+  Assert(specifier->next, "specifier at the end");
+  Assert(!strcmp(specifier->name, "Specifier"), "not a specifier");
+  STNode *child = specifier->child;
   SEType *type = (SEType *)malloc(sizeof(SEType));
   if (child->token == TYPE) {
     type->kind = BASIC;
@@ -35,17 +36,33 @@ SEType *SECreateType(STNode *node) {
       // STRUCT Tag
       STEntry *entry = STSearch(tag->sval);
       if (entry == NULL) {
-        // undefined struct, treat as INT
-        throwErrorS(17, tag->child);
-        type->kind = BASIC;
-        type->basic = INT;
+        if (specifier->next->token == SEMI) {
+          // only declare the struct, OK
+          Log("Declare of struct %s", tag->sval);
+          type->kind = STRUCTURE;
+          type->structure = NULL;
+          STInsert(tag->sval, type);
+        } else {
+          // undefined struct, treat as INT
+          throwErrorS(17, tag->child);
+          type->kind = BASIC;
+          type->basic = INT;
+        }
       } else if (entry->type->kind != STRUCTURE) {
         // duplicated name of struct, treat as INT
         throwErrorS(16, tag->child);
         type->kind = BASIC;
         type->basic = INT;
       } else {
-        type = entry->type;
+        // FIXME: what if we declated a struct twice??
+        if (entry->type->structure == NULL) {
+          // declared but not defined, treat as INT
+          throwErrorS(17, tag->child);
+          type->kind = BASIC;
+          type->basic = INT;
+        } else {
+          type = entry->type;
+        }
       }
     }
   }

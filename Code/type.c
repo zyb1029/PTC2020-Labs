@@ -1,6 +1,7 @@
 #include <string.h>
 #include "tree.h"
 #include "type.h"
+#include "table.h"
 #include "semantics.h"
 #include "syntax.tab.h"
 

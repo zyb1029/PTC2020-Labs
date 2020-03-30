@@ -27,7 +27,7 @@ typedef struct SEField {
   struct SEField *next;
 } SEField;
 
-SEType *SECreateType(STNode *node);
+SEType *SECreateType(STNode *node, STNode *parent);
 bool SECompareType(const SEType *t1, const SEType *t2);
 void SEDestroyType(SEType *type);
 

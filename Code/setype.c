@@ -1,7 +1,7 @@
 #include "sytree.h"
 #include "setype.h"
 
-SEType *SECreateType(STNode *node) {
+SEType *SECreateType(STNode *node, STNode *parent) {
   // TODO
   exit(-888);
   return NULL;

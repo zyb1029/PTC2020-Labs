@@ -1,4 +1,4 @@
-#include "setype.h"
+#include "type.h"
 #include "semantics.h"
 #include "syntax.tab.h"
 

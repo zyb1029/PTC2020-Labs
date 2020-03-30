@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
-#include "sytree.h"
+#include "tree.h"
 #include "syntax.tab.h"
 
 void printSyntaxTree() {

@@ -6,9 +6,9 @@
 #ifndef SEMANTIC_H
 #define SEMANTIC_H
 
-#include "sytree.h"
+#include "tree.h"
 #include "rbtree.h"
-#include "setype.h"
+#include "type.h"
 #define SEMANTIC_DEBUG true // <- debug switch
 
 typedef struct STError {

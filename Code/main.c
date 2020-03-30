@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdbool.h>
-#include "sytree.h"
+#include "tree.h"
 #include "semantics.h"
 
 extern void yyrestart(FILE *);

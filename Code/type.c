@@ -1,6 +1,6 @@
 #include <string.h>
-#include "sytree.h"
-#include "setype.h"
+#include "tree.h"
+#include "type.h"
 #include "semantics.h"
 #include "syntax.tab.h"
 

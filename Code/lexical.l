@@ -10,7 +10,7 @@
   #include <stdlib.h>
   #include <stdbool.h>
   #include "token.h"
-  #include "sytree.h"
+  #include "tree.h"
   #include "syntax.tab.h"
   #if FLEXDEBUG
   void printType(const char*);

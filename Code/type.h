@@ -45,6 +45,7 @@ SEField *SEParseDecList(STNode *list, bool assignable);
 SEField *SEParseDec(STNode *dec, bool assignable);
 
 bool SECompareType(const SEType *t1, const SEType *t2);
+SEType *SECopyType(const SEType *type);
 void SEDestroyType(SEType *type);
 
 #endif // SE_TYPE_H

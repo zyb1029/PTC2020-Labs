@@ -1,3 +1,4 @@
+#include "debug.h"
 #include "type.h"
 #include "table.h"
 #include "semantics.h"
@@ -17,11 +18,11 @@ const STError SETable[] = {
   {  7, false, "Type mismatched for operands ", "" },
   {  8, false, "Type mismatched for return " },
   {  9,  true, "Arguments mismatched for function ", "" },
-  { 10,  true, "Array access on non-array variable ", "" },
-  { 11,  true, "Function call on non-function variable ", "" },
-  { 12, false, "Non integer offset of an array ", "" },
-  { 13,  true, "Field access on non-struct variable ", "" },
-  { 14,  true, "Access to undefined field ", " in struct" },
+  { 10, false, "Array access on non-array variable", "" },
+  { 11, false, "Function call on non-function variable", "" },
+  { 12, false, "Non integer offset of an array", "" },
+  { 13, false, "Field access on non-struct variable", "" },
+  { 14, false, "Access to undefined field in struct", "" },
   { 15,  true, "Redefinition or initialization of field ", " in struct" },
   { 16,  true, "Duplicated name ", " of struct" },
   { 17,  true, "Use of undefined struct ", "" },
@@ -45,6 +46,8 @@ void checkSemantics(STNode *node, STNode *parent) {
   if (!strcmp(node->name, "Def")) {
     STNode *child = node->child;
     SEType *type = SEParseSpecifier(child);
+  } else if (!strcmp(node->name, "Exp")) {
+    SEType *type = SEParseExp(node);
   } else {
     for (STNode *child = node->child; child != NULL; child = child->next) {
       checkSemantics(child, node);
@@ -52,10 +55,11 @@ void checkSemantics(STNode *node, STNode *parent) {
   }
 }
 
-void throwErrorS(int id, STNode *node) {
+void throwErrorS(enum SemanticErrors id, STNode *node) {
+  Assert(!SETable[id].showID || node, "node is NULL for error %d", id);
   hasErrorS = true;
   fprintf(stderr, "Error type %d at Line %d: ", id, node->line);
-  if (SETable[id].showId) {
+  if (SETable[id].showID) {
     fprintf(stderr, "%s\"%s\"%s", SETable[id].message1, node->sval, SETable[id].message2);
   } else {
     fprintf(stderr, "%s", SETable[id].message1);

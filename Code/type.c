@@ -11,7 +11,89 @@
 SEType *SEParseExp(STNode *exp) {
   Assert(exp, "exp is null");
   Assert(!strcmp(exp->name, "Exp"), "not an exp");
-  
+  STNode *e1 = exp->child;
+  STNode *e2 = e1 ? e1->next : NULL;
+  STNode *e3 = e2 ? e2->next : NULL;
+  switch (e1->token) {
+    case LP:    // LP Exp RP
+    case MINUS: // MINUS Exp
+    case NOT:   // NOT Exp
+      return SEParseExp(e2);
+    case ID:
+      if (e2 == NULL) {
+        STEntry *entry = STSearch(e1->sval);
+        if (entry == NULL) {
+          // undefined variable, treat as int
+          throwErrorS(SE_VARIABLE_UNDEFINED, e1);
+          SEType *type = (SEType *)malloc(sizeof(SEType));
+          type->kind = BASIC;
+          type->basic = INT;
+          return type; 
+        } else {
+          return SECopyType(entry->type);
+        }
+      } else {
+        // function call
+        Panic("Not implemented!");
+      }
+      break;
+    case INT:
+    case FLOAT: {
+      SEType *type = (SEType *)malloc(sizeof(SEType));
+      type->kind = BASIC;
+      type->basic = e1->token;
+      return type;
+    }
+    default: {
+      SEType *t1 = SEParseExp(e1);
+      switch (e2->token) {
+        case LB: {
+          // Exp LB Exp RB
+          if (t1->kind != ARRAY) {
+            throwErrorS(SE_ACCESS_TO_NON_ARRAY, e2);
+            return t1;
+          }
+          SEType *t2 = SEParseExp(e3);
+          if (t2->kind != BASIC || t2->basic != INT) {
+            throwErrorS(SE_NON_INTEGER_INDEX, e3);
+          }
+          SEType *type = SECopyType(t1->array.elem);
+          SEDestroyType(t2);
+          SEDestroyType(t1);
+          return type;
+        }
+        case DOT: {
+          // Exp DOT ID
+          if (t1->kind != STRUCTURE) {
+            throwErrorS(SE_ACCESS_TO_NON_STRUCT, e2);
+            return t1;
+          } else {
+            SEType *type = NULL;
+            SEField *field = t1->structure;
+            while (field != NULL) {
+              if (!strcmp(field->name, e3->sval)) {
+                type = SECopyType(field->type);
+                break;
+              }
+              field = field->next;
+            }
+            if (type == NULL) {
+              throwErrorS(SE_STRUCT_FIELD_UNDEFINED, e3);
+              type = (SEType *)malloc(sizeof(SEType));
+              type->kind = BASIC; // treat as int
+              type->basic = INT;
+            }
+            SEDestroyType(t1);
+            return type;
+          }
+        }
+        default: {
+          Panic("Not implemented!"); 
+        }
+      }
+    }
+  }
+  Panic("Should not reach here");
 }
 
 SEType *SEParseSpecifier(STNode *specifier) {

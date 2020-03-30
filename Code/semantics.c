@@ -58,10 +58,11 @@ STEntry *STSearch(const char *id) {
   STEntry *result = NULL;
   while (cur != NULL) {
     RBNode *candidate = RBSearch(&(cur->root), target, STRBCompare);
-    if (!STRBCompare(candidate->value, target)) {
+    if (candidate && !STRBCompare(candidate->value, target)) {
       result = (STEntry *)(candidate->value);
       break;
     }
+    cur = cur->prev;
   }
   free(target);
   return result;

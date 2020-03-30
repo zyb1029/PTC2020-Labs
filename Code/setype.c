@@ -26,21 +26,22 @@ SEType *SECreateType(STNode *node) {
     Log("STRUCT");
     child = child->child; // STRUCT
     Assert(child->token == STRUCT, "child is not struct");
-    child = child->next;
-    if (child->next) {
+    STNode *tag = child->next;
+    if (tag->next) {
       // STRUCT OptTag LC DefList RC
-      Panic("Please implement me!");
+      const char *structID = tag->sval;
+      Panic("I don't know how to parse deflist");
     } else {
       // STRUCT Tag
-      STEntry *entry = STSearch(child->sval);
+      STEntry *entry = STSearch(tag->sval);
       if (entry == NULL) {
         // undefined struct, treat as INT
-        throwErrorS(17, child);
+        throwErrorS(17, tag->child);
         type->kind = BASIC;
         type->basic = INT;
       } else if (entry->type->kind != STRUCTURE) {
         // duplicated name of struct, treat as INT
-        throwErrorS(16, child);
+        throwErrorS(16, tag->child);
         type->kind = BASIC;
         type->basic = INT;
       } else {

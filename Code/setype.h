@@ -25,7 +25,7 @@ typedef struct SEType {
     int basic;
     struct {
       int size;
-      struct Type *elem;
+      struct SEType *elem;
     } array;
     struct SEField *structure;
   };

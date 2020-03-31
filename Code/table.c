@@ -22,6 +22,7 @@ void STPopStack() {
 
 void STInsert(const char *id, SEType *type) {
   STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
+  entry->type = SECopyType(type);
   RBInsert(&(currStack->root), (void *)entry, STRBCompare);
 }
 

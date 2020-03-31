@@ -212,19 +212,66 @@ SEType *SEParseSpecifier(STNode *specifier) {
 }
 
 SEField *SEParseDefList(STNode *list, bool assignable) {
-  Panic("Not implemented!");
+  if (list->empty) return NULL;
+  SEField *tail = SEParseDefList(list->child->next, assignable);
+  SEField *field = SEParseDef(list->child, tail, assignable);
+  return field;
 }
 
-SEField *SEParseDef(STNode *list, bool assignable) {
-  Panic("Not implemented!");
+SEField *SEParseDef(STNode *def, SEField *tail, bool assignable) {
+  SEType *type = SEParseSpecifier(def->child);
+  SEField *field = SEParseDecList(def->child->next, type, tail, assignable);
+  return field;
 }
 
-SEField *SEParseDecList(STNode *list, bool assignable) {
-  Panic("Not implemented!");
+SEField *SEParseDecList(STNode *list, SEType *type, SEField *tail, bool assignable) {
+  SEField *field = SEParseDec(list->child, type, assignable);
+  if (list->child->next) {
+    // Dec COMMA DecList
+    field->next = SEParseDecList(list->child->next->next, type, tail, assignable);
+  } else {
+    // Dec -> tail
+    field->next = tail;
+  }
+  return field;
 }
 
-SEField *SEParseDec(STNode *dec, bool assignable) {
-  Panic("Not implemented!");
+SEField *SEParseDec(STNode *dec, SEType *type, bool assignable) {
+  SEType *copiedType = SECopyType(type); // !!! EXTREME CAUTION
+  SEField *field = SEParseVarDec(dec->child, copiedType);
+  if (dec->child->next != NULL) {
+    if (!assignable) {
+      throwErrorS(SE_STRUCT_FIELD_INITIALIZED, dec->child->next);
+    }
+    SEType *expType = SEParseExp(dec->child->next->next);
+    if (SECompareType(field->type, expType)) {
+      throwErrorS(SE_MISMATCHED_ASSIGNMENT, dec->child->next);
+    }
+  }
+  STInsert(field->name, field->type); // register in ST
+  return field;
+}
+
+// !!! EXTREME CAUTION REQUIRED !!!
+// 'type' in this func IS OWNED BY each VarDec
+// HANDLE CAREFULLY WITH RECURSIVE CALLS FOR ARRAY
+SEField *SEParseVarDec(STNode *var, SEType *type) {
+  if (var->child->next) {
+    // VarDec LB INT RB
+    SEType *arrayType = (SEType *)malloc(sizeof(SEType));
+    arrayType->kind = ARRAY;
+    arrayType->array.size = var->child->next->next->ival;
+    arrayType->array.elem = type; // DO NOT DESTROY IT !!!
+    return SEParseVarDec(var->child, arrayType);
+  } else {
+    // ID
+    SEField *field = (SEField *)malloc(sizeof(SEField));
+    field->name = var->sval;
+    field->type = type;
+    field->next = NULL;
+    CLog(FG_GREEN, "new variable \"%s\"", field->name);
+    return field;
+  }
 }
 
 bool SECompareType(const SEType *t1, const SEType *t2) {

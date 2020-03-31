@@ -44,7 +44,7 @@ SEType *SEParseExp(STNode *exp) {
       type->basic = e1->token;
       return type;
     }
-    default: {
+    default: { // Exp ??
       SEType *t1 = SEParseExp(e1);
       switch (e2->token) {
         case LB: {
@@ -87,13 +87,57 @@ SEType *SEParseExp(STNode *exp) {
             return type;
           }
         }
+        case ASSIGNOP: {
+          // Exp ASSIGNOP Exp
+          SEType *t2 = SEParseExp(e3);
+          if (SECompareType(t1, t2)) {
+            throwErrorS(SE_MISMATCHED_OPERANDS, e3); // same as gcc
+          }
+          SEDestroyType(t2);
+          CLog(FG_RED, "lvalue not checked!"); // FIXME
+          return t1;
+        }
+        case AND:
+        case OR: {
+          // Exp AND/OR Exp
+          SEType *t2 = SEParseExp(e3);
+          SEType *type = (SEType *)malloc(sizeof(SEType)); 
+          type->kind = BASIC;
+          type->basic = INT;
+          if (SECompareType(type, t1) || SECompareType(type, t2)) {
+            throwErrorS(SE_MISMATCHED_OPERANDS, e2);
+          }
+          SEDestroyType(t1);
+          SEDestroyType(t2);
+          return type; // always return INT
+        }
+        case RELOP: {
+          // Exp RELOP Exp
+          SEType *t2 = SEParseExp(e3);
+          SEType *type = (SEType *)malloc(sizeof(SEType));
+          type->kind = BASIC;
+          type->basic = INT;
+          if (SECompareType(t1, t2)) {
+            throwErrorS(SE_MISMATCHED_OPERANDS, e2);
+          }
+          SEDestroyType(t1);
+          SEDestroyType(t2);
+          return type; // always return INT
+        }
         default: {
-          Panic("Not implemented!"); 
+          // Exp PLUS/MINUS/STAR/DIV Exp
+          SEType *t2 = SEParseExp(e3);
+          if (SECompareType(t1, t2)) {
+            throwErrorS(SE_MISMATCHED_OPERANDS, e2);
+          }
+          SEDestroyType(t2);
+          return t1; // treat as t1 if error
         }
       }
     }
   }
   Panic("Should not reach here");
+  return NULL;
 }
 
 SEType *SEParseSpecifier(STNode *specifier) {
@@ -120,8 +164,12 @@ SEType *SEParseSpecifier(STNode *specifier) {
       // define a new struct
       // STRUCT OptTag LC DefList RC
       const char *structID = tag->sval;
-      type->kind = STRUCTURE;
-      Panic("not implemented!"); /* FIXME */
+      {
+        STPushStack();
+        type->kind = STRUCTURE;
+        type->structure = SEParseDefList(tag->next->next, false);
+        STPopStack();
+      }
       if (structID != NULL) {
         STInsert(structID, type);
       }

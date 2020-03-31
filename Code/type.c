@@ -8,6 +8,29 @@
 #define DEBUG
 #include "debug.h"
 
+#ifdef DEBUG
+#define SEDEBUG
+void SEDumpType(const SEType *type);
+#else
+#define SEDumpType(t) ;
+#endif
+
+SEType *STATIC_TYPE_INT   = NULL;
+SEType *STATIC_TYPE_FLOAT = NULL;
+
+void SEPrepare() {
+  // int and float will never be a variable,
+  // thus we can save them to the global ST.
+  STATIC_TYPE_INT = (SEType *)malloc(sizeof(SEType));
+  STATIC_TYPE_INT->kind = BASIC;
+  STATIC_TYPE_INT->basic = INT;
+  STInsertBase("int", STATIC_TYPE_INT);
+  STATIC_TYPE_FLOAT = (SEType *)malloc(sizeof(SEType));
+  STATIC_TYPE_FLOAT->kind = BASIC;
+  STATIC_TYPE_FLOAT->basic = FLOAT;
+  STInsertBase("float", STATIC_TYPE_INT);
+}
+
 SEType *SEParseExp(STNode *exp) {
   Assert(exp, "exp is null");
   Assert(!strcmp(exp->name, "Exp"), "not an exp");
@@ -25,12 +48,9 @@ SEType *SEParseExp(STNode *exp) {
         if (entry == NULL) {
           // undefined variable, treat as int
           throwErrorS(SE_VARIABLE_UNDEFINED, e1);
-          SEType *type = (SEType *)malloc(sizeof(SEType));
-          type->kind = BASIC;
-          type->basic = INT;
-          return type; 
+          return STATIC_TYPE_INT; 
         } else {
-          return SECopyType(entry->type);
+          return entry->type;
         }
       } else {
         // function call
@@ -39,10 +59,7 @@ SEType *SEParseExp(STNode *exp) {
       break;
     case INT:
     case FLOAT: {
-      SEType *type = (SEType *)malloc(sizeof(SEType));
-      type->kind = BASIC;
-      type->basic = e1->token;
-      return type;
+      return e1->token == INT ? STATIC_TYPE_INT : STATIC_TYPE_FLOAT;
     }
     default: { // Exp ??
       SEType *t1 = SEParseExp(e1);
@@ -57,10 +74,7 @@ SEType *SEParseExp(STNode *exp) {
           if (t2->kind != BASIC || t2->basic != INT) {
             throwErrorS(SE_NON_INTEGER_INDEX, e3);
           }
-          SEType *type = SECopyType(t1->array.elem);
-          SEDestroyType(t2);
-          SEDestroyType(t1);
-          return type;
+          return t1->array.elem;
         }
         case DOT: {
           // Exp DOT ID
@@ -72,18 +86,14 @@ SEType *SEParseExp(STNode *exp) {
             SEField *field = t1->structure;
             while (field != NULL) {
               if (!strcmp(field->name, e3->sval)) {
-                type = SECopyType(field->type);
+                type = field->type;
                 break;
               }
               field = field->next;
             }
             if (type == NULL) {
-              throwErrorS(SE_STRUCT_FIELD_UNDEFINED, e3);
-              type = (SEType *)malloc(sizeof(SEType));
-              type->kind = BASIC; // treat as int
-              type->basic = INT;
+              type = STATIC_TYPE_INT;
             }
-            SEDestroyType(t1);
             return type;
           }
         }
@@ -93,7 +103,6 @@ SEType *SEParseExp(STNode *exp) {
           if (SECompareType(t1, t2)) {
             throwErrorS(SE_MISMATCHED_OPERANDS, e3); // same as gcc
           }
-          SEDestroyType(t2);
           CLog(FG_RED, "lvalue not checked!"); // FIXME
           return t1;
         }
@@ -101,28 +110,19 @@ SEType *SEParseExp(STNode *exp) {
         case OR: {
           // Exp AND/OR Exp
           SEType *t2 = SEParseExp(e3);
-          SEType *type = (SEType *)malloc(sizeof(SEType)); 
-          type->kind = BASIC;
-          type->basic = INT;
-          if (SECompareType(type, t1) || SECompareType(type, t2)) {
+          if (SECompareType(STATIC_TYPE_INT, t1) ||
+              SECompareType(STATIC_TYPE_INT, t2)) {
             throwErrorS(SE_MISMATCHED_OPERANDS, e2);
           }
-          SEDestroyType(t1);
-          SEDestroyType(t2);
-          return type; // always return INT
+          return STATIC_TYPE_INT; // always return INT
         }
         case RELOP: {
           // Exp RELOP Exp
           SEType *t2 = SEParseExp(e3);
-          SEType *type = (SEType *)malloc(sizeof(SEType));
-          type->kind = BASIC;
-          type->basic = INT;
           if (SECompareType(t1, t2)) {
             throwErrorS(SE_MISMATCHED_OPERANDS, e2);
           }
-          SEDestroyType(t1);
-          SEDestroyType(t2);
-          return type; // always return INT
+          return STATIC_TYPE_INT; // always return INT
         }
         default: {
           // Exp PLUS/MINUS/STAR/DIV Exp
@@ -130,8 +130,7 @@ SEType *SEParseExp(STNode *exp) {
           if (SECompareType(t1, t2)) {
             throwErrorS(SE_MISMATCHED_OPERANDS, e2);
           }
-          SEDestroyType(t2);
-          return t1; // treat as t1 if error
+          return t1; // always treat as t1
         }
       }
     }
@@ -171,7 +170,7 @@ SEType *SEParseSpecifier(STNode *specifier) {
         STPopStack();
       }
       if (structID != NULL) {
-        STInsert(structID, type);
+        STInsertBase(structID, type); // struct has global scope
       }
       Log("Define struct %s", structID);
     } else {
@@ -183,7 +182,7 @@ SEType *SEParseSpecifier(STNode *specifier) {
           Log("Declare struct %s", tag->sval);
           type->kind = STRUCTURE;
           type->structure = NULL;
-          STInsert(tag->sval, type);
+          STInsertBase(tag->sval, type); // global scope
         } else {
           // undefined struct, treat as INT
           throwErrorS(SE_STRUCT_UNDEFINED, tag->child);
@@ -237,8 +236,7 @@ SEField *SEParseDecList(STNode *list, SEType *type, SEField *tail, bool assignab
 }
 
 SEField *SEParseDec(STNode *dec, SEType *type, bool assignable) {
-  SEType *copiedType = SECopyType(type); // !!! EXTREME CAUTION
-  SEField *field = SEParseVarDec(dec->child, copiedType);
+  SEField *field = SEParseVarDec(dec->child, type);
   if (dec->child->next != NULL) {
     if (!assignable) {
       throwErrorS(SE_STRUCT_FIELD_INITIALIZED, dec->child->next);
@@ -248,31 +246,48 @@ SEField *SEParseDec(STNode *dec, SEType *type, bool assignable) {
       throwErrorS(SE_MISMATCHED_ASSIGNMENT, dec->child->next);
     }
   }
-  STInsert(field->name, field->type); // register in ST
+  STInsertCurr(field->name, field->type); // register in local scope
   return field;
 }
 
-// !!! EXTREME CAUTION REQUIRED !!!
-// 'type' in this func IS OWNED BY each VarDec
-// HANDLE CAREFULLY WITH RECURSIVE CALLS FOR ARRAY
 SEField *SEParseVarDec(STNode *var, SEType *type) {
   if (var->child->next) {
     // VarDec LB INT RB
     SEType *arrayType = (SEType *)malloc(sizeof(SEType));
     arrayType->kind = ARRAY;
     arrayType->array.size = var->child->next->next->ival;
-    arrayType->array.elem = type; // DO NOT DESTROY IT !!!
+    arrayType->array.elem = type;
     return SEParseVarDec(var->child, arrayType);
   } else {
     // ID
     SEField *field = (SEField *)malloc(sizeof(SEField));
-    field->name = var->sval;
+    field->name = var->child->sval;
     field->type = type;
     field->next = NULL;
     CLog(FG_GREEN, "new variable \"%s\"", field->name);
     return field;
   }
 }
+
+#ifdef SEDEBUG
+void SEDumpType(const SEType *type) {
+  switch (type->kind) {
+    case BASIC:
+      Log("%s", type->basic == INT ? "INT" : "FLOAT");
+      break;
+    case ARRAY:
+      Log("%d-array of", type->array.size);
+      SEDumpType(type->array.elem);
+      break;
+    case STRUCTURE:
+      Log("STRUCTURE");
+      break;
+    case FUNCTION:
+      Log("FUNCTION");
+      break;
+  }
+}
+#endif
 
 bool SECompareType(const SEType *t1, const SEType *t2) {
   if (t1->kind != t2->kind) return false;
@@ -302,6 +317,7 @@ bool SECompareType(const SEType *t1, const SEType *t2) {
   return false;
 }
 
+/** DEPRECATED!!!
 SEType *SECopyType(const SEType *type) {
   SEType *ret = (SEType *)malloc(sizeof(SEType));
   SEField *field = NULL, *head = NULL, *tail = NULL;
@@ -336,6 +352,7 @@ SEType *SECopyType(const SEType *type) {
   }
   return ret;
 }
+*/
 
 void SEDestroyType(SEType *type) {
   SEField *temp = NULL, *field = NULL;

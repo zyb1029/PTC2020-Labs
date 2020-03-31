@@ -20,9 +20,13 @@ typedef struct STStack {
   struct STStack *prev; // no next
 } STStack;
 
+void STPrepare();
+void STDestroy();
+
 void STPushStack();
 void STPopStack();
-void STInsert(const char *id, SEType *type);
+void STInsertBase(const char *id, SEType *type);
+void STInsertCurr(const char *id, SEType *type);
 STEntry *STSearch(const char *id);
 int STRBCompare(const void *p1, const void *p2);
 void STRBDestroy(void *p);

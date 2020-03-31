@@ -37,6 +37,8 @@ typedef struct SEField {
   struct SEField *next;
 } SEField;
 
+void SEPrepare();
+
 SEType *SEParseExp(STNode *exp);
 SEType *SEParseSpecifier(STNode *specifier);
 SEField *SEParseDefList(STNode *list, bool assignable);
@@ -46,7 +48,7 @@ SEField *SEParseDec(STNode *dec, SEType *type, bool assignable);
 SEField *SEParseVarDec(STNode *var, SEType *type);
 
 bool SECompareType(const SEType *t1, const SEType *t2);
-SEType *SECopyType(const SEType *type);
+//SEType *SECopyType(const SEType *type);
 void SEDestroyType(SEType *type);
 
 #endif // SE_TYPE_H

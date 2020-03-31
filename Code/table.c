@@ -6,6 +6,19 @@
 STStack *baseStack = NULL;
 STStack *currStack = NULL;
 
+void STPrepare() {
+  // prepare the base stack
+  baseStack = (STStack *)malloc(sizeof(STStack));
+  baseStack->root = NULL;
+  baseStack->prev = NULL;
+  currStack = baseStack;
+  SEPrepare();
+}
+
+void STDestroy() {
+  while (currStack != NULL) STPopStack();
+}
+
 void STPushStack() {
   STStack *top = (STStack *)malloc(sizeof(STStack));
   top->root = NULL;
@@ -20,9 +33,17 @@ void STPopStack() {
   free(temp);
 }
 
-void STInsert(const char *id, SEType *type) {
+void STInsertBase(const char *id, SEType *type) {
   STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
-  entry->type = SECopyType(type);
+  entry->id = id;
+  entry->type = type;
+  RBInsert(&(baseStack->root), (void *)entry, STRBCompare);
+}
+
+void STInsertCurr(const char *id, SEType *type) {
+  STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
+  entry->id = id;
+  entry->type = type;
   RBInsert(&(currStack->root), (void *)entry, STRBCompare);
 }
 
@@ -51,4 +72,3 @@ int STRBCompare(const void *p1, const void *p2) {
 void STRBDestroy(void *p) {
   SEDestroyType((SEType *)p);
 }
-

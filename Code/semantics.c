@@ -31,21 +31,16 @@ const STError SETable[] = {
 };
 
 // main entry of semantic scan
-extern STStack *baseStack, *currStack;
 void semanticScan() {
-  // prepare the base stack
-  baseStack = (STStack *)malloc(sizeof(STStack));
-  baseStack->root = NULL;
-  baseStack->prev = NULL;
-  currStack = baseStack;
+  STPrepare();
   checkSemantics(stroot, stroot);
+  STDestroy();
 }
 
 void checkSemantics(STNode *node, STNode *parent) {
   if (node->empty) return;
-  if (!strcmp(node->name, "Def")) {
-    STNode *child = node->child;
-    SEType *type = SEParseSpecifier(child);
+  if (!strcmp(node->name, "DefList")) {
+    SEField *field = SEParseDefList(node, true);
   } else if (!strcmp(node->name, "Exp")) {
     SEType *type = SEParseExp(node);
   } else {

@@ -10,15 +10,15 @@ extern bool hasErrorS;
 extern STNode *stroot;
 
 const STError SETable[] = {
-  {  0, false, "Pseudo error ", "" },
+  {  0, false, "Pseudo error", "" },
   {  1,  true, "Use of undefined variable ", "" },
   {  2,  true, "Use of undefined function ", "" },
   {  3,  true, "Duplicated name ", " of variables" },
   {  4,  true, "Redefinition of function ", "" },
-  {  5, false, "Type mismatched for assignment ", "" },
-  {  6, false, "Cannot assign to rvalue ", "" },
-  {  7, false, "Type mismatched for operands ", "" },
-  {  8, false, "Type mismatched for return " },
+  {  5, false, "Type mismatched for assignment", "" },
+  {  6, false, "Cannot assign to rvalue", "" },
+  {  7, false, "Type mismatched for operands", "" },
+  {  8, false, "Type mismatched for return" },
   {  9,  true, "Arguments mismatched for function ", "" },
   { 10, false, "Array access on non-array variable", "" },
   { 11, false, "Function call on non-function variable", "" },

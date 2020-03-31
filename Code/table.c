@@ -3,6 +3,9 @@
 #include "table.h"
 #include "syntax.tab.h"
 
+#define DEBUG
+#include "debug.h"
+
 STStack *baseStack = NULL;
 STStack *currStack = NULL;
 
@@ -34,6 +37,7 @@ void STPopStack() {
 }
 
 void STInsertBase(const char *id, SEType *type) {
+  Log("Insert to base ST: %d", type->kind);
   STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
   entry->id = id;
   entry->type = type;
@@ -41,6 +45,7 @@ void STInsertBase(const char *id, SEType *type) {
 }
 
 void STInsertCurr(const char *id, SEType *type) {
+  Log("Insert to curr ST: %d", type->kind);
   STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
   entry->id = id;
   entry->type = type;

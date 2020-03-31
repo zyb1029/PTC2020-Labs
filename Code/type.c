@@ -8,13 +8,6 @@
 #define DEBUG
 #include "debug.h"
 
-#ifdef DEBUG
-#define SEDEBUG
-void SEDumpType(const SEType *type);
-#else
-#define SEDumpType(t) ;
-#endif
-
 SEType *STATIC_TYPE_INT   = NULL;
 SEType *STATIC_TYPE_FLOAT = NULL;
 
@@ -100,7 +93,7 @@ SEType *SEParseExp(STNode *exp) {
         case ASSIGNOP: {
           // Exp ASSIGNOP Exp
           SEType *t2 = SEParseExp(e3);
-          if (SECompareType(t1, t2)) {
+          if (!SECompareType(t1, t2)) {
             throwErrorS(SE_MISMATCHED_OPERANDS, e3); // same as gcc
           }
           CLog(FG_RED, "lvalue not checked!"); // FIXME
@@ -110,8 +103,8 @@ SEType *SEParseExp(STNode *exp) {
         case OR: {
           // Exp AND/OR Exp
           SEType *t2 = SEParseExp(e3);
-          if (SECompareType(STATIC_TYPE_INT, t1) ||
-              SECompareType(STATIC_TYPE_INT, t2)) {
+          if (!SECompareType(STATIC_TYPE_INT, t1) ||
+              !SECompareType(STATIC_TYPE_INT, t2)) {
             throwErrorS(SE_MISMATCHED_OPERANDS, e2);
           }
           return STATIC_TYPE_INT; // always return INT
@@ -119,7 +112,7 @@ SEType *SEParseExp(STNode *exp) {
         case RELOP: {
           // Exp RELOP Exp
           SEType *t2 = SEParseExp(e3);
-          if (SECompareType(t1, t2)) {
+          if (!SECompareType(t1, t2)) {
             throwErrorS(SE_MISMATCHED_OPERANDS, e2);
           }
           return STATIC_TYPE_INT; // always return INT
@@ -127,7 +120,7 @@ SEType *SEParseExp(STNode *exp) {
         default: {
           // Exp PLUS/MINUS/STAR/DIV Exp
           SEType *t2 = SEParseExp(e3);
-          if (SECompareType(t1, t2)) {
+          if (!SECompareType(t1, t2)) {
             throwErrorS(SE_MISMATCHED_OPERANDS, e2);
           }
           return t1; // always treat as t1
@@ -242,7 +235,9 @@ SEField *SEParseDec(STNode *dec, SEType *type, bool assignable) {
       throwErrorS(SE_STRUCT_FIELD_INITIALIZED, dec->child->next);
     }
     SEType *expType = SEParseExp(dec->child->next->next);
-    if (SECompareType(field->type, expType)) {
+    SEDumpType(field->type);
+    SEDumpType(expType);
+    if (!SECompareType(field->type, expType)) {
       throwErrorS(SE_MISMATCHED_ASSIGNMENT, dec->child->next);
     }
   }
@@ -269,8 +264,8 @@ SEField *SEParseVarDec(STNode *var, SEType *type) {
   }
 }
 
-#ifdef SEDEBUG
 void SEDumpType(const SEType *type) {
+#ifdef DEBUG
   switch (type->kind) {
     case BASIC:
       Log("%s", type->basic == INT ? "INT" : "FLOAT");
@@ -286,8 +281,10 @@ void SEDumpType(const SEType *type) {
       Log("FUNCTION");
       break;
   }
-}
+#else
+  return;
 #endif
+}
 
 bool SECompareType(const SEType *t1, const SEType *t2) {
   if (t1->kind != t2->kind) return false;
@@ -295,11 +292,9 @@ bool SECompareType(const SEType *t1, const SEType *t2) {
   switch (t1->kind) {
     case BASIC:
       return t1->basic == t2->basic;
-      break;
     case ARRAY:
       if (t1->array.size != t2->array.size) return false;
       return SECompareType(t1->array.elem, t2->array.elem);
-      break;
     case STRUCTURE:
       f1 = t1->structure;
       f2 = t2->structure;
@@ -309,11 +304,11 @@ bool SECompareType(const SEType *t1, const SEType *t2) {
         f2 = f2->next;
       }
       return f1 == NULL && f2 == NULL;
-      break;
     case FUNCTION:
     default:
       Panic("not implemented");
   }
+  Panic("should not reach here");
   return false;
 }
 
@@ -372,7 +367,7 @@ void SEDestroyType(SEType *type) {
       break;
     case FUNCTION:
     default:
-      Panic("not implemented");
+      Panic("destroy %d not implemented", type->kind);
   }
   free(type);
   return;

@@ -25,9 +25,16 @@ void STDestroy();
 
 void STPushStack();
 void STPopStack();
+
 void STInsertBase(const char *id, SEType *type);
 void STInsertCurr(const char *id, SEType *type);
+
 STEntry *STSearch(const char *id);
+STEntry *STSearchBase(const char *id);
+STEntry *STSearchCurr(const char *id);
+STEntry *STSearchAt(STStack *stack, STEntry *target);
+
+// helpers
 int STRBCompare(const void *p1, const void *p2);
 void STRBDestroy(void *p);
 

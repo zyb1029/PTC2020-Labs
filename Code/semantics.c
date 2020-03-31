@@ -1,8 +1,10 @@
-#include "debug.h"
 #include "type.h"
 #include "table.h"
 #include "semantics.h"
 #include "syntax.tab.h"
+
+#define DEBUG
+#include "debug.h"
 
 extern bool hasErrorS;
 extern STNode *stroot;
@@ -32,9 +34,13 @@ const STError SETable[] = {
 
 // main entry of semantic scan
 void semanticScan() {
+  CLog(FG_YELLOW, "Before prepare");
   STPrepare();
+  CLog(FG_YELLOW, "After prepare");
   checkSemantics(stroot, stroot);
+  CLog(FG_YELLOW, "Before destroy");
   STDestroy();
+  CLog(FG_YELLOW, "After destroy");
 }
 
 void checkSemantics(STNode *node, STNode *parent) {

@@ -91,8 +91,10 @@ SEType *SEParseExp(STNode *exp) {
           }
         }
         case ASSIGNOP: {
-          // Exp ASSIGNOP Exp
           SEType *t2 = SEParseExp(e3);
+          CLog(FG_CYAN, "Exp ASSIGNOP Exp");
+          Log("DUMP LEFT:"), SEDumpType(t1);
+          Log("DUMP RIGHT:"), SEDumpType(t2);
           if (!SECompareType(t1, t2)) {
             throwErrorS(SE_MISMATCHED_OPERANDS, e3); // same as gcc
           }
@@ -101,8 +103,10 @@ SEType *SEParseExp(STNode *exp) {
         }
         case AND:
         case OR: {
-          // Exp AND/OR Exp
           SEType *t2 = SEParseExp(e3);
+          CLog(FG_CYAN, "Exp AND/OR Exp");
+          Log("DUMP LEFT:"), SEDumpType(t1);
+          Log("DUMP RIGHT:"), SEDumpType(t2);
           if (!SECompareType(STATIC_TYPE_INT, t1) ||
               !SECompareType(STATIC_TYPE_INT, t2)) {
             throwErrorS(SE_MISMATCHED_OPERANDS, e2);

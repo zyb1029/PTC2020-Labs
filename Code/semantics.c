@@ -46,7 +46,7 @@ void semanticScan() {
 void checkSemantics(STNode *node, STNode *parent) {
   if (node->empty) return;
   if (!strcmp(node->name, "DefList")) {
-    SEField *field = SEParseDefList(node, true);
+    SEParseDefList(node, true);
   } else if (!strcmp(node->name, "Exp")) {
     SEType *type = SEParseExp(node);
   } else {

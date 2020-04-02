@@ -12,8 +12,8 @@ SEType *STATIC_TYPE_VOID  = NULL;
 SEType *STATIC_TYPE_INT   = NULL;
 SEType *STATIC_TYPE_FLOAT = NULL;
 
-SEField DUMMY_TYPE_1, DUMMY_TYPE_2; // remedy for NULL pointers
-const SEFieldChain DUMMY_FIELD_CHAIN = { &DUMMY_TYPE_1, &DUMMY_TYPE_2 };
+SEField STATIC_FIELD_VOID, DUMMY_FIELD;
+const SEFieldChain DUMMY_FIELD_CHAIN = { &DUMMY_FIELD, &DUMMY_FIELD };
 
 // Prepare the base ST, insert VOID, INT and FLOAT.
 void SEPrepare() {
@@ -21,6 +21,8 @@ void SEPrepare() {
   // We don't use static variables because we want less trouble destroying the ST stack.
   STATIC_TYPE_VOID = (SEType *)malloc(sizeof(SEType));
   STATIC_TYPE_VOID->kind = VOID;
+  STATIC_FIELD_VOID.type = STATIC_TYPE_VOID;
+  STATIC_FIELD_VOID.next = NULL;
   STInsertBase(" void", STATIC_TYPE_VOID);
   STATIC_TYPE_INT = (SEType *)malloc(sizeof(SEType));
   STATIC_TYPE_INT->kind = BASIC;
@@ -34,7 +36,7 @@ void SEPrepare() {
 
 // Parse an expression. Only one type so we don't need a chain.
 // NO MALLOC ALLOWED when parsing expression to avoid memory leak.
-#define malloc(s) NO_MALLOC_ALLOWED_GCC_PLEASE_PANIC(s)
+#define malloc(s) NO_MALLOC_ALLOWED_EXP(s)
 SEType *SEParseExp(STNode *exp) {
   Assert(exp, "exp is null");
   Assert(!strcmp(exp->name, "Exp"), "not an exp");
@@ -57,8 +59,10 @@ SEType *SEParseExp(STNode *exp) {
           return entry->type;
         }
       } else {
-        // function call
-        STEntry *entry = STSearch(e1->sval);
+        STEntry *entry = NULL;
+        SEField *signature = NULL;
+        CLog(FG_CYAN, "%s", e3->next ? "ID LP Args RP" : "ID LP RP");
+        entry = STSearch(e1->sval);
         if (entry == NULL) {
           // undefined function, treat as int
           throwErrorS(SE_FUNCTION_UNDEFINED, e1);
@@ -68,7 +72,7 @@ SEType *SEParseExp(STNode *exp) {
           throwErrorS(SE_ACCESS_TO_NON_FUNCTION, e1); // same as gcc
           return STATIC_TYPE_INT;
         }
-        SEField *signature = SEParseArgs(e3).head;
+        signature = e3->next ? SEParseArgs(e3).head : &STATIC_FIELD_VOID;
         if (!SECompareField(entry->type->function.signature, signature)) {
           throwErrorS(SE_FUNCTION_CONFLICTING_SIGNATURE, e3);
         }
@@ -247,6 +251,8 @@ SEType *SEParseSpecifier(STNode *specifier) {
  * we do not care about what the chain contains at all.
  * */
 // Parse a definition list. Return a field chain.
+// NO MALLOC ALLOWED when parsing expression to avoid memory leak.
+#define malloc(s) NO_MALLOC_ALLOWED_DEF_LIST(s)
 SEFieldChain SEParseDefList(STNode *list, bool assignable) {
   Assert(!strcmp(list->name, "DefList"), "not a def list");
   SEFieldChain chain = SEParseDef(list->child, assignable);
@@ -259,15 +265,21 @@ SEFieldChain SEParseDefList(STNode *list, bool assignable) {
   }
   return chain;
 }
+#undef malloc
 
 // Parse a single definition. Return a field chain.
+// NO MALLOC ALLOWED when parsing expression to avoid memory leak.
+#define malloc(s) NO_MALLOC_ALLOWED_DEF(s)
 SEFieldChain SEParseDef(STNode *def, bool assignable) {
   Assert(!strcmp(def->name, "Def"), "not a def");
   SEType *type = SEParseSpecifier(def->child);
   return SEParseDecList(def->child->next, type, assignable);
 }
+#undef malloc
 
 // Parse a declaration list. Return a field chain.
+// NO MALLOC ALLOWED when parsing expression to avoid memory leak.
+#define malloc(s) NO_MALLOC_ALLOWED_DEC_LIST(s)
 SEFieldChain SEParseDecList(STNode *list, SEType *type, bool assignable) {
   Assert(!strcmp(list->name, "DecList"), "not a dec list");
   SEFieldChain chain = SEParseDec(list->child, type, assignable);
@@ -280,8 +292,11 @@ SEFieldChain SEParseDecList(STNode *list, SEType *type, bool assignable) {
   }
   return chain;
 }
+#undef malloc
 
 // Parse a single declaration Return a field chain.
+// NO MALLOC ALLOWED when parsing expression to avoid memory leak.
+#define malloc(s) NO_MALLOC_ALLOWED_DEC(s)
 SEFieldChain SEParseDec(STNode *dec, SEType *type, bool assignable) {
   Assert(!strcmp(dec->name, "Dec"), "not a dec");
   // We don't care about the chain, but we need the type!!
@@ -297,6 +312,7 @@ SEFieldChain SEParseDec(STNode *dec, SEType *type, bool assignable) {
   }
   return chain;
 }
+#undef malloc
 
 // Parse a variable declaration. Return a field chain.
 SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
@@ -344,6 +360,12 @@ SEFieldChain SEParseArgs(STNode *args) {
   }
   return chain;
 }
+
+/**
+ * Helper functions: dump, compare and destroy.
+ * We don't need malloc from here any more.
+ * */
+#define malloc(s) NO_MALLOC_ALLOWED_HELPERS(s)
 
 // Print the info of the type.
 void SEDumpType(const SEType *type) {
@@ -404,6 +426,7 @@ bool SECompareField(const SEField *f1, const SEField *f2) {
 void SEDestroyType(SEType *type) {
   SEField *temp = NULL, *field = NULL;
   switch (type->kind) {
+    case VOID:
     case BASIC:
       break;
     case ARRAY:

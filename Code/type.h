@@ -53,7 +53,7 @@ void SEPrepare();
 SEType *SEParseExp(STNode *exp);
 SEType *SEParseSpecifier(STNode *specifier);
 
-// assignable == function signature, or struct definition
+// not assignable == function signature, or struct definition
 SEFieldChain SEParseDefList(STNode *list, bool assignable);
 SEFieldChain SEParseDef(STNode *def, bool assignable);
 SEFieldChain SEParseDecList(STNode *list, SEType *type, bool assignable);

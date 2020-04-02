@@ -8,27 +8,33 @@
 #define DEBUG
 #include "debug.h"
 
+SEType *STATIC_TYPE_VOID  = NULL;
 SEType *STATIC_TYPE_INT   = NULL;
 SEType *STATIC_TYPE_FLOAT = NULL;
 
 SEField DUMMY_TYPE_1, DUMMY_TYPE_2; // remedy for NULL pointers
 const SEFieldChain DUMMY_FIELD_CHAIN = { &DUMMY_TYPE_1, &DUMMY_TYPE_2 };
 
-// Prepare the base ST, insert INT and FLOAT.
+// Prepare the base ST, insert VOID, INT and FLOAT.
 void SEPrepare() {
-  // INT and FLOAT will never be a variable, thus we can save them to the global ST.
-  // we don't use static variable because we want less trouble destroying the ST chain.
+  // Variables will never start with a space, thus we can save them to the global ST.
+  // We don't use static variables because we want less trouble destroying the ST stack.
+  STATIC_TYPE_VOID = (SEType *)malloc(sizeof(SEType));
+  STATIC_TYPE_VOID->kind = VOID;
+  STInsertBase(" void", STATIC_TYPE_VOID);
   STATIC_TYPE_INT = (SEType *)malloc(sizeof(SEType));
   STATIC_TYPE_INT->kind = BASIC;
   STATIC_TYPE_INT->basic = INT;
-  STInsertBase("int", STATIC_TYPE_INT);
+  STInsertBase(" int", STATIC_TYPE_INT);
   STATIC_TYPE_FLOAT = (SEType *)malloc(sizeof(SEType));
   STATIC_TYPE_FLOAT->kind = BASIC;
   STATIC_TYPE_FLOAT->basic = FLOAT;
-  STInsertBase("float", STATIC_TYPE_FLOAT);
+  STInsertBase(" float", STATIC_TYPE_FLOAT);
 }
 
 // Parse an expression. Only one type so we don't need a chain.
+// NO MALLOC ALLOWED when parsing expression to avoid memory leak.
+#define malloc(s) NO_MALLOC_ALLOWED_GCC_PLEASE_PANIC(s)
 SEType *SEParseExp(STNode *exp) {
   Assert(exp, "exp is null");
   Assert(!strcmp(exp->name, "Exp"), "not an exp");
@@ -155,6 +161,7 @@ SEType *SEParseExp(STNode *exp) {
   Panic("Should not reach here");
   return NULL;
 }
+#undef malloc
 
 // Parse a specifier. Only one type so we don't need a chain.
 SEType *SEParseSpecifier(STNode *specifier) {
@@ -241,6 +248,7 @@ SEType *SEParseSpecifier(STNode *specifier) {
  * */
 // Parse a definition list. Return a field chain.
 SEFieldChain SEParseDefList(STNode *list, bool assignable) {
+  Assert(!strcmp(list->name, "DefList"), "not a def list");
   SEFieldChain chain = SEParseDef(list->child, assignable);
   if (!list->child->next->empty) {
     SEFieldChain tail = SEParseDefList(list->child->next, assignable);
@@ -254,12 +262,14 @@ SEFieldChain SEParseDefList(STNode *list, bool assignable) {
 
 // Parse a single definition. Return a field chain.
 SEFieldChain SEParseDef(STNode *def, bool assignable) {
+  Assert(!strcmp(def->name, "Def"), "not a def");
   SEType *type = SEParseSpecifier(def->child);
   return SEParseDecList(def->child->next, type, assignable);
 }
 
 // Parse a declaration list. Return a field chain.
 SEFieldChain SEParseDecList(STNode *list, SEType *type, bool assignable) {
+  Assert(!strcmp(list->name, "DecList"), "not a dec list");
   SEFieldChain chain = SEParseDec(list->child, type, assignable);
   if (list->child->next) {
     SEFieldChain tail = SEParseDecList(list->child->next->next, type, assignable);
@@ -273,6 +283,7 @@ SEFieldChain SEParseDecList(STNode *list, SEType *type, bool assignable) {
 
 // Parse a single declaration Return a field chain.
 SEFieldChain SEParseDec(STNode *dec, SEType *type, bool assignable) {
+  Assert(!strcmp(dec->name, "Dec"), "not a dec");
   // We don't care about the chain, but we need the type!!
   SEFieldChain chain = SEParseVarDec(dec->child, type, assignable);
   if (dec->child->next != NULL) { // check assignment
@@ -289,6 +300,7 @@ SEFieldChain SEParseDec(STNode *dec, SEType *type, bool assignable) {
 
 // Parse a variable declaration. Return a field chain.
 SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
+  Assert(!strcmp(var->name, "VarDec"), "not a var dec");
   if (var->child->next) {
     // VarDec LB INT RB
     SEType *arrayType = (SEType *)malloc(sizeof(SEType));
@@ -318,6 +330,7 @@ SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
 }
 
 SEFieldChain SEParseArgs(STNode *args) {
+  Assert(!strcmp(args->name, "Args"), "not an args");
   SEType *type = SEParseExp(args->child);
   SEField *field = (SEField *)malloc(sizeof(SEField));
   field->name = NULL;

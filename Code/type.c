@@ -73,11 +73,11 @@ SEType *SEParseExp(STNode *exp) {
     case FLOAT: {
       return e1->token == INT ? STATIC_TYPE_INT : STATIC_TYPE_FLOAT;
     }
-    default: { // Exp ??
+    default: {
       SEType *t1 = SEParseExp(e1);
       switch (e2->token) {
         case LB: {
-          // Exp LB Exp RB
+          CLog(FG_CYAN, "Exp LB Exp RB");
           if (t1->kind != ARRAY) {
             throwErrorS(SE_ACCESS_TO_NON_ARRAY, e2);
             return t1;
@@ -89,7 +89,7 @@ SEType *SEParseExp(STNode *exp) {
           return t1->array.elem;
         }
         case DOT: {
-          // Exp DOT ID
+          CLog(FG_CYAN, "Exp DOT ID");
           if (t1->kind != STRUCTURE) {
             throwErrorS(SE_ACCESS_TO_NON_STRUCT, e2);
             return t1;
@@ -104,7 +104,8 @@ SEType *SEParseExp(STNode *exp) {
               field = field->next;
             }
             if (type == NULL) {
-              type = STATIC_TYPE_INT;
+              throwErrorS(SE_STRUCT_FIELD_UNDEFINED, e3);
+              type = STATIC_TYPE_INT; // treat as INT
             }
             return type;
           }
@@ -133,7 +134,7 @@ SEType *SEParseExp(STNode *exp) {
           return STATIC_TYPE_INT; // always return INT
         }
         case RELOP: {
-          // Exp RELOP Exp
+          CLog(FG_CYAN, "Exp RELOP Exp");
           SEType *t2 = SEParseExp(e3);
           if (!SECompareType(t1, t2)) {
             throwErrorS(SE_MISMATCHED_OPERANDS, e2);
@@ -141,7 +142,7 @@ SEType *SEParseExp(STNode *exp) {
           return STATIC_TYPE_INT; // always return INT
         }
         default: {
-          // Exp PLUS/MINUS/STAR/DIV Exp
+          CLog(FG_CYAN, "Exp PLUS/MINUS/STAR/DIV Exp");
           SEType *t2 = SEParseExp(e3);
           if (!SECompareType(t1, t2)) {
             throwErrorS(SE_MISMATCHED_OPERANDS, e2);

@@ -99,6 +99,7 @@ ExtDefList: ExtDef ExtDefList
   ;
 ExtDef: Specifier ExtDecList SEMI
   | Specifier SEMI
+  | Specifier FunDec SEMI
   | Specifier FunDec CompSt
   | error SEMI
   | error FunDec CompSt

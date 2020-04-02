@@ -270,7 +270,7 @@ void SEParseStmtList(STNode *list, SEType *type) {
 // NO MALLOC ALLOWED when parsing statement list to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_STMT(s)
 void SEParseStmt(STNode *stmt, SEType *type) {
-  AssertSTNode(stmt, "stmt");
+  AssertSTNode(stmt, "Stmt");
   if (stmt->child->next == NULL) {
     STPushStack();
     SEParseCompSt(stmt->child, type);

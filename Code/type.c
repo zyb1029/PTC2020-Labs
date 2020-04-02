@@ -11,9 +11,12 @@
 SEType *STATIC_TYPE_INT   = NULL;
 SEType *STATIC_TYPE_FLOAT = NULL;
 
+SEField DUMMY_TYPE_1, DUMMY_TYPE_2; // remedy for NULL pointers
+const SEFieldChain DUMMY_FIELD_CHAIN = { &DUMMY_TYPE_1, &DUMMY_TYPE_2 };
+
 void SEPrepare() {
-  // int and float will never be a variable,
-  // thus we can save them to the global ST.
+  // INT and FLOAT will never be a variable, thus we can save them to the global ST.
+  // we don't use static variable because we want less trouble destroying the ST chain.
   STATIC_TYPE_INT = (SEType *)malloc(sizeof(SEType));
   STATIC_TYPE_INT->kind = BASIC;
   STATIC_TYPE_INT->basic = INT;
@@ -163,7 +166,7 @@ SEType *SEParseSpecifier(STNode *specifier) {
       {
         STPushStack();
         type->kind = STRUCTURE;
-        type->structure = SEParseDefList(tag->next->next, false);
+        type->structure = SEParseDefList(tag->next->next, false).head;
         STPopStack();
       }
       if (structID != NULL) {
@@ -207,65 +210,86 @@ SEType *SEParseSpecifier(STNode *specifier) {
   return type; 
 }
 
-SEField *SEParseDefList(STNode *list, bool assignable) {
-  if (list->empty) return NULL;
-  SEField *tail = SEParseDefList(list->child->next, assignable);
-  SEField *field = SEParseDef(list->child, tail, assignable);
-  return field;
-}
-
-SEField *SEParseDef(STNode *def, SEField *tail, bool assignable) {
-  SEType *type = SEParseSpecifier(def->child);
-  SEField *field = SEParseDecList(def->child->next, type, tail, assignable);
-  return field;
-}
-
-SEField *SEParseDecList(STNode *list, SEType *type, SEField *tail, bool assignable) {
-  SEField *field = SEParseDec(list->child, type, assignable);
-  if (list->child->next) {
-    // Dec COMMA DecList
-    field->next = SEParseDecList(list->child->next->next, type, tail, assignable);
-  } else {
-    // Dec -> tail
-    field->next = tail;
+/**
+ * SEFieldChain is a struct of head and tail of the chain. 
+ *                chain
+ *   +-------------+-------------------+
+ *   |                                 |
+ * head -> head+1 -> ... -> tail-1 -> tail
+ * 
+ * If the node is a struct definition or a function signature,
+ * we will want the chain to store its into in ST. Otherwise,
+ * we do not care about what the chain contains at all.
+ * */
+SEFieldChain SEParseDefList(STNode *list, bool assignable) {
+  SEFieldChain chain = SEParseDef(list->child, assignable);
+  if (!list->child->next->empty) {
+    SEFieldChain tail = SEParseDefList(list->child->next, assignable);
+    if (!assignable) {
+      chain.tail->next = tail.head;
+    }
   }
-  return field;
+  return chain;
 }
 
-SEField *SEParseDec(STNode *dec, SEType *type, bool assignable) {
-  SEField *field = SEParseVarDec(dec->child, type);
-  if (dec->child->next != NULL) {
+SEFieldChain SEParseDef(STNode *def, bool assignable) {
+  SEType *type = SEParseSpecifier(def->child);
+  return SEParseDecList(def->child->next, type, assignable);
+}
+
+SEFieldChain SEParseDecList(STNode *list, SEType *type, bool assignable) {
+  SEFieldChain chain = SEParseDec(list->child, type, assignable);
+  if (list->child->next) {
+    SEFieldChain tail = SEParseDecList(list->child->next->next, type, assignable);
+    if (!assignable) {
+      chain.tail->next = tail.head;
+    }
+  }
+  return chain;
+}
+
+SEFieldChain SEParseDec(STNode *dec, SEType *type, bool assignable) {
+  // We don't care about the chain, but we need the type!!
+  SEFieldChain chain = SEParseVarDec(dec->child, type, assignable);
+  if (dec->child->next != NULL) { // check assignment
     if (!assignable) {
       throwErrorS(SE_STRUCT_FIELD_INITIALIZED, dec->child->next);
     }
     SEType *expType = SEParseExp(dec->child->next->next);
-    SEDumpType(field->type);
-    SEDumpType(expType);
-    if (!SECompareType(field->type, expType)) {
+    if (!SECompareType(chain.head->type, expType)) {
       throwErrorS(SE_MISMATCHED_ASSIGNMENT, dec->child->next);
     }
   }
-  STInsertCurr(field->name, field->type); // register in local scope
-  return field;
+  return chain;
 }
 
-SEField *SEParseVarDec(STNode *var, SEType *type) {
+SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
   if (var->child->next) {
     // VarDec LB INT RB
     SEType *arrayType = (SEType *)malloc(sizeof(SEType));
     arrayType->kind = ARRAY;
     arrayType->array.size = var->child->next->next->ival;
     arrayType->array.elem = type;
-    return SEParseVarDec(var->child, arrayType);
+    return SEParseVarDec(var->child, arrayType, assignable);
   } else {
-    // ID
-    SEField *field = (SEField *)malloc(sizeof(SEField));
-    field->name = var->child->sval;
-    field->type = type;
-    field->next = NULL;
-    CLog(FG_GREEN, "new variable \"%s\"", field->name);
-    return field;
+    // register ID in local scope
+    STInsertCurr(var->child->sval, type);
+    CLog(FG_GREEN, "new variable \"%s\"", var->child->sval);
+    if (assignable) {
+      // we don't care about the chain except the type
+      DUMMY_FIELD_CHAIN.head->type = type;
+      return DUMMY_FIELD_CHAIN;
+    } else {
+      SEFieldChain chain;
+      SEField *field = (SEField *)malloc(sizeof(SEField));
+      field->name = var->child->sval;
+      field->type = type;
+      field->next = NULL;
+      chain.head = chain.tail = field;
+      return chain; // chain of length 1
+    }
   }
+  Panic("should not reach here");
 }
 
 void SEDumpType(const SEType *type) {
@@ -315,43 +339,6 @@ bool SECompareType(const SEType *t1, const SEType *t2) {
   Panic("should not reach here");
   return false;
 }
-
-/** DEPRECATED!!!
-SEType *SECopyType(const SEType *type) {
-  SEType *ret = (SEType *)malloc(sizeof(SEType));
-  SEField *field = NULL, *head = NULL, *tail = NULL;
-  switch (type->kind) {
-    case BASIC:
-      ret->basic = type->basic;
-      break;
-    case ARRAY:
-      ret->array.size = type->array.size;
-      ret->array.elem = SECopyType(type->array.elem);
-      break;
-    case STRUCTURE:
-      field = type->structure;
-      while (field != NULL) {
-        tail = (SEField *)malloc(sizeof(SEField));
-        tail->name = field->name;
-        tail->type = SECopyType(field->type);
-        tail->next = NULL;
-        if (head == NULL) {
-          head = tail;
-          ret->structure = head;
-        } else {
-          head->next = tail;
-          head = tail;
-        }
-        field = field->next;
-      }
-      break;
-    case FUNCTION:
-    default:
-      Panic("not implemented");
-  }
-  return ret;
-}
-*/
 
 void SEDestroyType(SEType *type) {
   SEField *temp = NULL, *field = NULL;

@@ -43,6 +43,7 @@ void STPopStack() {
 }
 
 void STInsertBase(const char *id, SEType *type) {
+  Assert(type->kind != DUMMY, "insert DUMMY type");
   STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
   entry->id = id;
   entry->type = type;
@@ -51,6 +52,7 @@ void STInsertBase(const char *id, SEType *type) {
 }
 
 void STInsertCurr(const char *id, SEType *type) {
+  Assert(type->kind != DUMMY, "insert DUMMY type");
   STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
   entry->id = id;
   entry->type = type;

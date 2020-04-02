@@ -37,15 +37,22 @@ typedef struct SEField {
   struct SEField *next;
 } SEField;
 
+typedef struct SEFieldChain {
+  struct SEField *head;
+  struct SEField *tail;
+} SEFieldChain;
+
 void SEPrepare();
 
 SEType *SEParseExp(STNode *exp);
 SEType *SEParseSpecifier(STNode *specifier);
-SEField *SEParseDefList(STNode *list, bool assignable);
-SEField *SEParseDef(STNode *def, SEField *tail, bool assignable);
-SEField *SEParseDecList(STNode *list, SEType *type, SEField *tail, bool assignable);
-SEField *SEParseDec(STNode *dec, SEType *type, bool assignable);
-SEField *SEParseVarDec(STNode *var, SEType *type);
+
+// assignable == function signature, or struct definition
+SEFieldChain SEParseDefList(STNode *list, bool assignable);
+SEFieldChain SEParseDef(STNode *def, bool assignable);
+SEFieldChain SEParseDecList(STNode *list, SEType *type, bool assignable);
+SEFieldChain SEParseDec(STNode *dec, SEType *type, bool assignable);
+SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable);
 
 void SEDumpType(const SEType *type);
 bool SECompareType(const SEType *t1, const SEType *t2);

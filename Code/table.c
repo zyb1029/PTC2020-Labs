@@ -15,6 +15,7 @@ void STPrepare() {
   baseStack->root = NULL;
   baseStack->prev = NULL;
   currStack = baseStack;
+  Log("Base ST at %p", baseStack);
   SEPrepare();
 }
 
@@ -22,33 +23,38 @@ void STDestroy() {
   while (currStack != NULL) STPopStack();
 }
 
+// Create a new syntax table and push it into chain.
 void STPushStack() {
   STStack *top = (STStack *)malloc(sizeof(STStack));
+  Log("Push ST %p", top);
   top->root = NULL;
   top->prev = currStack;
   currStack = top;
 }
 
+// Pop the last syntax table in chain and destroy it.
 void STPopStack() {
+  if (currStack == NULL) return;
   STStack *temp = currStack;
+  Log("Pop ST %p", temp);
   currStack = currStack->prev;
   RBDestroy(&(temp->root), STRBDestroy);
   free(temp);
 }
 
 void STInsertBase(const char *id, SEType *type) {
-  Log("Insert to base ST: %d", type->kind);
   STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
   entry->id = id;
   entry->type = type;
+  Log("Insert to base ST: %p %p", entry, type);
   RBInsert(&(baseStack->root), (void *)entry, STRBCompare);
 }
 
 void STInsertCurr(const char *id, SEType *type) {
-  Log("Insert to curr ST: %d", type->kind);
   STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
   entry->id = id;
   entry->type = type;
+  Log("Insert to curr ST: %p %p", entry, type);
   RBInsert(&(currStack->root), (void *)entry, STRBCompare);
 }
 
@@ -92,5 +98,7 @@ int STRBCompare(const void *p1, const void *p2) {
 }
 
 void STRBDestroy(void *p) {
-  SEDestroyType((SEType *)p);
+  Log("Destroy from ST: %p %p", p, ((STEntry *)p)->type);
+  SEDestroyType(((STEntry *)p)->type);
+  free(p);
 }

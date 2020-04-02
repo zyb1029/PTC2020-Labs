@@ -21,7 +21,7 @@ void SEPrepare() {
   STATIC_TYPE_FLOAT = (SEType *)malloc(sizeof(SEType));
   STATIC_TYPE_FLOAT->kind = BASIC;
   STATIC_TYPE_FLOAT->basic = FLOAT;
-  STInsertBase("float", STATIC_TYPE_INT);
+  STInsertBase("float", STATIC_TYPE_FLOAT);
 }
 
 SEType *SEParseExp(STNode *exp) {

@@ -259,7 +259,7 @@ void RBDeleteNode(RBNode **root, RBNode *node) {
 }
 
 void RBInsert(RBNode **root, void *value, int (*cmp)(const void *, const void *)) {
-  if (!root) return;
+  if (!root) return; // *root == NULL means empty tree
   RBNode *node = (RBNode *)malloc(sizeof(RBNode));
   node->value = value;
   node->color = RED;
@@ -284,7 +284,7 @@ void RBInsert(RBNode **root, void *value, int (*cmp)(const void *, const void *)
 }
 
 RBNode *RBSearch(RBNode **root, void *value, int (*cmp)(const void *, const void *)) {
-  if (!root) return NULL;
+  if (!root || !*root) return NULL;
   RBNode *cur = *root;
   while (cur != NULL) {
     int result = cmp(value, cur->value);
@@ -316,9 +316,10 @@ void RBDelete(RBNode **root, void *value, int (*cmp)(const void *, const void *)
 }
 
 void RBDestroy(RBNode **root, void (*destroy)(void *)) {
-  if ((*root)->left)  RBDestroy(&(*root)->left,  destroy);
-  if ((*root)->right) RBDestroy(&(*root)->right, destroy);
+  if (!root || !*root) return;
+  if ((*root)->left)  RBDestroy(&((*root)->left),  destroy);
+  if ((*root)->right) RBDestroy(&((*root)->right), destroy);
   destroy((*root)->value);
   free(*root);
-  root = NULL;
+  *root = NULL;
 }

@@ -250,7 +250,10 @@ SEType *SEParseSpecifier(STNode *specifier) {
 #define malloc(s) NO_MALLOC_ALLOWED_COMPST(s)
 void SEParseCompSt(STNode *comp, SEType *type) {
   AssertSTNode(comp, "CompSt");
-  Panic("not implemented");
+  // We do not need to push/pop stack, that should be done by the CALLER.
+  // CompSt -> LC DefList StmtList RC
+  SEParseDefList(comp->child->next, true);
+  SEParseStmtList(comp->child->next->next, type);
 }
 #undef malloc
 

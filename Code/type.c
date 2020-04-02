@@ -251,7 +251,7 @@ SEType *SEParseSpecifier(STNode *specifier) {
  * we do not care about what the chain contains at all.
  * */
 // Parse a definition list. Return a field chain.
-// NO MALLOC ALLOWED when parsing expression to avoid memory leak.
+// NO MALLOC ALLOWED when parsing definition list to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_DEF_LIST(s)
 SEFieldChain SEParseDefList(STNode *list, bool assignable) {
   Assert(!strcmp(list->name, "DefList"), "not a def list");
@@ -268,7 +268,7 @@ SEFieldChain SEParseDefList(STNode *list, bool assignable) {
 #undef malloc
 
 // Parse a single definition. Return a field chain.
-// NO MALLOC ALLOWED when parsing expression to avoid memory leak.
+// NO MALLOC ALLOWED when parsing definition to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_DEF(s)
 SEFieldChain SEParseDef(STNode *def, bool assignable) {
   Assert(!strcmp(def->name, "Def"), "not a def");
@@ -278,7 +278,7 @@ SEFieldChain SEParseDef(STNode *def, bool assignable) {
 #undef malloc
 
 // Parse a declaration list. Return a field chain.
-// NO MALLOC ALLOWED when parsing expression to avoid memory leak.
+// NO MALLOC ALLOWED when parsing declaration list to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_DEC_LIST(s)
 SEFieldChain SEParseDecList(STNode *list, SEType *type, bool assignable) {
   Assert(!strcmp(list->name, "DecList"), "not a dec list");
@@ -294,8 +294,8 @@ SEFieldChain SEParseDecList(STNode *list, SEType *type, bool assignable) {
 }
 #undef malloc
 
-// Parse a single declaration Return a field chain.
-// NO MALLOC ALLOWED when parsing expression to avoid memory leak.
+// Parse a single declaration. Return a field chain.
+// NO MALLOC ALLOWED when parsing declaration to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_DEC(s)
 SEFieldChain SEParseDec(STNode *dec, SEType *type, bool assignable) {
   Assert(!strcmp(dec->name, "Dec"), "not a dec");
@@ -345,6 +345,7 @@ SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
   Panic("should not reach here");
 }
 
+// Parse arguments list. Return a field chain.
 SEFieldChain SEParseArgs(STNode *args) {
   Assert(!strcmp(args->name, "Args"), "not an args");
   SEType *type = SEParseExp(args->child);

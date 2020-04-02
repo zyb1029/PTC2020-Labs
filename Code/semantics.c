@@ -32,7 +32,7 @@ const STError SETable[] = {
   { 19,  true, "Inconsistent declaration of function ", "" },
 };
 
-// main entry of semantic scan
+// Main entry of semantic scan
 void semanticScan() {
   CLog(FG_YELLOW, "Before prepare");
   STPrepare();
@@ -43,6 +43,7 @@ void semanticScan() {
   CLog(FG_YELLOW, "After destroy");
 }
 
+// Parse and check semantics of the current node.
 void checkSemantics(STNode *node, STNode *parent) {
   if (node->empty) return;
   if (!strcmp(node->name, "DefList")) {
@@ -56,6 +57,7 @@ void checkSemantics(STNode *node, STNode *parent) {
   }
 }
 
+// Throw an semantic error.
 void throwErrorS(enum SemanticErrors id, STNode *node) {
   Assert(!SETable[id].showID || node, "node is NULL for error %d", id);
   hasErrorS = true;

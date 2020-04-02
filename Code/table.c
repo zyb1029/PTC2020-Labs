@@ -9,8 +9,8 @@
 STStack *baseStack = NULL;
 STStack *currStack = NULL;
 
+// Prepare the base (global) symbol table.
 void STPrepare() {
-  // prepare the base stack
   baseStack = (STStack *)malloc(sizeof(STStack));
   baseStack->root = NULL;
   baseStack->prev = NULL;
@@ -19,6 +19,7 @@ void STPrepare() {
   SEPrepare();
 }
 
+// Destroy all symbol tables in system.
 void STDestroy() {
   while (currStack != NULL) STPopStack();
 }
@@ -42,6 +43,7 @@ void STPopStack() {
   free(temp);
 }
 
+// Insert a symbol into base (global) ST.
 void STInsertBase(const char *id, SEType *type) {
   STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
   entry->id = id;
@@ -50,6 +52,7 @@ void STInsertBase(const char *id, SEType *type) {
   RBInsert(&(baseStack->root), (void *)entry, STRBCompare);
 }
 
+// Insert a symbol into current (local) ST.
 void STInsertCurr(const char *id, SEType *type) {
   STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
   entry->id = id;
@@ -58,6 +61,7 @@ void STInsertCurr(const char *id, SEType *type) {
   RBInsert(&(currStack->root), (void *)entry, STRBCompare);
 }
 
+// Search a symbol name in all STs.
 STEntry *STSearch(const char *id) {
   STEntry target;
   target.id = id;
@@ -72,18 +76,21 @@ STEntry *STSearch(const char *id) {
   return result;
 }
 
+// Search a symbol name in base (global) ST.
 STEntry *STSearchBase(const char *id) {
   STEntry target;
   target.id = id;
   return STSearchAt(baseStack, &target);
 }
 
+// Search a symbol name in current (local) ST.
 STEntry *STSearchCurr(const char *id) {
   STEntry target;
   target.id = id;
   return STSearchAt(currStack, &target);
 }
 
+// Search a symbol ENTRY in a specified ST **inner function**.
 STEntry *STSearchAt(STStack *stack, STEntry *target) {
   RBNode *candidate = RBSearch(&(stack->root), target, STRBCompare);
   if (candidate && !STRBCompare(candidate->value, target)) {
@@ -93,10 +100,12 @@ STEntry *STSearchAt(STStack *stack, STEntry *target) {
   }
 }
 
+// Compare two ST entries.
 int STRBCompare(const void *p1, const void *p2) {
   return strcmp(((const STEntry *)p1)->id, ((const STEntry *)p2)->id);
 }
 
+// Destroy an ST entry.
 void STRBDestroy(void *p) {
   Log("Destroy from ST: %p %p", p, ((STEntry *)p)->type);
   SEDestroyType(((STEntry *)p)->type);

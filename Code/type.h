@@ -9,6 +9,7 @@
 #include <stdbool.h>
 
 enum SEBasicType {
+  VOID,
   BASIC,
   ARRAY,
   STRUCTURE,
@@ -28,6 +29,11 @@ typedef struct SEType {
       struct SEType *elem;
     } array;
     struct SEField *structure;
+    struct {
+      bool defined;
+      struct SEType *type;
+      struct SEField *signature;
+    } function;
   };
 } SEType;
 
@@ -53,10 +59,11 @@ SEFieldChain SEParseDef(STNode *def, bool assignable);
 SEFieldChain SEParseDecList(STNode *list, SEType *type, bool assignable);
 SEFieldChain SEParseDec(STNode *dec, SEType *type, bool assignable);
 SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable);
+SEFieldChain SEParseArgs(STNode *args);
 
 void SEDumpType(const SEType *type);
 bool SECompareType(const SEType *t1, const SEType *t2);
-//SEType *SECopyType(const SEType *type);
+bool SECompareField(const SEField *f1, const SEField *f2);
 void SEDestroyType(SEType *type);
 
 #endif // SE_TYPE_H

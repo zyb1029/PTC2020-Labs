@@ -14,6 +14,7 @@ SEType *STATIC_TYPE_FLOAT = NULL;
 SEField DUMMY_TYPE_1, DUMMY_TYPE_2; // remedy for NULL pointers
 const SEFieldChain DUMMY_FIELD_CHAIN = { &DUMMY_TYPE_1, &DUMMY_TYPE_2 };
 
+// Prepare the base ST, insert INT and FLOAT.
 void SEPrepare() {
   // INT and FLOAT will never be a variable, thus we can save them to the global ST.
   // we don't use static variable because we want less trouble destroying the ST chain.
@@ -27,6 +28,7 @@ void SEPrepare() {
   STInsertBase("float", STATIC_TYPE_FLOAT);
 }
 
+// Parse an expression. Only one type so we don't need a chain.
 SEType *SEParseExp(STNode *exp) {
   Assert(exp, "exp is null");
   Assert(!strcmp(exp->name, "Exp"), "not an exp");
@@ -50,7 +52,21 @@ SEType *SEParseExp(STNode *exp) {
         }
       } else {
         // function call
-        Panic("Not implemented!");
+        STEntry *entry = STSearch(e1->sval);
+        if (entry == NULL) {
+          // undefined function, treat as int
+          throwErrorS(SE_FUNCTION_UNDEFINED, e1);
+          return STATIC_TYPE_INT;
+        } else if (entry->type->kind != FUNCTION) {
+          // call to a non-function variable
+          throwErrorS(SE_ACCESS_TO_NON_FUNCTION, e1); // same as gcc
+          return STATIC_TYPE_INT;
+        }
+        SEField *signature = SEParseArgs(e3).head;
+        if (!SECompareField(entry->type->function.signature, signature)) {
+          throwErrorS(SE_FUNCTION_CONFLICTING_SIGNATURE, e3);
+        }
+        return entry->type->function.type;
       }
       break;
     case INT:
@@ -139,6 +155,7 @@ SEType *SEParseExp(STNode *exp) {
   return NULL;
 }
 
+// Parse a specifier. Only one type so we don't need a chain.
 SEType *SEParseSpecifier(STNode *specifier) {
   Assert(specifier, "specifier is null");
   Assert(specifier->next, "specifier at the end");
@@ -221,33 +238,39 @@ SEType *SEParseSpecifier(STNode *specifier) {
  * we will want the chain to store its into in ST. Otherwise,
  * we do not care about what the chain contains at all.
  * */
+// Parse a definition list. Return a field chain.
 SEFieldChain SEParseDefList(STNode *list, bool assignable) {
   SEFieldChain chain = SEParseDef(list->child, assignable);
   if (!list->child->next->empty) {
     SEFieldChain tail = SEParseDefList(list->child->next, assignable);
     if (!assignable) {
       chain.tail->next = tail.head;
+      chain.tail = tail.tail;
     }
   }
   return chain;
 }
 
+// Parse a single definition. Return a field chain.
 SEFieldChain SEParseDef(STNode *def, bool assignable) {
   SEType *type = SEParseSpecifier(def->child);
   return SEParseDecList(def->child->next, type, assignable);
 }
 
+// Parse a declaration list. Return a field chain.
 SEFieldChain SEParseDecList(STNode *list, SEType *type, bool assignable) {
   SEFieldChain chain = SEParseDec(list->child, type, assignable);
   if (list->child->next) {
     SEFieldChain tail = SEParseDecList(list->child->next->next, type, assignable);
     if (!assignable) {
       chain.tail->next = tail.head;
+      chain.tail = tail.tail;
     }
   }
   return chain;
 }
 
+// Parse a single declaration Return a field chain.
 SEFieldChain SEParseDec(STNode *dec, SEType *type, bool assignable) {
   // We don't care about the chain, but we need the type!!
   SEFieldChain chain = SEParseVarDec(dec->child, type, assignable);
@@ -263,6 +286,7 @@ SEFieldChain SEParseDec(STNode *dec, SEType *type, bool assignable) {
   return chain;
 }
 
+// Parse a variable declaration. Return a field chain.
 SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
   if (var->child->next) {
     // VarDec LB INT RB
@@ -292,6 +316,22 @@ SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
   Panic("should not reach here");
 }
 
+SEFieldChain SEParseArgs(STNode *args) {
+  SEType *type = SEParseExp(args->child);
+  SEField *field = (SEField *)malloc(sizeof(SEField));
+  field->name = NULL;
+  field->type = type;
+  field->next = NULL;
+  SEFieldChain chain = { field, field };
+  if (args->child->next) {
+    SEFieldChain tail = SEParseArgs(args->child->next->next);
+    chain.tail->next = tail.head;
+    chain.tail = tail.tail;
+  }
+  return chain;
+}
+
+// Print the info of the type.
 void SEDumpType(const SEType *type) {
 #ifdef DEBUG
   switch (type->kind) {
@@ -314,6 +354,7 @@ void SEDumpType(const SEType *type) {
 #endif
 }
 
+// Compare two types, return true if they are same.
 bool SECompareType(const SEType *t1, const SEType *t2) {
   if (t1->kind != t2->kind) return false;
   SEField *f1 = NULL, *f2 = NULL;
@@ -324,15 +365,10 @@ bool SECompareType(const SEType *t1, const SEType *t2) {
       if (t1->array.size != t2->array.size) return false;
       return SECompareType(t1->array.elem, t2->array.elem);
     case STRUCTURE:
-      f1 = t1->structure;
-      f2 = t2->structure;
-      while (f1 != NULL && f2 != NULL) {
-        if (!SECompareType(f1->type, f2->type)) return false;
-        f1 = f1->next;
-        f2 = f2->next;
-      }
-      return f1 == NULL && f2 == NULL;
+      return SECompareField(t1->structure, t2->structure);
     case FUNCTION:
+      return SECompareType(t1->function.type, t2->function.type)
+          && SECompareField(t1->function.signature, t2->function.signature);
     default:
       Panic("not implemented");
   }
@@ -340,6 +376,17 @@ bool SECompareType(const SEType *t1, const SEType *t2) {
   return false;
 }
 
+// Compare two field chains, return true if they are same.
+bool SECompareField(const SEField *f1, const SEField *f2) {
+  while (f1 != NULL && f2 != NULL) {
+    if (!SECompareType(f1->type, f2->type)) return false;
+    f1 = f1->next;
+    f2 = f2->next;
+  }
+  return f1 == NULL && f2 == NULL;
+}
+
+// Destroy the type in memory until INT or FLOAT is met
 void SEDestroyType(SEType *type) {
   SEField *temp = NULL, *field = NULL;
   switch (type->kind) {

@@ -8,6 +8,14 @@
 #define DEBUG
 #include "debug.h"
 
+#ifdef DEBUG
+#define AssertSTNode(node, str) \
+  Assert(node, "node is null"); \
+  Assert(!strcmp(node->name, str), "not a " str);
+#else
+#define AssertSTNode(node, str)
+#endif
+
 SEType *STATIC_TYPE_VOID  = NULL;
 SEType *STATIC_TYPE_INT   = NULL;
 SEType *STATIC_TYPE_FLOAT = NULL;
@@ -38,8 +46,7 @@ void SEPrepare() {
 // NO MALLOC ALLOWED when parsing expression to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_EXP(s)
 SEType *SEParseExp(STNode *exp) {
-  Assert(exp, "exp is null");
-  Assert(!strcmp(exp->name, "Exp"), "not an exp");
+  AssertSTNode(exp, "Exp");
   STNode *e1 = exp->child;
   STNode *e2 = e1 ? e1->next : NULL;
   STNode *e3 = e2 ? e2->next : NULL;
@@ -169,9 +176,8 @@ SEType *SEParseExp(STNode *exp) {
 
 // Parse a specifier. Only one type so we don't need a chain.
 SEType *SEParseSpecifier(STNode *specifier) {
-  Assert(specifier, "specifier is null");
+  AssertSTNode(specifier, "Specifier");
   Assert(specifier->next, "specifier at the end");
-  Assert(!strcmp(specifier->name, "Specifier"), "not a specifier");
   STNode *child = specifier->child;
   SEType *type = (SEType *)malloc(sizeof(SEType));
   if (child->token == TYPE) {
@@ -239,6 +245,79 @@ SEType *SEParseSpecifier(STNode *specifier) {
   return type; 
 }
 
+// Parse a composed statement list and check for RETURN statements.
+// NO MALLOC ALLOWED when parsing compst to avoid memory leak.
+#define malloc(s) NO_MALLOC_ALLOWED_COMPST(s)
+void SEParseCompSt(STNode *comp, SEType *type) {
+  AssertSTNode(comp, "CompSt");
+  Panic("not implemented");
+}
+#undef malloc
+
+// Parse a statement list and check for RETURN statements.
+// NO MALLOC ALLOWED when parsing statement list to avoid memory leak.
+#define malloc(s) NO_MALLOC_ALLOWED_STMT_LIST(s)
+void SEParseStmtList(STNode *list, SEType *type) {
+  AssertSTNode(list, "StmtList");
+  SEParseStmt(list->child, type);
+  if (!list->child->next->empty) {
+    SEParseStmtList(list->child->next, type);
+  }
+}
+#undef malloc
+
+// Parse a single statement and check for RETURN statements.
+// NO MALLOC ALLOWED when parsing statement list to avoid memory leak.
+#define malloc(s) NO_MALLOC_ALLOWED_STMT(s)
+void SEParseStmt(STNode *stmt, SEType *type) {
+  AssertSTNode(stmt, "stmt");
+  if (stmt->child->next == NULL) {
+    STPushStack();
+    SEParseCompSt(stmt->child, type);
+    STPopStack();
+    return;
+  } else {
+    switch (stmt->child->token) {
+      case RETURN: { // RETURN Exp SEMI
+        SEType *ret = SEParseExp(stmt->child->next);
+        if (!SECompareType(type, ret)) {
+          throwErrorS(SE_MISMATCHED_RETURN, stmt->child);
+        }
+        return;
+      }
+      case IF: { // IF LP Exp RP Stmt [ELSE Stmt]
+        STNode *enode = stmt->child->next->next;
+        STNode *snode = enode->next->next;
+        SEType *etype = SEParseExp(enode);
+        if (!SECompareType(etype, STATIC_TYPE_INT)) {
+          throwErrorS(SE_MISMATCHED_OPERANDS, enode);
+        }
+        SEParseStmt(snode, type);
+        if (snode->next) {
+          SEParseStmt(snode->next->next, type);
+        }
+        return;
+      }
+      case WHILE: { // WHILE LP Exp RP Stmt
+        STNode *enode = stmt->child->next->next;
+        STNode *snode = enode->next->next;
+        SEType *etype = SEParseExp(enode);
+        if (!SECompareType(etype, STATIC_TYPE_INT)) {
+          throwErrorS(SE_MISMATCHED_OPERANDS, enode);
+        }
+        SEParseStmt(snode, type);
+        return;
+      }
+      default: { // Exp SEMI
+        SEParseExp(stmt->child);
+        return;
+      }
+    }
+  }
+  Panic("should not reach here");
+}
+#undef malloc
+
 /**
  * SEFieldChain is a struct of head and tail of the chain. 
  *                chain
@@ -254,7 +333,7 @@ SEType *SEParseSpecifier(STNode *specifier) {
 // NO MALLOC ALLOWED when parsing definition list to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_DEF_LIST(s)
 SEFieldChain SEParseDefList(STNode *list, bool assignable) {
-  Assert(!strcmp(list->name, "DefList"), "not a def list");
+  AssertSTNode(list, "DefList");
   SEFieldChain chain = SEParseDef(list->child, assignable);
   if (!list->child->next->empty) {
     SEFieldChain tail = SEParseDefList(list->child->next, assignable);
@@ -271,7 +350,7 @@ SEFieldChain SEParseDefList(STNode *list, bool assignable) {
 // NO MALLOC ALLOWED when parsing definition to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_DEF(s)
 SEFieldChain SEParseDef(STNode *def, bool assignable) {
-  Assert(!strcmp(def->name, "Def"), "not a def");
+  AssertSTNode(def, "Def");
   SEType *type = SEParseSpecifier(def->child);
   return SEParseDecList(def->child->next, type, assignable);
 }
@@ -281,7 +360,7 @@ SEFieldChain SEParseDef(STNode *def, bool assignable) {
 // NO MALLOC ALLOWED when parsing declaration list to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_DEC_LIST(s)
 SEFieldChain SEParseDecList(STNode *list, SEType *type, bool assignable) {
-  Assert(!strcmp(list->name, "DecList"), "not a dec list");
+  AssertSTNode(list, "DecList");
   SEFieldChain chain = SEParseDec(list->child, type, assignable);
   if (list->child->next) {
     SEFieldChain tail = SEParseDecList(list->child->next->next, type, assignable);
@@ -298,7 +377,7 @@ SEFieldChain SEParseDecList(STNode *list, SEType *type, bool assignable) {
 // NO MALLOC ALLOWED when parsing declaration to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_DEC(s)
 SEFieldChain SEParseDec(STNode *dec, SEType *type, bool assignable) {
-  Assert(!strcmp(dec->name, "Dec"), "not a dec");
+  AssertSTNode(dec, "Dec");
   // We don't care about the chain, but we need the type!!
   SEFieldChain chain = SEParseVarDec(dec->child, type, assignable);
   if (dec->child->next != NULL) { // check assignment
@@ -316,7 +395,7 @@ SEFieldChain SEParseDec(STNode *dec, SEType *type, bool assignable) {
 
 // Parse a variable declaration. Return a field chain.
 SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
-  Assert(!strcmp(var->name, "VarDec"), "not a var dec");
+  AssertSTNode(var, "VarDec");
   if (var->child->next) {
     // VarDec LB INT RB
     SEType *arrayType = (SEType *)malloc(sizeof(SEType));
@@ -347,7 +426,7 @@ SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
 
 // Parse arguments list. Return a field chain.
 SEFieldChain SEParseArgs(STNode *args) {
-  Assert(!strcmp(args->name, "Args"), "not an args");
+  AssertSTNode(args, "Args");
   SEType *type = SEParseExp(args->child);
   SEField *field = (SEField *)malloc(sizeof(SEField));
   field->name = NULL;

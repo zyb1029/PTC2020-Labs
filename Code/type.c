@@ -214,14 +214,15 @@ SEType *SEParseSpecifier(STNode *specifier) {
       }
     } else {
       // STRUCT Tag
-      STEntry *entry = STSearch(tag->sval);
+      const char *name = tag->child->sval;
+      STEntry *entry = STSearch(name);
       if (entry == NULL) {
         if (specifier->next->token == SEMI) {
           // only declare the struct
-          Log("Declare struct %s", tag->sval);
+          CLog(FG_GREEN, "dec structure %s", name);
           type->kind = STRUCTURE;
           type->structure = NULL;
-          STInsertBase(tag->sval, type); // global scope
+          STInsertBase(name, type); // global scope
         } else {
           // undefined struct, treat as INT
           throwErrorS(SE_STRUCT_UNDEFINED, tag->child);

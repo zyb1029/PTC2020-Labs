@@ -43,7 +43,6 @@ void SEPrepare() {
 }
 
 // Parse an expression. Only one type so we don't need a chain.
-// NO MALLOC ALLOWED when parsing expression to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_EXP(s)
 SEType *SEParseExp(STNode *exp) {
   AssertSTNode(exp, "Exp");
@@ -245,8 +244,63 @@ SEType *SEParseSpecifier(STNode *specifier) {
   return type; 
 }
 
+// Parse an ext-definition list.
+#define malloc(s) NO_MALLOC_ALLOWED_EXT_DEF_LIST(s)
+void SEParseExtDefList(STNode *list) {
+  AssertSTNode(list, "ExtDefList");
+  Panic("Not implemented!");
+}
+#undef malloc
+
+// Parse an ext-definition.
+#define malloc(s) NO_MALLOC_ALLOWED_EXT_DEF(s)
+void SEParseExtDef(STNode *edef) {
+  AssertSTNode(edef, "ExtDef");
+  Panic("Not implemented!");
+}
+#undef malloc
+
+// Parse an ext-declaration list.
+#define malloc(s) NO_MALLOC_ALLOWED_EXT_DEC_LIST(s)
+void SEParseExtDecList(STNode *list, SEType *type) {
+  AssertSTNode(list, "ExtDecList");
+  Panic("Not implemented!");
+}
+#undef malloc
+
+// Parse an ext-declaration.
+#define malloc(s) NO_MALLOC_ALLOWED_EXT_DEC(s)
+void SEParseExtDec(STNode *edec, SEType *type) {
+  AssertSTNode(edec, "ExtDec");
+  Panic("Not implemented!");
+}
+#undef malloc
+
+// Parse a function declaration.
+#define malloc(s) NO_MALLOC_ALLOWED_FUN_DEC(s)
+void SEParseFunDec(STNode *fdec, SEType *type) {
+  AssertSTNode(fdec, "FunDec");
+  Panic("Not implemented!");
+}
+#undef malloc
+
+// Parse a variable list.
+#define malloc(s) NO_MALLOC_ALLOWED_VAR_LIST(s)
+void SEParseVarList(STNode *list) {
+  AssertSTNode(list, "VarList");
+  Panic("Not implemented!");
+}
+#undef malloc
+
+// Parse a parameter declaration.
+#define malloc(s) NO_MALLOC_ALLOWED_PARAM_DEC(s)
+void SEParseParamDec(STNode *pdec) {
+  AssertSTNode(pdec, "ParamDec");
+  Panic("Not implemented!");
+}
+#undef malloc
+
 // Parse a composed statement list and check for RETURN statements.
-// NO MALLOC ALLOWED when parsing compst to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_COMPST(s)
 void SEParseCompSt(STNode *comp, SEType *type) {
   AssertSTNode(comp, "CompSt");
@@ -258,7 +312,6 @@ void SEParseCompSt(STNode *comp, SEType *type) {
 #undef malloc
 
 // Parse a statement list and check for RETURN statements.
-// NO MALLOC ALLOWED when parsing statement list to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_STMT_LIST(s)
 void SEParseStmtList(STNode *list, SEType *type) {
   AssertSTNode(list, "StmtList");
@@ -270,7 +323,6 @@ void SEParseStmtList(STNode *list, SEType *type) {
 #undef malloc
 
 // Parse a single statement and check for RETURN statements.
-// NO MALLOC ALLOWED when parsing statement list to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_STMT(s)
 void SEParseStmt(STNode *stmt, SEType *type) {
   AssertSTNode(stmt, "Stmt");
@@ -333,7 +385,6 @@ void SEParseStmt(STNode *stmt, SEType *type) {
  * we do not care about what the chain contains at all.
  * */
 // Parse a definition list. Return a field chain.
-// NO MALLOC ALLOWED when parsing definition list to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_DEF_LIST(s)
 SEFieldChain SEParseDefList(STNode *list, bool assignable) {
   AssertSTNode(list, "DefList");
@@ -350,7 +401,6 @@ SEFieldChain SEParseDefList(STNode *list, bool assignable) {
 #undef malloc
 
 // Parse a single definition. Return a field chain.
-// NO MALLOC ALLOWED when parsing definition to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_DEF(s)
 SEFieldChain SEParseDef(STNode *def, bool assignable) {
   AssertSTNode(def, "Def");
@@ -360,7 +410,6 @@ SEFieldChain SEParseDef(STNode *def, bool assignable) {
 #undef malloc
 
 // Parse a declaration list. Return a field chain.
-// NO MALLOC ALLOWED when parsing declaration list to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_DEC_LIST(s)
 SEFieldChain SEParseDecList(STNode *list, SEType *type, bool assignable) {
   AssertSTNode(list, "DecList");
@@ -377,7 +426,6 @@ SEFieldChain SEParseDecList(STNode *list, SEType *type, bool assignable) {
 #undef malloc
 
 // Parse a single declaration. Return a field chain.
-// NO MALLOC ALLOWED when parsing declaration to avoid memory leak.
 #define malloc(s) NO_MALLOC_ALLOWED_DEC(s)
 SEFieldChain SEParseDec(STNode *dec, SEType *type, bool assignable) {
   AssertSTNode(dec, "Dec");

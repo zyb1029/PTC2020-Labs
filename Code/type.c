@@ -51,7 +51,7 @@ SEType *SEParseExp(STNode *exp) {
         STEntry *entry = STSearch(e1->sval);
         if (entry == NULL) {
           // undefined variable, treat as int
-          throwErrorS(SE_VARIABLE_UNDEFINED, e1);
+          throwErrorS(SE_VARIABLE_UNDEFINED, e1->line, e1->sval);
           return STATIC_TYPE_INT; 
         } else {
           return entry->type;
@@ -63,16 +63,16 @@ SEType *SEParseExp(STNode *exp) {
         entry = STSearchBase(e1->sval);
         if (entry == NULL) {
           // undefined function, treat as int
-          throwErrorS(SE_FUNCTION_UNDEFINED, e1);
+          throwErrorS(SE_FUNCTION_UNDEFINED, e1->line, e1->sval);
           return STATIC_TYPE_INT;
         } else if (entry->type->kind != FUNCTION) {
           // call to a non-function variable
-          throwErrorS(SE_ACCESS_TO_NON_FUNCTION, e1); // same as gcc
+          throwErrorS(SE_ACCESS_TO_NON_FUNCTION, e1->line, e1->sval);
           return STATIC_TYPE_INT;
         }
         signature = e3->next ? SEParseArgs(e3).head : &STATIC_FIELD_VOID;
         if (!SECompareField(entry->type->function.signature, signature)) {
-          throwErrorS(SE_MISMATCHED_SIGNATURE, e1);
+          throwErrorS(SE_MISMATCHED_SIGNATURE, e1->line, e1->sval);
         }
         return entry->type->function.type;
       }
@@ -87,19 +87,19 @@ SEType *SEParseExp(STNode *exp) {
         case LB: {
           CLog(FG_CYAN, "Exp LB Exp RB");
           if (t1->kind != ARRAY) {
-            throwErrorS(SE_ACCESS_TO_NON_ARRAY, e2);
+            throwErrorS(SE_ACCESS_TO_NON_ARRAY, e2->line, e1->sval);
             return t1;
           }
           SEType *t2 = SEParseExp(e3);
           if (t2->kind != BASIC || t2->basic != INT) {
-            throwErrorS(SE_NON_INTEGER_INDEX, e3);
+            throwErrorS(SE_NON_INTEGER_INDEX, e3->line, NULL);
           }
           return t1->array.elem;
         }
         case DOT: {
           CLog(FG_CYAN, "Exp DOT ID");
           if (t1->kind != STRUCTURE) {
-            throwErrorS(SE_ACCESS_TO_NON_STRUCT, e2);
+            throwErrorS(SE_ACCESS_TO_NON_STRUCT, e2->line, e1->sval);
             return t1;
           } else {
             SEType *type = NULL;
@@ -112,7 +112,7 @@ SEType *SEParseExp(STNode *exp) {
               field = field->next;
             }
             if (type == NULL) {
-              throwErrorS(SE_STRUCT_FIELD_UNDEFINED, e3);
+              throwErrorS(SE_STRUCT_FIELD_UNDEFINED, e3->line, e3->sval);
               type = STATIC_TYPE_INT; // treat as INT
             }
             return type;
@@ -125,7 +125,7 @@ SEType *SEParseExp(STNode *exp) {
           Log("DUMP LEFT:"), SEDumpType(t1);
           Log("DUMP RIGHT:"), SEDumpType(t2);
           if (!SECompareType(t1, t2)) {
-            throwErrorS(SE_MISMATCHED_ASSIGNMENT, e3); // same as gcc
+            throwErrorS(SE_MISMATCHED_ASSIGNMENT, e2->line, NULL);
           }
           if (e1->child->token == ID) lvalue = true;
           if (!lvalue && e1->child->next) {
@@ -134,7 +134,7 @@ SEType *SEParseExp(STNode *exp) {
           }
           if (!lvalue) {
             // Not any of ID / Exp LB Exp RB / Exp DOT ID
-            throwErrorS(SE_RVALUE_ASSIGNMENT, e1);
+            throwErrorS(SE_RVALUE_ASSIGNMENT, e2->line, NULL);
           }
           return t1;
         }
@@ -146,7 +146,7 @@ SEType *SEParseExp(STNode *exp) {
           Log("DUMP RIGHT:"), SEDumpType(t2);
           if (!SECompareType(STATIC_TYPE_INT, t1) ||
               !SECompareType(STATIC_TYPE_INT, t2)) {
-            throwErrorS(SE_MISMATCHED_OPERANDS, e2);
+            throwErrorS(SE_MISMATCHED_OPERANDS, e2->line, NULL);
           }
           return STATIC_TYPE_INT; // always return INT
         }
@@ -154,7 +154,7 @@ SEType *SEParseExp(STNode *exp) {
           CLog(FG_CYAN, "Exp RELOP Exp");
           SEType *t2 = SEParseExp(e3);
           if (!SECompareType(t1, t2)) {
-            throwErrorS(SE_MISMATCHED_OPERANDS, e2);
+            throwErrorS(SE_MISMATCHED_OPERANDS, e2->line, NULL);
           }
           return STATIC_TYPE_INT; // always return INT
         }
@@ -162,7 +162,7 @@ SEType *SEParseExp(STNode *exp) {
           CLog(FG_CYAN, "Exp PLUS/MINUS/STAR/DIV Exp");
           SEType *t2 = SEParseExp(e3);
           if (!SECompareType(t1, t2)) {
-            throwErrorS(SE_MISMATCHED_OPERANDS, e2);
+            throwErrorS(SE_MISMATCHED_OPERANDS, e2->line, NULL);
           }
           return t1; // always treat as t1
         }
@@ -206,7 +206,7 @@ SEType *SEParseSpecifier(STNode *specifier) {
         const char *name = tag->child->sval;
         CLog(FG_GREEN, "new structure \"%s\"", name);
         if (STSearchBase(name) != NULL) {
-          throwErrorS(SE_STRUCT_DUPLICATE, tag->child);
+          throwErrorS(SE_STRUCT_DUPLICATE, tag->line, name);
         } else {
           STInsertBase(name, type); // struct has global scope
         }
@@ -218,11 +218,11 @@ SEType *SEParseSpecifier(STNode *specifier) {
       STEntry *entry = STSearchBase(name);
       if (entry == NULL) {
         // undefined struct, treat as INT
-        throwErrorS(SE_STRUCT_UNDEFINED, tag->child);
+        throwErrorS(SE_STRUCT_UNDEFINED, tag->line, name);
         return STATIC_TYPE_INT;
       } else if (entry->type->kind != STRUCTURE) {
         // duplicated name of struct, treat as INT
-        throwErrorS(SE_STRUCT_DUPLICATE, tag->child);
+        throwErrorS(SE_STRUCT_DUPLICATE, tag->line, name);
         return STATIC_TYPE_INT;
       } else {
         return entry->type;
@@ -299,21 +299,22 @@ void SEParseFunDec(STNode *fdec, SEType *type) {
   } else {
     func = entry->type;
     if (func->kind != FUNCTION) {
-      throwErrorS(SE_ACCESS_TO_NON_FUNCTION, id); // treat as bad function call
+      // treat as bad function call
+      throwErrorS(SE_ACCESS_TO_NON_FUNCTION, id->line, name);
     } else {
       if (fdec->next->token != SEMI) {
         if (func->function.defined) {
-          throwErrorS(SE_FUNCTION_DUPLICATE, id);
+          throwErrorS(SE_FUNCTION_DUPLICATE, id->line, name);
         } else {
           CLog(FG_GREEN, "def function \"%s\"", name);
           func->function.defined = true;
         }
       }
       if (!SECompareType(func->function.type, type)) {
-        throwErrorS(SE_FUNCTION_CONFLICTING, id);
+        throwErrorS(SE_FUNCTION_CONFLICTING, id->line, name);
       }
       if (!SECompareField(func->function.signature, signature)) {
-        throwErrorS(SE_FUNCTION_CONFLICTING, id);
+        throwErrorS(SE_FUNCTION_CONFLICTING, id->line, name);
       }
     }
   }
@@ -358,7 +359,7 @@ void SEParseStmt(STNode *stmt, SEType *type) {
       case RETURN: { // RETURN Exp SEMI
         SEType *ret = SEParseExp(stmt->child->next);
         if (!SECompareType(type, ret)) {
-          throwErrorS(SE_MISMATCHED_RETURN, stmt->child);
+          throwErrorS(SE_MISMATCHED_RETURN, stmt->child->line, NULL);
         }
         return;
       }
@@ -367,7 +368,7 @@ void SEParseStmt(STNode *stmt, SEType *type) {
         STNode *snode = enode->next->next;
         SEType *etype = SEParseExp(enode);
         if (!SECompareType(etype, STATIC_TYPE_INT)) {
-          throwErrorS(SE_MISMATCHED_OPERANDS, enode);
+          throwErrorS(SE_MISMATCHED_OPERANDS, enode->line, NULL);
         }
         SEParseStmt(snode, type);
         if (snode->next) {
@@ -380,7 +381,7 @@ void SEParseStmt(STNode *stmt, SEType *type) {
         STNode *snode = enode->next->next;
         SEType *etype = SEParseExp(enode);
         if (!SECompareType(etype, STATIC_TYPE_INT)) {
-          throwErrorS(SE_MISMATCHED_OPERANDS, enode);
+          throwErrorS(SE_MISMATCHED_OPERANDS, enode->line, NULL);
         }
         SEParseStmt(snode, type);
         return;
@@ -454,11 +455,13 @@ SEFieldChain SEParseDec(STNode *dec, SEType *type, bool assignable) {
   SEFieldChain chain = SEParseVarDec(dec->child, type, assignable);
   if (dec->child->next != NULL) { // check assignment
     if (!assignable) {
-      throwErrorS(SE_STRUCT_FIELD_INITIALIZED, dec->child->next);
+      STNode *id = dec->child;
+      while (id->token != ID) id = id->child;
+      throwErrorS(SE_STRUCT_FIELD_INITIALIZED, dec->child->next->line, id->sval);
     }
     SEType *expType = SEParseExp(dec->child->next->next);
     if (!SECompareType(chain.head->type, expType)) {
-      throwErrorS(SE_MISMATCHED_ASSIGNMENT, dec->child->next);
+      throwErrorS(SE_MISMATCHED_ASSIGNMENT, dec->child->next->line, NULL);
     }
   }
   return chain;
@@ -479,7 +482,7 @@ SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
     // register ID in local scope
     const char *name = var->child->sval;
     if (STSearchCurr(name) != NULL) {
-      throwErrorS(SE_VARIABLE_DUPLICATE, var->child);
+      throwErrorS(SE_VARIABLE_DUPLICATE, var->child->line, name);
     } else{
       STInsertCurr(var->child->sval, type);
       CLog(FG_GREEN, "new variable \"%s\"", var->child->sval);
@@ -626,7 +629,7 @@ void SEDestroyType(SEType *type, bool force) {
     case FUNCTION: {
       if (!type->function.defined) {
         // undefined function detected when destroying its type
-        throwErrorS(SE_FUNCTION_DECLARED_NOT_DEFINED, type->function.node->child);
+        throwErrorS(SE_FUNCTION_DECLARED_NOT_DEFINED, type->function.node->line, type->function.node->child->sval);
       }
       SEDestroyType(type->function.type, force);
       if (type->function.signature != &STATIC_FIELD_VOID) {

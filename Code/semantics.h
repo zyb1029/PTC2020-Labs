@@ -36,13 +36,12 @@ enum SemanticErrors {
 
 typedef struct STError {
   enum SemanticErrors id;
-  bool showID;
   const char *message1;
   const char *message2;
 } STError;
 
 void semanticScan();
 void checkSemantics(STNode *node, STNode *parent);
-void throwErrorS(enum SemanticErrors id, STNode *node);
+void throwErrorS(enum SemanticErrors id, int line, const char *name);
 
 #endif // SEMANTIC_H

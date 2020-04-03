@@ -10,26 +10,26 @@ extern bool hasErrorS;
 extern STNode *stroot;
 
 const STError SETable[] = {
-  {  0, false, "Pseudo error", "" },
-  {  1,  true, "Use of undefined variable ", "" },
-  {  2,  true, "Use of undefined function ", "" },
-  {  3,  true, "Duplicated name ", " of variables" },
-  {  4,  true, "Redefinition of function ", "" },
-  {  5, false, "Type mismatched for assignment", "" },
-  {  6, false, "Cannot assign to rvalue", "" },
-  {  7, false, "Type mismatched for operands", "" },
-  {  8, false, "Type mismatched for return" },
-  {  9,  true, "Arguments mismatched for function ", "" },
-  { 10, false, "Array access on non-array variable", "" },
-  { 11, false, "Function call on non-function variable", "" },
-  { 12, false, "Non integer offset of an array", "" },
-  { 13, false, "Field access on non-struct variable", "" },
-  { 14, false, "Access to undefined field in struct", "" },
-  { 15,  true, "Redefinition or initialization of field ", " in struct" },
-  { 16,  true, "Duplicated name ", " of struct" },
-  { 17,  true, "Use of undefined struct ", "" },
-  { 18,  true, "Function ", " declared but not defined" },
-  { 19,  true, "Inconsistent declaration of function ", "" },
+  {  0, "Pseudo error", "" },
+  {  1, "Use of undefined variable ", "" },
+  {  2, "Use of undefined function ", "" },
+  {  3, "Duplicated name ", " of variables" },
+  {  4, "Redefinition of function ", "" },
+  {  5, "Type mismatched for assignment", "" },
+  {  6, "Cannot assign to rvalue", "" },
+  {  7, "Type mismatched for operands", "" },
+  {  8, "Type mismatched for return" },
+  {  9, "Arguments mismatched for function ", "" },
+  { 10, "Array access on non-array variable ", "" },
+  { 11, "Function call on non-function variable ", "" },
+  { 12, "Non integer offset of an array", "" },
+  { 13, "Field access on non-struct variable", "" },
+  { 14, "Access to undefined field ", " in struct" },
+  { 15, "Redefinition or initialization of field ", " in struct" },
+  { 16, "Duplicated name ", " of struct" },
+  { 17, "Use of undefined struct ", "" },
+  { 18, "Function ", " declared but not defined" },
+  { 19, "Inconsistent declaration of function ", "" },
 };
 
 // Main entry of semantic scan
@@ -59,12 +59,11 @@ void checkSemantics(STNode *node, STNode *parent) {
 }
 
 // Throw an semantic error.
-void throwErrorS(enum SemanticErrors id, STNode *node) {
-  Assert(!SETable[id].showID || node, "node is NULL for error %d", id);
+void throwErrorS(enum SemanticErrors id, int line, const char *name) {
   hasErrorS = true;
-  fprintf(stderr, "Error type %d at Line %d: ", id, node->line);
-  if (SETable[id].showID) {
-    fprintf(stderr, "%s\"%s\"%s", SETable[id].message1, node->sval, SETable[id].message2);
+  fprintf(stderr, "Error type %d at Line %d: ", id, line);
+  if (name != NULL) {
+    fprintf(stderr, "%s\"%s\"%s", SETable[id].message1, name, SETable[id].message2);
   } else {
     fprintf(stderr, "%s", SETable[id].message1);
   }

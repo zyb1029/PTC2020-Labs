@@ -202,7 +202,7 @@ SEType *SEParseSpecifier(STNode *specifier) {
         type->structure = SEParseDefList(tag->next->next, false).head;
         STPopStack();
       }
-      if (!tag->child->empty) {
+      if (!tag->empty) {
         const char *name = tag->child->sval;
         CLog(FG_GREEN, "new structure \"%s\"", name);
         if (STSearchBase(name) != NULL) {
@@ -210,8 +210,8 @@ SEType *SEParseSpecifier(STNode *specifier) {
         } else {
           STInsertBase(name, type); // struct has global scope
         }
-        return type;
       }
+      return type;
     } else {
       // STRUCT Tag
       const char *name = tag->child->sval;

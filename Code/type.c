@@ -197,17 +197,21 @@ SEType *SEParseSpecifier(STNode *specifier) {
     if (tag->next) {
       // define a new struct
       // STRUCT OptTag LC DefList RC
-      const char *structID = tag->sval;
       {
         STPushStack();
         type->kind = STRUCTURE;
         type->structure = SEParseDefList(tag->next->next, false).head;
         STPopStack();
       }
-      if (structID != NULL) {
-        STInsertBase(structID, type); // struct has global scope
+      if (!tag->child->empty) {
+        const char *id = tag->child->sval;
+        CLog(FG_GREEN, "new structure \"%s\"", id);
+        if (STSearchBase(id) != NULL) {
+          throwErrorS(SE_STRUCT_DUPLICATE, tag->child);
+        } else {
+          STInsertBase(id, type); // struct has global scope
+        }
       }
-      Log("Define struct %s", structID);
     } else {
       // STRUCT Tag
       STEntry *entry = STSearch(tag->sval);

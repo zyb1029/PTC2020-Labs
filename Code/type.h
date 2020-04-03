@@ -30,6 +30,7 @@ typedef struct SEType {
     } array;
     struct SEField *structure;
     struct {
+      int line;
       bool defined;
       struct SEType *type;
       struct SEField *signature;
@@ -53,6 +54,11 @@ void SEPrepare();
 SEType *SEParseExp(STNode *exp);
 SEType *SEParseSpecifier(STNode *specifier);
 
+void SEParseExtDefList(STNode *list);
+void SEParseExtDef(STNode *edef);
+void SEParseExtDecList(STNode *list, SEType *type);
+void SEParseFunDec(STNode *fdec, SEType *type);
+
 void SEParseCompSt(STNode *comp, SEType *type);
 void SEParseStmtList(STNode *list, SEType *type);
 void SEParseStmt(STNode *stmt, SEType *type);
@@ -63,6 +69,8 @@ SEFieldChain SEParseDef(STNode *def, bool assignable);
 SEFieldChain SEParseDecList(STNode *list, SEType *type, bool assignable);
 SEFieldChain SEParseDec(STNode *dec, SEType *type, bool assignable);
 SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable);
+SEFieldChain SEParseVarList(STNode *list);
+SEFieldChain SEParseParamDec(STNode *pdec);
 SEFieldChain SEParseArgs(STNode *args);
 
 void SEDumpType(const SEType *type);

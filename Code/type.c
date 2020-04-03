@@ -80,7 +80,7 @@ SEType *SEParseExp(STNode *exp) {
         }
         signature = e3->next ? SEParseArgs(e3).head : &STATIC_FIELD_VOID;
         if (!SECompareField(entry->type->function.signature, signature)) {
-          throwErrorS(SE_FUNCTION_CONFLICTING_SIGNATURE, e3);
+          throwErrorS(SE_MISMATCHED_SIGNATURE, e3);
         }
         return entry->type->function.type;
       }
@@ -248,7 +248,10 @@ SEType *SEParseSpecifier(STNode *specifier) {
 #define malloc(s) NO_MALLOC_ALLOWED_EXT_DEF_LIST(s)
 void SEParseExtDefList(STNode *list) {
   AssertSTNode(list, "ExtDefList");
-  Panic("Not implemented!");
+  SEParseExtDef(list->child);
+  if (!list->child->next->empty) {
+    SEParseExtDefList(list->child->next);
+  }
 }
 #undef malloc
 
@@ -256,7 +259,14 @@ void SEParseExtDefList(STNode *list) {
 #define malloc(s) NO_MALLOC_ALLOWED_EXT_DEF(s)
 void SEParseExtDef(STNode *edef) {
   AssertSTNode(edef, "ExtDef");
-  Panic("Not implemented!");
+  SEType *type = SEParseSpecifier(edef->child);
+  STNode *body = edef->child->next;
+  if (body->token == SEMI) return;
+  if (!strcmp(body->name, "ExtDecList")) {
+    SEParseExtDecList(body, type);
+  } else {
+    SEParseFunDec(body, type); // CompSt handled by FunDec
+  }
 }
 #undef malloc
 
@@ -264,41 +274,62 @@ void SEParseExtDef(STNode *edef) {
 #define malloc(s) NO_MALLOC_ALLOWED_EXT_DEC_LIST(s)
 void SEParseExtDecList(STNode *list, SEType *type) {
   AssertSTNode(list, "ExtDecList");
-  Panic("Not implemented!");
-}
-#undef malloc
-
-// Parse an ext-declaration.
-#define malloc(s) NO_MALLOC_ALLOWED_EXT_DEC(s)
-void SEParseExtDec(STNode *edec, SEType *type) {
-  AssertSTNode(edec, "ExtDec");
-  Panic("Not implemented!");
+  SEParseVarDec(list->child, type, false);
+  if (list->child->next) {
+    SEParseExtDecList(list->child->next->next, type);
+  }
 }
 #undef malloc
 
 // Parse a function declaration.
-#define malloc(s) NO_MALLOC_ALLOWED_FUN_DEC(s)
 void SEParseFunDec(STNode *fdec, SEType *type) {
   AssertSTNode(fdec, "FunDec");
-  Panic("Not implemented!");
-}
-#undef malloc
+  const char *name = fdec->child->sval;
+  STEntry *entry = NULL;
+  SEType *func = NULL;
+  STNode *vars = fdec->child->next->next;
+  SEField *signature = &STATIC_FIELD_VOID;
 
-// Parse a variable list.
-#define malloc(s) NO_MALLOC_ALLOWED_VAR_LIST(s)
-void SEParseVarList(STNode *list) {
-  AssertSTNode(list, "VarList");
-  Panic("Not implemented!");
-}
-#undef malloc
+  STPushStack(); // treat signature as inner scope
+  if (vars->next) {
+    signature = SEParseVarList(vars).head;
+  }
 
-// Parse a parameter declaration.
-#define malloc(s) NO_MALLOC_ALLOWED_PARAM_DEC(s)
-void SEParseParamDec(STNode *pdec) {
-  AssertSTNode(pdec, "ParamDec");
-  Panic("Not implemented!");
+  entry = STSearch(name);
+  if (entry == NULL) {
+    CLog(FG_GREEN, "new function \"%s\"", name);
+    func = (SEType *)malloc(sizeof(SEType));
+    func->kind = FUNCTION;
+    func->function.line = fdec->line;
+    func->function.defined = fdec->next->token != SEMI;
+    func->function.type = type;
+    func->function.signature = signature;
+    STInsertBase(name, func); // global scope
+  } else {
+    func = entry->type;
+    if (func->kind != FUNCTION) {
+      throwErrorS(SE_FUNCTION_DUPLICATE, fdec); // treat as redefine
+      func->kind = FUNCTION; // overriding original type to avoid UB
+    }
+    if (!SECompareType(func->function.type, type)) {
+      throwErrorS(SE_FUNCTION_CONFLICTING, fdec);
+    }
+    if (!SECompareField(func->function.signature, signature)) {
+      throwErrorS(SE_FUNCTION_CONFLICTING, fdec);
+    }
+    if (fdec->next->token != SEMI) {
+      if (func->function.defined) {
+        throwErrorS(SE_FUNCTION_DUPLICATE, fdec);
+      } else {
+        func->function.defined = true;
+      }
+    }
+  }
+  if (fdec->next->token != SEMI) {
+    SEParseCompSt(fdec->next, type);
+  }
+  STPopStack();
 }
-#undef malloc
 
 // Parse a composed statement list and check for RETURN statements.
 #define malloc(s) NO_MALLOC_ALLOWED_COMPST(s)
@@ -474,6 +505,29 @@ SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
   }
   Panic("should not reach here");
 }
+
+// Parse a variable list.
+#define malloc(s) NO_MALLOC_ALLOWED_VAR_LIST(s)
+SEFieldChain SEParseVarList(STNode *list) {
+  AssertSTNode(list, "VarList");
+  SEFieldChain chain = SEParseParamDec(list->child);
+  if (list->child->next) {
+    SEFieldChain tail = SEParseParamDec(list->child->next->next);
+    chain.tail->next = tail.head;
+    chain.tail = tail.tail;
+  }
+  return chain;
+}
+#undef malloc
+
+// Parse a parameter declaration.
+#define malloc(s) NO_MALLOC_ALLOWED_PARAM_DEC(s)
+SEFieldChain SEParseParamDec(STNode *pdec) {
+  AssertSTNode(pdec, "ParamDec");
+  SEType *type = SEParseSpecifier(pdec->child);
+  return SEParseVarDec(pdec->child->next, type, false);
+}
+#undef malloc
 
 // Parse arguments list. Return a field chain.
 SEFieldChain SEParseArgs(STNode *args) {

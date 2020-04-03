@@ -37,7 +37,8 @@ void semanticScan() {
   CLog(FG_YELLOW, "Before prepare");
   STPrepare();
   CLog(FG_YELLOW, "After prepare");
-  checkSemantics(stroot, stroot);
+  //checkSemantics(stroot, stroot);
+  SEParseExtDefList(stroot->child);
   CLog(FG_YELLOW, "Before destroy");
   STDestroy();
   CLog(FG_YELLOW, "After destroy");

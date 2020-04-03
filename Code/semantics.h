@@ -31,7 +31,7 @@ enum SemanticErrors {
   SE_STRUCT_DUPLICATE               = 16,
   SE_STRUCT_UNDEFINED               = 17,
   SE_FUNCTION_DECLARED_NOT_DEFINED  = 18,
-  SE_FUNCTION_CONFLICTING_SIGNATURE = 19,
+  SE_FUNCTION_CONFLICTING           = 19,
 };
 
 typedef struct STError {

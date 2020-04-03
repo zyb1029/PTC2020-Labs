@@ -122,15 +122,13 @@ SEType *SEParseExp(STNode *exp) {
         case ASSIGNOP: {
           bool lvalue = false;
           SEType *t2 = SEParseExp(e3);
-#ifdef DEBUG
           CLog(FG_CYAN, "Exp ASSIGNOP Exp");
-          Log("DUMP LEFT:"), SEDumpType(t1);
-          Log("DUMP RIGHT:"), SEDumpType(t2);
-#endif
+          Log("DUMP LEFT:"); SEDumpType(t1);
+          Log("DUMP RIGHT:"); SEDumpType(t2);
           if (!SECompareType(t1, t2)) {
             throwErrorS(SE_MISMATCHED_ASSIGNMENT, e2->line, NULL);
           }
-          if (e1->child->token == ID) lvalue = true;
+          if (e1->child->token == ID) lvalue = e1->child->next == NULL;
           if (!lvalue && e1->child->next) {
             lvalue = e1->child->next->token == LB
                   || e1->child->next->token == DOT;
@@ -144,11 +142,9 @@ SEType *SEParseExp(STNode *exp) {
         case AND:
         case OR: {
           SEType *t2 = SEParseExp(e3);
-#ifdef DEBUG
           CLog(FG_CYAN, "Exp AND/OR Exp");
-          Log("DUMP LEFT:"), SEDumpType(t1);
-          Log("DUMP RIGHT:"), SEDumpType(t2);
-#endif
+          Log("DUMP LEFT:"); SEDumpType(t1);
+          Log("DUMP RIGHT:"); SEDumpType(t2);
           if (!SECompareType(STATIC_TYPE_INT, t1) ||
               !SECompareType(STATIC_TYPE_INT, t2)) {
             throwErrorS(SE_MISMATCHED_OPERANDS, e2->line, NULL);

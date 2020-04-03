@@ -6,7 +6,6 @@
 #define DEBUG
 #include "debug.h"
 
-bool destroyTypes = false; // keep types defined in a structure
 STStack *struStack = NULL;
 STStack *funcStack = NULL;
 STStack *globStack = NULL;

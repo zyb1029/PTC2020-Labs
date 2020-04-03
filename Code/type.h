@@ -31,7 +31,7 @@ typedef struct SEType {
     } array;
     struct SEField *structure;
     struct {
-      int line;
+      STNode *node;
       bool defined;
       struct SEType *type;
       struct SEField *signature;

@@ -308,7 +308,7 @@ void SEParseFunDec(STNode *fdec, SEType *type) {
   if (entry == NULL) {
     func = (SEType *)malloc(sizeof(SEType));
     func->kind = FUNCTION;
-    func->function.line = fdec->line;
+    func->function.node = fdec;
     func->function.defined = fdec->next->token != SEMI;
     func->function.type = type;
     func->function.signature = signature;
@@ -637,6 +637,10 @@ void SEDestroyType(SEType *type) {
       return;
     }
     case FUNCTION: {
+      if (!type->function.defined) {
+        // undefined function detected when destroying its type
+        throwErrorS(SE_FUNCTION_DECLARED_NOT_DEFINED, type->function.node->child);
+      }
       SEDestroyType(type->function.type);
       if (type->function.signature != &STATIC_FIELD_VOID) {
         SEDestroyField(type->function.signature);

@@ -28,7 +28,7 @@ const STError SETable[] = {
   { 15,  true, "Redefinition or initialization of field ", " in struct" },
   { 16,  true, "Duplicated name ", " of struct" },
   { 17,  true, "Use of undefined struct ", "" },
-  { 18,  true, "Function ", " declared but not declared" },
+  { 18,  true, "Function ", " declared but not defined" },
   { 19,  true, "Inconsistent declaration of function ", "" },
 };
 

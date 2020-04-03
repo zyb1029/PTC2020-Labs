@@ -77,5 +77,6 @@ void SEDumpType(const SEType *type);
 bool SECompareType(const SEType *t1, const SEType *t2);
 bool SECompareField(const SEField *f1, const SEField *f2);
 void SEDestroyType(SEType *type);
+void SEDestroyField(SEField *field);
 
 #endif // SE_TYPE_H

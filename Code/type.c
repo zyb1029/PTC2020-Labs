@@ -16,30 +16,22 @@
 #define AssertSTNode(node, str)
 #endif
 
-SEType *STATIC_TYPE_VOID  = NULL;
-SEType *STATIC_TYPE_INT   = NULL;
-SEType *STATIC_TYPE_FLOAT = NULL;
-
+SEType _STATIC_TYPE_VOID, _STATIC_TYPE_INT, _STATIC_TYPE_FLOAT;
+SEType *STATIC_TYPE_VOID, *STATIC_TYPE_INT, *STATIC_TYPE_FLOAT;
 SEField STATIC_FIELD_VOID, DUMMY_FIELD;
 const SEFieldChain DUMMY_FIELD_CHAIN = { &DUMMY_FIELD, &DUMMY_FIELD };
 
-// Prepare the base ST, insert VOID, INT and FLOAT.
 void SEPrepare() {
-  // Variables will never start with a space, thus we can save them to the global ST.
-  // We don't use static variables because we want less trouble destroying the ST stack.
-  STATIC_TYPE_VOID = (SEType *)malloc(sizeof(SEType));
+  STATIC_TYPE_VOID = &_STATIC_TYPE_VOID;
   STATIC_TYPE_VOID->kind = VOID;
   STATIC_FIELD_VOID.type = STATIC_TYPE_VOID;
   STATIC_FIELD_VOID.next = NULL;
-  STInsertBase(" void", STATIC_TYPE_VOID);
-  STATIC_TYPE_INT = (SEType *)malloc(sizeof(SEType));
+  STATIC_TYPE_INT = &_STATIC_TYPE_INT;
   STATIC_TYPE_INT->kind = BASIC;
   STATIC_TYPE_INT->basic = INT;
-  STInsertBase(" int", STATIC_TYPE_INT);
-  STATIC_TYPE_FLOAT = (SEType *)malloc(sizeof(SEType));
+  STATIC_TYPE_FLOAT = &_STATIC_TYPE_FLOAT;
   STATIC_TYPE_FLOAT->kind = BASIC;
   STATIC_TYPE_FLOAT->basic = FLOAT;
-  STInsertBase(" float", STATIC_TYPE_FLOAT);
 }
 
 // Parse an expression. Only one type so we don't need a chain.
@@ -613,22 +605,34 @@ void SEDestroyType(SEType *type) {
   switch (type->kind) {
     case VOID:
     case BASIC:
-      break;
-    case ARRAY:
+      return;
+    case ARRAY: {
       SEDestroyType(type->array.elem);
-      break;
-    case STRUCTURE:
-      field = type->structure;
-      while (field != NULL) {
-        temp = field;
-        field = field->next;
-        free(temp);
-      }
-      break;
-    case FUNCTION:
+      free(type);
+      return;
+    }
+    case STRUCTURE: {
+      SEDestroyField(type->structure);
+      free(type);
+      return;
+    }
+    case FUNCTION: {
+      SEDestroyType(type->function.type);
+      SEDestroyField(type->function.signature);
+    }
     default:
       Panic("destroy %d not implemented", type->kind);
   }
-  free(type);
-  return;
+  Panic("should not reach here");
+}
+
+// Destroy a chained field.
+void SEDestroyField(SEField *field) {
+  SEField *temp = NULL;
+  while (field != NULL) {
+    temp = field;
+    field = field->next;
+    SEDestroyType(temp->type);
+    free(temp);
+  }
 }

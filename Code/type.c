@@ -119,6 +119,7 @@ SEType *SEParseExp(STNode *exp) {
           }
         }
         case ASSIGNOP: {
+          bool lvalue = false;
           SEType *t2 = SEParseExp(e3);
           CLog(FG_CYAN, "Exp ASSIGNOP Exp");
           Log("DUMP LEFT:"), SEDumpType(t1);
@@ -126,7 +127,15 @@ SEType *SEParseExp(STNode *exp) {
           if (!SECompareType(t1, t2)) {
             throwErrorS(SE_MISMATCHED_ASSIGNMENT, e3); // same as gcc
           }
-          CLog(FG_RED, "lvalue not checked!"); // FIXME
+          if (e1->child->token == ID) lvalue = true;
+          if (!lvalue && e1->child->next) {
+            lvalue = e1->child->next->token == LB
+                  || e1->child->next->token == DOT;
+          }
+          if (!lvalue) {
+            // Not any of ID / Exp LB Exp RB / Exp DOT ID
+            throwErrorS(SE_RVALUE_ASSIGNMENT, e1);
+          }
           return t1;
         }
         case AND:
@@ -160,7 +169,7 @@ SEType *SEParseExp(STNode *exp) {
       }
     }
   }
-  Panic("Should not reach here");
+  Panic("should not reach here");
   return NULL;
 }
 #undef malloc

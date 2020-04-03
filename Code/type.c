@@ -275,10 +275,11 @@ void SEParseExtDecList(STNode *list, SEType *type) {
 // Parse a function declaration.
 void SEParseFunDec(STNode *fdec, SEType *type) {
   AssertSTNode(fdec, "FunDec");
-  const char *name = fdec->child->sval;
+  STNode *id = fdec->child;
+  STNode *vars = id->next->next;
+  const char *name = id->sval;
   STEntry *entry = NULL;
   SEType *func = NULL;
-  STNode *vars = fdec->child->next->next;
   SEField *signature = &STATIC_FIELD_VOID;
 
   STPushStack(); // treat signature as inner scope
@@ -299,21 +300,21 @@ void SEParseFunDec(STNode *fdec, SEType *type) {
   } else {
     func = entry->type;
     if (func->kind != FUNCTION) {
-      throwErrorS(SE_FUNCTION_DUPLICATE, fdec); // treat as redefine
+      throwErrorS(SE_FUNCTION_DUPLICATE, id); // treat as redefine
       func->kind = FUNCTION; // overriding original type to avoid UB
-    }
-    if (!SECompareType(func->function.type, type)) {
-      throwErrorS(SE_FUNCTION_CONFLICTING, fdec);
-    }
-    if (!SECompareField(func->function.signature, signature)) {
-      throwErrorS(SE_FUNCTION_CONFLICTING, fdec);
     }
     if (fdec->next->token != SEMI) {
       if (func->function.defined) {
-        throwErrorS(SE_FUNCTION_DUPLICATE, fdec);
+        throwErrorS(SE_FUNCTION_DUPLICATE, id);
       } else {
         func->function.defined = true;
       }
+    }
+    if (!SECompareType(func->function.type, type)) {
+      throwErrorS(SE_FUNCTION_CONFLICTING, id);
+    }
+    if (!SECompareField(func->function.signature, signature)) {
+      throwErrorS(SE_FUNCTION_CONFLICTING, id);
     }
   }
   if (fdec->next->token != SEMI) {

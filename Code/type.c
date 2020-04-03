@@ -479,8 +479,13 @@ SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
     return SEParseVarDec(var->child, arrayType, assignable);
   } else {
     // register ID in local scope
-    STInsertCurr(var->child->sval, type);
-    CLog(FG_GREEN, "new variable \"%s\"", var->child->sval);
+    const char *name = var->child->sval;
+    if (STSearch(name) != NULL) {
+      throwErrorS(SE_VARIABLE_DUPLICATE, var->child);
+    } else{
+      STInsertCurr(var->child->sval, type);
+      CLog(FG_GREEN, "new variable \"%s\"", var->child->sval);
+    }
     if (assignable) {
       // we don't care about the chain except the type
       DUMMY_FIELD_CHAIN.head->type = type;

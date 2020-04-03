@@ -1,5 +1,6 @@
-#include "rbtree.h"
 #include <assert.h>
+#include "rbtree.h"
+#include "debug.h"
 
 /**
  * This Red-Black Tree implementation is manually adapted from
@@ -278,8 +279,10 @@ void RBInsert(RBNode **root, void *value, int (*cmp)(const void *, const void *)
       } else {
         parent->right = node;
       }
+      RBFixRedRed(root, node);
+    } else {
+      Panic("Inserting existed element into RB tree.");
     }
-    RBFixRedRed(root, node);
   }
 }
 

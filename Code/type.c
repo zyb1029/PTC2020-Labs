@@ -478,7 +478,7 @@ SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
   } else {
     // register ID in local scope
     const char *name = var->child->sval;
-    if (STSearch(name) != NULL) {
+    if (STSearchCurr(name) != NULL) {
       throwErrorS(SE_VARIABLE_DUPLICATE, var->child);
     } else{
       STInsertCurr(var->child->sval, type);

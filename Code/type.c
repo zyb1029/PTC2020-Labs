@@ -605,21 +605,22 @@ bool SECompareField(const SEField *f1, const SEField *f2) {
 }
 
 // Destroy the type in memory until INT or FLOAT is met
-void SEDestroyType(SEType *type) {
+void SEDestroyType(SEType *type, bool force) {
   SEField *temp = NULL, *field = NULL;
   switch (type->kind) {
     case VOID:
     case BASIC:
       return;
     case ARRAY: {
-      SEDestroyType(type->array.elem);
+      SEDestroyType(type->array.elem, force);
       free(type);
       return;
     }
     case STRUCTURE: {
-      // DOUBLE FREEING ???
-      //SEDestroyField(type->structure);
-      //free(type);
+      if (force) {
+        SEDestroyField(type->structure, force);
+        free(type);
+      }
       return;
     }
     case FUNCTION: {
@@ -627,9 +628,9 @@ void SEDestroyType(SEType *type) {
         // undefined function detected when destroying its type
         throwErrorS(SE_FUNCTION_DECLARED_NOT_DEFINED, type->function.node->child);
       }
-      SEDestroyType(type->function.type);
+      SEDestroyType(type->function.type, force);
       if (type->function.signature != &STATIC_FIELD_VOID) {
-        SEDestroyField(type->function.signature);
+        SEDestroyField(type->function.signature, force);
       }
       free(type);
       return;
@@ -641,12 +642,12 @@ void SEDestroyType(SEType *type) {
 }
 
 // Destroy a chained field.
-void SEDestroyField(SEField *field) {
+void SEDestroyField(SEField *field, bool force) {
   SEField *temp = NULL;
   while (field != NULL) {
     temp = field;
     field = field->next;
-    SEDestroyType(temp->type);
+    SEDestroyType(temp->type, force);
     free(temp);
   }
 }

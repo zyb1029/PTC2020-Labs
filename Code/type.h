@@ -76,7 +76,7 @@ SEFieldChain SEParseArgs(STNode *args);
 void SEDumpType(const SEType *type);
 bool SECompareType(const SEType *t1, const SEType *t2);
 bool SECompareField(const SEField *f1, const SEField *f2);
-void SEDestroyType(SEType *type);
-void SEDestroyField(SEField *field);
+void SEDestroyType(SEType *type, bool force);
+void SEDestroyField(SEField *field, bool force);
 
 #endif // SE_TYPE_H

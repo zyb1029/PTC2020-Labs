@@ -6,6 +6,7 @@
 #define DEBUG
 #include "debug.h"
 
+bool destroyAllTypes = false;
 STStack *baseStack = NULL;
 STStack *currStack = NULL;
 
@@ -21,7 +22,10 @@ void STPrepare() {
 
 // Destroy all symbol tables in system.
 void STDestroy() {
-  while (currStack != NULL) STPopStack();
+  Assert(destroyAllTypes == false, "STDestroy called more than once!");
+  while (currStack != baseStack) STPopStack();
+  destroyAllTypes = true;
+  STPopStack(); // destroy all types in global scope
 }
 
 // Create a new syntax table and push it into chain.
@@ -108,6 +112,6 @@ int STRBCompare(const void *p1, const void *p2) {
 // Destroy an ST entry.
 void STRBDestroy(void *p) {
   Log("Destroy from ST: %p %p", p, ((STEntry *)p)->type);
-  SEDestroyType(((STEntry *)p)->type);
+  SEDestroyType(((STEntry *)p)->type, destroyAllTypes);
   free(p);
 }

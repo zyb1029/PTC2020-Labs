@@ -20,7 +20,7 @@ const STError SETable[] = {
   {  7, "Type mismatched for operands", "" },
   {  8, "Type mismatched for return" },
   {  9, "Arguments mismatched for function ", "" },
-  { 10, "Array access on non-array variable ", "" },
+  { 10, "Array access on non-array variable", "" },
   { 11, "Function call on non-function variable ", "" },
   { 12, "Non integer offset of an array", "" },
   { 13, "Field access on non-struct variable", "" },

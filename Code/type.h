@@ -8,7 +8,7 @@
 
 #include <stdbool.h>
 
-enum SEBasicType {
+enum SETypeKind {
   VOID,
   BASIC,
   ARRAY,
@@ -21,7 +21,7 @@ typedef struct STNode STNode;
 typedef struct SEField SEField;
 
 typedef struct SEType {
-  enum SEBasicType kind;
+  enum SETypeKind kind;
   union {
     int basic;
     struct {
@@ -76,7 +76,7 @@ SEFieldChain SEParseArgs(STNode *args);
 void SEDumpType(const SEType *type);
 bool SECompareType(const SEType *t1, const SEType *t2);
 bool SECompareField(const SEField *f1, const SEField *f2);
-void SEDestroyType(SEType *type, bool force);
-void SEDestroyField(SEField *field, bool force);
+void SEDestroyType(SEType *type);
+void SEDestroyField(SEField *field);
 
 #endif // SE_TYPE_H

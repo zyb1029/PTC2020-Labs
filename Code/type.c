@@ -16,6 +16,7 @@
 #define AssertSTNode(node, str)
 #endif
 
+int anonymous = 0; // anonymous structure counter
 SEType _STATIC_TYPE_VOID, _STATIC_TYPE_INT, _STATIC_TYPE_FLOAT;
 SEType *STATIC_TYPE_VOID, *STATIC_TYPE_INT, *STATIC_TYPE_FLOAT;
 SEField STATIC_FIELD_VOID, DUMMY_FIELD;
@@ -60,7 +61,7 @@ SEType *SEParseExp(STNode *exp) {
         STEntry *entry = NULL;
         SEField *signature = NULL;
         CLog(FG_CYAN, "%s", e3->next ? "ID LP Args RP" : "ID LP RP");
-        entry = STSearchBase(e1->sval);
+        entry = STSearchFunc(e1->sval);
         if (entry == NULL) {
           // undefined function, treat as int
           throwErrorS(SE_FUNCTION_UNDEFINED, e1->line, e1->sval);
@@ -87,7 +88,7 @@ SEType *SEParseExp(STNode *exp) {
         case LB: {
           CLog(FG_CYAN, "Exp LB Exp RB");
           if (t1->kind != ARRAY) {
-            throwErrorS(SE_ACCESS_TO_NON_ARRAY, e2->line, e1->sval);
+            throwErrorS(SE_ACCESS_TO_NON_ARRAY, e2->line, NULL);
             return t1;
           }
           SEType *t2 = SEParseExp(e3);
@@ -99,7 +100,7 @@ SEType *SEParseExp(STNode *exp) {
         case DOT: {
           CLog(FG_CYAN, "Exp DOT ID");
           if (t1->kind != STRUCTURE) {
-            throwErrorS(SE_ACCESS_TO_NON_STRUCT, e2->line, e1->sval);
+            throwErrorS(SE_ACCESS_TO_NON_STRUCT, e2->line, NULL);
             return t1;
           } else {
             SEType *type = NULL;
@@ -195,27 +196,30 @@ SEType *SEParseSpecifier(STNode *specifier) {
     if (tag->next) {
       // define a new struct
       // STRUCT OptTag LC DefList RC
+      char *name = tag->empty ? NULL : tag->child->sval;
       SEType *type = (SEType *)malloc(sizeof(SEType));
       {
-        STPushStack();
+        STPushStack(STACK_STRUCTURE);
         type->kind = STRUCTURE;
         type->structure = SEParseDefList(tag->next->next, false).head;
         STPopStack();
       }
-      if (!tag->empty) {
-        const char *name = tag->child->sval;
-        CLog(FG_GREEN, "new structure \"%s\"", name);
-        if (STSearchBase(name) != NULL) {
-          throwErrorS(SE_STRUCT_DUPLICATE, tag->line, name);
-        } else {
-          STInsertBase(name, type); // struct has global scope
-        }
+      if (tag->empty) {
+        // ID never begins with a space so it's safe!
+        name = (char *)malloc(sizeof(char) * 32);
+        sprintf(name, " ANONYMOUS_STRUCT_%08x", anonymous++);
+      }
+      CLog(FG_GREEN, "new structure \"%s\"", name);
+      if (STSearchStru(name) != NULL) {
+        throwErrorS(SE_STRUCT_DUPLICATE, tag->line, name);
+      } else {
+        STInsertStru(name, type);
       }
       return type;
     } else {
       // STRUCT Tag
       const char *name = tag->child->sval;
-      STEntry *entry = STSearchBase(name);
+      STEntry *entry = STSearchStru(name);
       if (entry == NULL) {
         // undefined struct, treat as INT
         throwErrorS(SE_STRUCT_UNDEFINED, tag->line, name);
@@ -275,13 +279,13 @@ void SEParseFunDec(STNode *fdec, SEType *type) {
   STNode *id = fdec->child;
   STNode *vars = id->next->next;
   const char *name = id->sval;
-  STEntry *entry = STSearchBase(name);
+  STEntry *entry = STSearchFunc(name);
   SEType *func = NULL;
   SEField *signature = NULL;
 
   if (entry == NULL) CLog(FG_GREEN, "new function \"%s\"", name);
 
-  STPushStack(); // treat signature as inner scope
+  STPushStack(STACK_LOCAL); // treat signature as inner scope
   if (vars->next) {
     signature = SEParseVarList(vars).head;
   } else {
@@ -295,7 +299,7 @@ void SEParseFunDec(STNode *fdec, SEType *type) {
     func->function.defined = fdec->next->token != SEMI;
     func->function.type = type;
     func->function.signature = signature;
-    STInsertBase(name, func); // function has global scope
+    STInsertFunc(name, func);
   } else {
     func = entry->type;
     if (func->kind != FUNCTION) {
@@ -350,7 +354,7 @@ void SEParseStmtList(STNode *list, SEType *type) {
 void SEParseStmt(STNode *stmt, SEType *type) {
   AssertSTNode(stmt, "Stmt");
   if (stmt->child->next == NULL) {
-    STPushStack();
+    STPushStack(STACK_LOCAL);
     SEParseCompSt(stmt->child, type);
     STPopStack();
     return;
@@ -608,22 +612,23 @@ bool SECompareField(const SEField *f1, const SEField *f2) {
 }
 
 // Destroy the type in memory until INT or FLOAT is met
-void SEDestroyType(SEType *type, bool force) {
+void SEDestroyType(SEType *type) {
   SEField *temp = NULL, *field = NULL;
   switch (type->kind) {
     case VOID:
     case BASIC:
       return;
     case ARRAY: {
-      SEDestroyType(type->array.elem, force);
+      // structures must be destroyed individually
+      if (type->array.elem->kind != STRUCTURE) {
+        SEDestroyType(type->array.elem);
+      }
       free(type);
       return;
     }
     case STRUCTURE: {
-      if (force) {
-        SEDestroyField(type->structure, force);
-        free(type);
-      }
+      SEDestroyField(type->structure);
+      free(type);
       return;
     }
     case FUNCTION: {
@@ -631,9 +636,12 @@ void SEDestroyType(SEType *type, bool force) {
         // undefined function detected when destroying its type
         throwErrorS(SE_FUNCTION_DECLARED_NOT_DEFINED, type->function.node->line, type->function.node->child->sval);
       }
-      SEDestroyType(type->function.type, force);
+      if (type->function.type->kind != STRUCTURE) {
+        // structures must be destroyed individually
+        SEDestroyType(type->function.type);
+      }
       if (type->function.signature != &STATIC_FIELD_VOID) {
-        SEDestroyField(type->function.signature, force);
+        SEDestroyField(type->function.signature);
       }
       free(type);
       return;
@@ -645,12 +653,15 @@ void SEDestroyType(SEType *type, bool force) {
 }
 
 // Destroy a chained field.
-void SEDestroyField(SEField *field, bool force) {
-  SEField *temp = NULL;
+void SEDestroyField(SEField *field) {
+  SEField *next = NULL;
   while (field != NULL) {
-    temp = field;
-    field = field->next;
-    SEDestroyType(temp->type, force);
-    free(temp);
+    next = field->next;
+    if (field->type->kind != STRUCTURE) {
+      // structures must be destroyed individually
+      SEDestroyType(field->type);
+    }
+    free(field);
+    field = next;
   }
 }

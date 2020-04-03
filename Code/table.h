@@ -15,7 +15,13 @@ typedef struct STEntry {
   SEType *type;
 } STEntry;
 
+enum STStackKind {
+  STACK_GLOBAL,    // global stack, destroy all contents.
+  STACK_LOCAL,     // local stack, do NOT destroy structures.
+  STACK_STRUCTURE, // structure stack, do NOT destroy types.
+};
 typedef struct STStack {
+  enum STStackKind kind;
   struct RBNode *root;
   struct STStack *prev; // no next
 } STStack;
@@ -23,14 +29,18 @@ typedef struct STStack {
 void STPrepare();
 void STDestroy();
 
-void STPushStack();
+void STPushStack(enum STStackKind kind);
 void STPopStack();
 
-void STInsertBase(const char *id, SEType *type);
+void STInsertStru(const char *id, SEType *type);
+void STInsertFunc(const char *id, SEType *type);
+void STInsertGlob(const char *id, SEType *type);
 void STInsertCurr(const char *id, SEType *type);
 
 STEntry *STSearch(const char *id);
-STEntry *STSearchBase(const char *id);
+STEntry *STSearchStru(const char *id);
+STEntry *STSearchFunc(const char *id);
+STEntry *STSearchGlob(const char *id);
 STEntry *STSearchCurr(const char *id);
 STEntry *STSearchAt(STStack *stack, STEntry *target);
 

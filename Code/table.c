@@ -13,9 +13,14 @@ STStack *currStack = NULL;
 
 // Prepare the base (global) symbol table.
 void STPrepare() {
+  /* Detach structure stack because we don't want to 
+   * destroy it, or we will have toooooo much trouble
+   * determining the destroy sequence of structures. */
   currStack = NULL;
   STPushStack(STACK_GLOBAL);
   struStack = currStack;
+
+  currStack = NULL;
   STPushStack(STACK_GLOBAL);
   funcStack = currStack;
   STPushStack(STACK_GLOBAL);

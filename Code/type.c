@@ -204,12 +204,12 @@ SEType *SEParseSpecifier(STNode *specifier) {
         STPopStack();
       }
       if (!tag->child->empty) {
-        const char *id = tag->child->sval;
-        CLog(FG_GREEN, "new structure \"%s\"", id);
-        if (STSearchBase(id) != NULL) {
+        const char *name = tag->child->sval;
+        CLog(FG_GREEN, "new structure \"%s\"", name);
+        if (STSearchBase(name) != NULL) {
           throwErrorS(SE_STRUCT_DUPLICATE, tag->child);
         } else {
-          STInsertBase(id, type); // struct has global scope
+          STInsertBase(name, type); // struct has global scope
         }
       }
     } else {
@@ -291,18 +291,20 @@ void SEParseFunDec(STNode *fdec, SEType *type) {
   STNode *id = fdec->child;
   STNode *vars = id->next->next;
   const char *name = id->sval;
-  STEntry *entry = NULL;
+  STEntry *entry = STSearch(name);
   SEType *func = NULL;
-  SEField *signature = &STATIC_FIELD_VOID;
+  SEField *signature = NULL;
+
+  if (entry == NULL) CLog(FG_GREEN, "new function \"%s\"", name);
 
   STPushStack(); // treat signature as inner scope
   if (vars->next) {
     signature = SEParseVarList(vars).head;
+  } else {
+    signature = &STATIC_FIELD_VOID;
   }
 
-  entry = STSearch(name);
   if (entry == NULL) {
-    CLog(FG_GREEN, "new function \"%s\"", name);
     func = (SEType *)malloc(sizeof(SEType));
     func->kind = FUNCTION;
     func->function.line = fdec->line;
@@ -320,6 +322,7 @@ void SEParseFunDec(STNode *fdec, SEType *type) {
       if (func->function.defined) {
         throwErrorS(SE_FUNCTION_DUPLICATE, id);
       } else {
+        CLog(FG_GREEN, "def function \"%s\"", name);
         func->function.defined = true;
       }
     }

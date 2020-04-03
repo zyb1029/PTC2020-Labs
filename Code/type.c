@@ -213,7 +213,10 @@ SEType *SEParseSpecifier(STNode *specifier) {
         sprintf(name, " ANONYMOUS_STRUCT_%08x", anonymous++);
       }
       CLog(FG_GREEN, "new structure \"%s\"", name);
-      if (STSearchStru(name) != NULL) {
+      if (STSearch(name) != NULL) {
+        // struct cannot have same name with variable
+        throwErrorS(SE_STRUCT_DUPLICATE, tag->line, name);
+      } else if (STSearchStru(name) != NULL) {
         throwErrorS(SE_STRUCT_DUPLICATE, tag->line, name);
       } else {
         STInsertStru(name, type);
@@ -524,7 +527,7 @@ SEFieldChain SEParseVarList(STNode *list) {
   AssertSTNode(list, "VarList");
   SEFieldChain chain = SEParseParamDec(list->child);
   if (list->child->next) {
-    SEFieldChain tail = SEParseParamDec(list->child->next->next);
+    SEFieldChain tail = SEParseVarList(list->child->next->next);
     chain.tail->next = tail.head;
     chain.tail = tail.tail;
   }

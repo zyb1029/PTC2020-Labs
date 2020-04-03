@@ -182,7 +182,6 @@ SEType *SEParseExp(STNode *exp) {
 // Parse a specifier. Only one type so we don't need a chain.
 SEType *SEParseSpecifier(STNode *specifier) {
   AssertSTNode(specifier, "Specifier");
-  Assert(specifier->next, "specifier at the end");
   STNode *child = specifier->child;
   if (child->token == TYPE) {
     if (!strcmp(child->sval, "int")) {

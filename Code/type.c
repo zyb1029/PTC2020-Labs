@@ -299,22 +299,22 @@ void SEParseFunDec(STNode *fdec, SEType *type) {
   } else {
     func = entry->type;
     if (func->kind != FUNCTION) {
-      throwErrorS(SE_FUNCTION_DUPLICATE, id); // treat as redefine
-      func->kind = FUNCTION; // overriding original type to avoid UB
-    }
-    if (fdec->next->token != SEMI) {
-      if (func->function.defined) {
-        throwErrorS(SE_FUNCTION_DUPLICATE, id);
-      } else {
-        CLog(FG_GREEN, "def function \"%s\"", name);
-        func->function.defined = true;
+      throwErrorS(SE_ACCESS_TO_NON_FUNCTION, id); // treat as bad function call
+    } else {
+      if (fdec->next->token != SEMI) {
+        if (func->function.defined) {
+          throwErrorS(SE_FUNCTION_DUPLICATE, id);
+        } else {
+          CLog(FG_GREEN, "def function \"%s\"", name);
+          func->function.defined = true;
+        }
       }
-    }
-    if (!SECompareType(func->function.type, type)) {
-      throwErrorS(SE_FUNCTION_CONFLICTING, id);
-    }
-    if (!SECompareField(func->function.signature, signature)) {
-      throwErrorS(SE_FUNCTION_CONFLICTING, id);
+      if (!SECompareType(func->function.type, type)) {
+        throwErrorS(SE_FUNCTION_CONFLICTING, id);
+      }
+      if (!SECompareField(func->function.signature, signature)) {
+        throwErrorS(SE_FUNCTION_CONFLICTING, id);
+      }
     }
   }
   if (fdec->next->token != SEMI) {

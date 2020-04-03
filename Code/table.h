@@ -29,6 +29,7 @@ typedef struct STStack {
 void STPrepare();
 void STDestroy();
 
+enum STStackKind getCurrentStackKind();
 void STPushStack(enum STStackKind kind);
 void STPopStack();
 

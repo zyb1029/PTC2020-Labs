@@ -28,6 +28,11 @@ void STDestroy() {
   while (currStack != NULL) STPopStack();
 }
 
+// Get kind of current ST stack.
+enum STStackKind getCurrentStackKind() {
+  return currStack->kind;
+}
+
 // Create a new syntax table and push it into chain.
 void STPushStack(enum STStackKind kind) {
   STStack *top = (STStack *)malloc(sizeof(STStack));

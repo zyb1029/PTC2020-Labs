@@ -490,7 +490,11 @@ SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
     // register ID in local scope
     const char *name = var->child->sval;
     if (STSearchCurr(name) != NULL) {
-      throwErrorS(SE_VARIABLE_DUPLICATE, var->child->line, name);
+      if (getCurrentStackKind() == STACK_STRUCTURE) {
+        throwErrorS(SE_STRUCT_FIELD_DUPLICATE, var->child->line, name);
+      } else {
+        throwErrorS(SE_VARIABLE_DUPLICATE, var->child->line, name);
+      }
     } else{
       STInsertCurr(var->child->sval, type);
       CLog(FG_GREEN, "new variable \"%s\"", var->child->sval);

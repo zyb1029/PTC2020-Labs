@@ -592,6 +592,8 @@ bool SECompareType(const SEType *t1, const SEType *t2) {
   if (t1->kind != t2->kind) return false;
   SEField *f1 = NULL, *f2 = NULL;
   switch (t1->kind) {
+    case VOID:
+      return t2->kind == VOID;
     case BASIC:
       return t1->basic == t2->basic;
     case ARRAY:
@@ -603,7 +605,7 @@ bool SECompareType(const SEType *t1, const SEType *t2) {
       return SECompareType(t1->function.type, t2->function.type)
           && SECompareField(t1->function.signature, t2->function.signature);
     default:
-      Panic("not implemented");
+      Panic("compare %d not implemented", t1->kind);
   }
   Panic("should not reach here");
   return false;

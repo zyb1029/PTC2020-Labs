@@ -240,10 +240,9 @@ SEType *SEParseSpecifier(STNode *specifier) {
 #define malloc(s) NO_MALLOC_ALLOWED_EXT_DEF_LIST(s)
 void SEParseExtDefList(STNode *list) {
   AssertSTNode(list, "ExtDefList");
+  if (list->empty) return;
   SEParseExtDef(list->child);
-  if (!list->child->next->empty) {
-    SEParseExtDefList(list->child->next);
-  }
+  SEParseExtDefList(list->child->next);
 }
 #undef malloc
 
@@ -338,10 +337,9 @@ void SEParseCompSt(STNode *comp, SEType *type) {
 #define malloc(s) NO_MALLOC_ALLOWED_STMT_LIST(s)
 void SEParseStmtList(STNode *list, SEType *type) {
   AssertSTNode(list, "StmtList");
+  if (list->empty) return;
   SEParseStmt(list->child, type);
-  if (!list->child->next->empty) {
-    SEParseStmtList(list->child->next, type);
-  }
+  SEParseStmtList(list->child->next, type);
 }
 #undef malloc
 
@@ -411,13 +409,12 @@ void SEParseStmt(STNode *stmt, SEType *type) {
 #define malloc(s) NO_MALLOC_ALLOWED_DEF_LIST(s)
 SEFieldChain SEParseDefList(STNode *list, bool assignable) {
   AssertSTNode(list, "DefList");
+  if (list->empty) return DUMMY_FIELD_CHAIN;
   SEFieldChain chain = SEParseDef(list->child, assignable);
-  if (!list->child->next->empty) {
-    SEFieldChain tail = SEParseDefList(list->child->next, assignable);
-    if (!assignable) {
-      chain.tail->next = tail.head;
-      chain.tail = tail.tail;
-    }
+  SEFieldChain tail = SEParseDefList(list->child->next, assignable);
+  if (tail.head != &DUMMY_FIELD) {
+    chain.tail->next = tail.head;
+    chain.tail = tail.tail;
   }
   return chain;
 }

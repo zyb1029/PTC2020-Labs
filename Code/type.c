@@ -124,7 +124,7 @@ SEType *SEParseExp(STNode *exp) {
           Log("DUMP LEFT:"), SEDumpType(t1);
           Log("DUMP RIGHT:"), SEDumpType(t2);
           if (!SECompareType(t1, t2)) {
-            throwErrorS(SE_MISMATCHED_OPERANDS, e3); // same as gcc
+            throwErrorS(SE_MISMATCHED_ASSIGNMENT, e3); // same as gcc
           }
           CLog(FG_RED, "lvalue not checked!"); // FIXME
           return t1;

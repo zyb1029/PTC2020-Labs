@@ -60,7 +60,7 @@ SEType *SEParseExp(STNode *exp) {
         STEntry *entry = NULL;
         SEField *signature = NULL;
         CLog(FG_CYAN, "%s", e3->next ? "ID LP Args RP" : "ID LP RP");
-        entry = STSearch(e1->sval);
+        entry = STSearchBase(e1->sval);
         if (entry == NULL) {
           // undefined function, treat as int
           throwErrorS(SE_FUNCTION_UNDEFINED, e1);
@@ -275,7 +275,7 @@ void SEParseFunDec(STNode *fdec, SEType *type) {
   STNode *id = fdec->child;
   STNode *vars = id->next->next;
   const char *name = id->sval;
-  STEntry *entry = STSearch(name);
+  STEntry *entry = STSearchBase(name);
   SEType *func = NULL;
   SEField *signature = NULL;
 
@@ -295,7 +295,7 @@ void SEParseFunDec(STNode *fdec, SEType *type) {
     func->function.defined = fdec->next->token != SEMI;
     func->function.type = type;
     func->function.signature = signature;
-    STInsertBase(name, func); // global scope
+    STInsertBase(name, func); // function has global scope
   } else {
     func = entry->type;
     if (func->kind != FUNCTION) {

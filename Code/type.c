@@ -598,7 +598,7 @@ bool SECompareType(const SEType *t1, const SEType *t2) {
     case BASIC:
       return t1->basic == t2->basic;
     case ARRAY:
-      if (t1->array.size != t2->array.size) return false;
+      // if (t1->array.size != t2->array.size) return false;
       return SECompareType(t1->array.elem, t2->array.elem);
     case STRUCTURE:
       return SECompareField(t1->structure, t2->structure);

@@ -21,6 +21,7 @@ typedef struct STNode STNode;
 typedef struct SEField SEField;
 
 typedef struct SEType {
+  bool extended; // should not be destroyed in local
   enum SETypeKind kind;
   union {
     int basic;
@@ -40,6 +41,7 @@ typedef struct SEType {
 
 typedef struct SEField {
   const char *name;
+  enum SETypeKind kind; // type may already be destroyed!
   struct SEType *type;
   struct SEField *next;
 } SEField;

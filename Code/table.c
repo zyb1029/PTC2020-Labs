@@ -3,12 +3,11 @@
 #include "table.h"
 #include "syntax.tab.h"
 
-//#define DEBUG
+#define DEBUG
 #include "debug.h"
 
 STStack *struStack = NULL;
 STStack *funcStack = NULL;
-STStack *globStack = NULL;
 STStack *currStack = NULL;
 
 // Prepare the base (global) symbol table.
@@ -18,8 +17,7 @@ void STPrepare() {
   struStack = currStack;
   STPushStack(STACK_GLOBAL);
   funcStack = currStack;
-  STPushStack(STACK_GLOBAL);
-  globStack = currStack;
+  STPushStack(STACK_LOCAL); // the base stack
   SEPrepare();
 }
 
@@ -71,15 +69,6 @@ void STInsertFunc(const char *id, SEType *type) {
   RBInsert(&(funcStack->root), (void *)entry, STRBCompare);
 }
 
-// Insert a symbol into glob (global) ST.
-void STInsertGlob(const char *id, SEType *type) {
-  STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
-  entry->id = id;
-  entry->type = type;
-  Log("Insert to base ST: %p %p \"%s\"", entry, type, id);
-  RBInsert(&(globStack->root), (void *)entry, STRBCompare);
-}
-
 // Insert a symbol into current (local) ST.
 void STInsertCurr(const char *id, SEType *type) {
   STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
@@ -118,13 +107,6 @@ STEntry *STSearchFunc(const char *id) {
   return STSearchAt(funcStack, &target);
 }
 
-// Search a symbol name in glob (global) ST.
-STEntry *STSearchGlob(const char *id) {
-  STEntry target;
-  target.id = id;
-  return STSearchAt(globStack, &target);
-}
-
 // Search a symbol name in current (local) ST.
 STEntry *STSearchCurr(const char *id) {
   STEntry target;
@@ -151,7 +133,7 @@ int STRBCompare(const void *p1, const void *p2) {
 void STRBDestroy(void *p) {
   STEntry *entry = (STEntry *)p;
   if (currStack->kind == STACK_GLOBAL ||
-      (currStack->kind == STACK_LOCAL && entry->type->kind != STRUCTURE)) {
+      (currStack->kind == STACK_LOCAL && !entry->type->extended)) {
     // only destroy types in global ST or non-struct in local ST
     Log("Destroy from ST: %p %p \"%s\"", p, entry->type, entry->id);
     SEDestroyType(entry->type);

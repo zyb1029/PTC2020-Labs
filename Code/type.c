@@ -5,7 +5,7 @@
 #include "semantics.h"
 #include "syntax.tab.h"
 
-//#define DEBUG
+#define DEBUG
 #include "debug.h"
 
 #ifdef DEBUG
@@ -203,6 +203,7 @@ SEType *SEParseSpecifier(STNode *specifier) {
       SEType *type = (SEType *)malloc(sizeof(SEType));
       {
         STPushStack(STACK_STRUCTURE);
+        type->extended = true; // struct has global scope
         type->kind = STRUCTURE;
         type->structure = SEParseDefList(tag->next->next, false).head;
         STPopStack();
@@ -293,7 +294,11 @@ void SEParseFunDec(STNode *fdec, SEType *type) {
 
   STPushStack(STACK_LOCAL); // treat signature as inner scope
   if (vars->next) {
-    signature = SEParseVarList(vars).head;
+    SEFieldChain chain = SEParseVarList(vars);
+    for (SEField *field = chain.head; field != NULL; field = field->next) {
+      field->type->extended = true; // signature should not be destroyed locally
+    }
+    signature = chain.head;
   } else {
     signature = &STATIC_FIELD_VOID;
   }
@@ -512,6 +517,7 @@ SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
       SEFieldChain chain;
       SEField *field = (SEField *)malloc(sizeof(SEField));
       field->name = var->child->sval;
+      field->kind = type->kind;
       field->type = type;
       field->next = NULL;
       chain.head = chain.tail = field;
@@ -550,6 +556,7 @@ SEFieldChain SEParseArgs(STNode *args) {
   SEType *type = SEParseExp(args->child);
   SEField *field = (SEField *)malloc(sizeof(SEField));
   field->name = NULL;
+  field->kind = type->kind;
   field->type = type;
   field->next = NULL;
   SEFieldChain chain = { field, field };
@@ -670,7 +677,7 @@ void SEDestroyField(SEField *field) {
   SEField *next = NULL;
   while (field != NULL) {
     next = field->next;
-    if (field->type->kind != STRUCTURE) {
+    if (field->kind != STRUCTURE) {
       // structures must be destroyed individually
       SEDestroyType(field->type);
     }

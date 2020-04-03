@@ -179,15 +179,13 @@ SEType *SEParseSpecifier(STNode *specifier) {
   AssertSTNode(specifier, "Specifier");
   Assert(specifier->next, "specifier at the end");
   STNode *child = specifier->child;
-  SEType *type = (SEType *)malloc(sizeof(SEType));
   if (child->token == TYPE) {
-    type->kind = BASIC;
     if (!strcmp(child->sval, "int")) {
       Log("INT");
-      type->basic = INT;
+      return STATIC_TYPE_INT;
     } else {
       Log("FLOAT");
-      type->basic = FLOAT;
+      return STATIC_TYPE_FLOAT;
     }
   } else {
     Log("STRUCT");
@@ -197,6 +195,7 @@ SEType *SEParseSpecifier(STNode *specifier) {
     if (tag->next) {
       // define a new struct
       // STRUCT OptTag LC DefList RC
+      SEType *type = (SEType *)malloc(sizeof(SEType));
       {
         STPushStack();
         type->kind = STRUCTURE;
@@ -211,43 +210,27 @@ SEType *SEParseSpecifier(STNode *specifier) {
         } else {
           STInsertBase(name, type); // struct has global scope
         }
+        return type;
       }
     } else {
       // STRUCT Tag
       const char *name = tag->child->sval;
-      STEntry *entry = STSearch(name);
+      STEntry *entry = STSearchBase(name);
       if (entry == NULL) {
-        if (specifier->next->token == SEMI) {
-          // only declare the struct
-          CLog(FG_GREEN, "dec structure %s", name);
-          type->kind = STRUCTURE;
-          type->structure = NULL;
-          STInsertBase(name, type); // global scope
-        } else {
-          // undefined struct, treat as INT
-          throwErrorS(SE_STRUCT_UNDEFINED, tag->child);
-          type->kind = BASIC;
-          type->basic = INT;
-        }
+        // undefined struct, treat as INT
+        throwErrorS(SE_STRUCT_UNDEFINED, tag->child);
+        return STATIC_TYPE_INT;
       } else if (entry->type->kind != STRUCTURE) {
         // duplicated name of struct, treat as INT
         throwErrorS(SE_STRUCT_DUPLICATE, tag->child);
-        type->kind = BASIC;
-        type->basic = INT;
+        return STATIC_TYPE_INT;
       } else {
-        // FIXME: what if we declated a struct twice??
-        if (entry->type->structure == NULL) {
-          // declared but not defined, treat as INT
-          throwErrorS(SE_STRUCT_UNDEFINED, tag->child);
-          type->kind = BASIC;
-          type->basic = INT;
-        } else {
-          type = entry->type;
-        }
+        return entry->type;
       }
     }
   }
-  return type; 
+  Panic("should not reach here");
+  return NULL;
 }
 
 // Parse an ext-definition list.
@@ -605,7 +588,7 @@ bool SECompareType(const SEType *t1, const SEType *t2) {
       return SECompareType(t1->function.type, t2->function.type)
           && SECompareField(t1->function.signature, t2->function.signature);
     default:
-      Panic("compare %d not implemented", t1->kind);
+      Panic("compare %p (kind %d) not implemented", t1, t1->kind);
   }
   Panic("should not reach here");
   return false;
@@ -634,8 +617,9 @@ void SEDestroyType(SEType *type) {
       return;
     }
     case STRUCTURE: {
-      SEDestroyField(type->structure);
-      free(type);
+      // DOUBLE FREEING ???
+      //SEDestroyField(type->structure);
+      //free(type);
       return;
     }
     case FUNCTION: {
@@ -651,7 +635,7 @@ void SEDestroyType(SEType *type) {
       return;
     }
     default:
-      Panic("destroy %d not implemented", type->kind);
+      Panic("destroy %p (kind %d) not implemented", type, type->kind);
   }
   Panic("should not reach here");
 }

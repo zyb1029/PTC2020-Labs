@@ -21,7 +21,6 @@ typedef struct STNode STNode;
 typedef struct SEField SEField;
 
 typedef struct SEType {
-  bool assignable;
   enum SEBasicType kind;
   union {
     int basic;

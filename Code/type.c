@@ -5,7 +5,7 @@
 #include "semantics.h"
 #include "syntax.tab.h"
 
-#define DEBUG
+//#define DEBUG
 #include "debug.h"
 
 #ifdef DEBUG
@@ -675,6 +675,7 @@ void SEDestroyType(SEType *type) {
 // Destroy a chained field.
 void SEDestroyField(SEField *field) {
   SEField *next = NULL;
+  if (field == &DUMMY_FIELD) return;
   while (field != NULL) {
     next = field->next;
     if (field->kind != STRUCTURE) {

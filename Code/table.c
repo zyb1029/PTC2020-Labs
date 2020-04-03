@@ -3,7 +3,7 @@
 #include "table.h"
 #include "syntax.tab.h"
 
-#define DEBUG
+//#define DEBUG
 #include "debug.h"
 
 STStack *struStack = NULL;

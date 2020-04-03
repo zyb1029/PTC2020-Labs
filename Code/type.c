@@ -72,7 +72,7 @@ SEType *SEParseExp(STNode *exp) {
         }
         signature = e3->next ? SEParseArgs(e3).head : &STATIC_FIELD_VOID;
         if (!SECompareField(entry->type->function.signature, signature)) {
-          throwErrorS(SE_MISMATCHED_SIGNATURE, e3);
+          throwErrorS(SE_MISMATCHED_SIGNATURE, e1);
         }
         return entry->type->function.type;
       }

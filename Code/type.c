@@ -618,7 +618,11 @@ void SEDestroyType(SEType *type) {
     }
     case FUNCTION: {
       SEDestroyType(type->function.type);
-      SEDestroyField(type->function.signature);
+      if (type->function.signature != &STATIC_FIELD_VOID) {
+        SEDestroyField(type->function.signature);
+      }
+      free(type);
+      return;
     }
     default:
       Panic("destroy %d not implemented", type->kind);

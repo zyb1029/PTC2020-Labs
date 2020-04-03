@@ -5,7 +5,7 @@ struct Position
 
 struct Position
 {
-  flost y;
+  float y;
 };
 
 int main()

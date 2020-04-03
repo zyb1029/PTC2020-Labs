@@ -5,7 +5,7 @@
 #include "semantics.h"
 #include "syntax.tab.h"
 
-#define DEBUG
+//#define DEBUG
 #include "debug.h"
 
 #ifdef DEBUG
@@ -61,7 +61,7 @@ SEType *SEParseExp(STNode *exp) {
         STEntry *entry = NULL;
         SEField *signature = NULL;
         CLog(FG_CYAN, "%s", e3->next ? "ID LP Args RP" : "ID LP RP");
-        entry = STSearchFunc(e1->sval);
+        entry = STSearch(e1->sval);
         if (entry == NULL) {
           // undefined function, treat as int
           throwErrorS(SE_FUNCTION_UNDEFINED, e1->line, e1->sval);
@@ -122,9 +122,11 @@ SEType *SEParseExp(STNode *exp) {
         case ASSIGNOP: {
           bool lvalue = false;
           SEType *t2 = SEParseExp(e3);
+#ifdef DEBUG
           CLog(FG_CYAN, "Exp ASSIGNOP Exp");
           Log("DUMP LEFT:"), SEDumpType(t1);
           Log("DUMP RIGHT:"), SEDumpType(t2);
+#endif
           if (!SECompareType(t1, t2)) {
             throwErrorS(SE_MISMATCHED_ASSIGNMENT, e2->line, NULL);
           }
@@ -142,9 +144,11 @@ SEType *SEParseExp(STNode *exp) {
         case AND:
         case OR: {
           SEType *t2 = SEParseExp(e3);
+#ifdef DEBUG
           CLog(FG_CYAN, "Exp AND/OR Exp");
           Log("DUMP LEFT:"), SEDumpType(t1);
           Log("DUMP RIGHT:"), SEDumpType(t2);
+#endif
           if (!SECompareType(STATIC_TYPE_INT, t1) ||
               !SECompareType(STATIC_TYPE_INT, t2)) {
             throwErrorS(SE_MISMATCHED_OPERANDS, e2->line, NULL);

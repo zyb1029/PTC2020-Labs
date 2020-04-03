@@ -3,7 +3,7 @@
 #include "semantics.h"
 #include "syntax.tab.h"
 
-#define DEBUG
+//#define DEBUG
 #include "debug.h"
 
 extern bool hasErrorS;

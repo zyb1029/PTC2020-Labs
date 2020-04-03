@@ -25,10 +25,7 @@ void STPrepare() {
 
 // Destroy all symbol tables in system.
 void STDestroy() {
-  /* Detach structure stack because we don't want to 
-   * destroy it, or we will have toooooo much trouble
-   * determining the destroy sequence of structures. */
-  while (currStack != struStack) STPopStack();
+  while (currStack != NULL) STPopStack();
 }
 
 // Get kind of current ST stack.

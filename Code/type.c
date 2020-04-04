@@ -93,7 +93,7 @@ SEType *SEParseExp(STNode *exp) {
           if (t2->kind != BASIC || t2->basic != INT) {
             throwErrorS(SE_NON_INTEGER_INDEX, e3->line, NULL);
           }
-          return t1->array.elem;
+          return t1->array.type;
         }
         case DOT: {
           CLog(FG_CYAN, "Exp DOT ID");
@@ -485,7 +485,8 @@ SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
     SEType *arrayType = (SEType *)malloc(sizeof(SEType));
     arrayType->kind = ARRAY;
     arrayType->array.size = var->child->next->next->ival;
-    arrayType->array.elem = type;
+    arrayType->array.kind = type->kind;
+    arrayType->array.type = type;
     return SEParseVarDec(var->child, arrayType, assignable);
   } else {
     // register ID in local scope
@@ -577,7 +578,7 @@ void SEDumpType(const SEType *type) {
       break;
     case ARRAY:
       Log("%d-array of", type->array.size);
-      SEDumpType(type->array.elem);
+      SEDumpType(type->array.type);
       break;
     case STRUCTURE:
       Log("STRUCTURE");
@@ -602,7 +603,7 @@ bool SECompareType(const SEType *t1, const SEType *t2) {
       return t1->basic == t2->basic;
     case ARRAY:
       // if (t1->array.size != t2->array.size) return false;
-      return SECompareType(t1->array.elem, t2->array.elem);
+      return SECompareType(t1->array.type, t2->array.type);
     case STRUCTURE:
       return SECompareField(t1->structure, t2->structure);
     case FUNCTION:
@@ -634,8 +635,8 @@ void SEDestroyType(SEType *type) {
       return;
     case ARRAY: {
       // structures must be destroyed individually
-      if (type->array.elem->kind != STRUCTURE) {
-        SEDestroyType(type->array.elem);
+      if (type->array.kind != STRUCTURE) {
+        SEDestroyType(type->array.type);
       }
       free(type);
       return;

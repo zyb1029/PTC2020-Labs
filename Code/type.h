@@ -27,7 +27,8 @@ typedef struct SEType {
     int basic;
     struct {
       int size;
-      struct SEType *elem;
+      enum SEBasicType kind; // type may already be destroyed!
+      struct SEType *type;
     } array;
     struct SEField *structure;
     struct {

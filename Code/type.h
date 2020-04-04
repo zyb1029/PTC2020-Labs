@@ -8,7 +8,7 @@
 
 #include <stdbool.h>
 
-enum SETypeKind {
+enum SEBasicType {
   VOID,
   BASIC,
   ARRAY,
@@ -22,7 +22,7 @@ typedef struct SEField SEField;
 
 typedef struct SEType {
   bool extended; // should not be destroyed in local
-  enum SETypeKind kind;
+  enum SEBasicType kind;
   union {
     int basic;
     struct {
@@ -41,7 +41,7 @@ typedef struct SEType {
 
 typedef struct SEField {
   const char *name;
-  enum SETypeKind kind; // type may already be destroyed!
+  enum SEBasicType kind; // type may already be destroyed!
   struct SEType *type;
   struct SEField *next;
 } SEField;

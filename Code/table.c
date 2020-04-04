@@ -1,9 +1,8 @@
 #include <string.h>
 #include "type.h"
 #include "table.h"
+#include "semantics.h"
 #include "syntax.tab.h"
-
-//#define DEBUG
 #include "debug.h"
 
 STStack *struStack = NULL;
@@ -13,11 +12,11 @@ STStack *currStack = NULL;
 // Prepare the base (global) symbol table.
 void STPrepare() {
   currStack = NULL;
-  STPushStack(STACK_GLOBAL);
+  STPushStack(STACK_GLOBAL); // stack for structures
   struStack = currStack;
-  STPushStack(STACK_GLOBAL);
+  STPushStack(STACK_GLOBAL); // stack for functions
   funcStack = currStack;
-  STPushStack(STACK_LOCAL); // the base stack
+  STPushStack(STACK_LOCAL); // the global scope for variables
   SEPrepare();
 }
 
@@ -26,16 +25,16 @@ void STDestroy() {
   while (currStack != NULL) STPopStack();
 }
 
-// Get kind of current ST stack.
-enum STStackKind getCurrentStackKind() {
-  return currStack->kind;
+// Get type of current ST stack.
+enum STStackType getCurrentStackType() {
+  return currStack->type;
 }
 
 // Create a new syntax table and push it into chain.
-void STPushStack(enum STStackKind kind) {
+void STPushStack(enum STStackType type) {
   STStack *top = (STStack *)malloc(sizeof(STStack));
-  Log("Push ST %p (kind %d)", top, kind);
-  top->kind = kind;
+  Log("Push ST %p (type %d)", top, type);
+  top->type = type;
   top->root = NULL;
   top->prev = currStack;
   currStack = top;
@@ -132,8 +131,8 @@ int STRBCompare(const void *p1, const void *p2) {
 // Destroy an ST entry.
 void STRBDestroy(void *p) {
   STEntry *entry = (STEntry *)p;
-  if (currStack->kind == STACK_GLOBAL ||
-      (currStack->kind == STACK_LOCAL && !entry->type->extended)) {
+  if (currStack->type == STACK_GLOBAL ||
+      (currStack->type == STACK_LOCAL && !entry->type->extended)) {
     // only destroy types in global ST or non-struct in local ST
     Log("Destroy from ST: %p %p \"%s\"", p, entry->type, entry->id);
     SEDestroyType(entry->type);

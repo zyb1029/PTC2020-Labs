@@ -6,6 +6,11 @@
 #ifndef SEMANTIC_H
 #define SEMANTIC_H
 
+#define SEDebug false // <- debug switch
+#if SEDebug
+#define DEBUG
+#endif
+
 #include "tree.h"
 #include "rbtree.h"
 #include "type.h"

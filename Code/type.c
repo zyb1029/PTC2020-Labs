@@ -4,8 +4,6 @@
 #include "table.h"
 #include "semantics.h"
 #include "syntax.tab.h"
-
-//#define DEBUG
 #include "debug.h"
 
 #ifdef DEBUG
@@ -493,7 +491,7 @@ SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
     // register ID in local scope
     const char *name = var->child->sval;
     if (STSearchCurr(name) != NULL) {
-      if (getCurrentStackKind() == STACK_STRUCTURE) {
+      if (getCurrentStackType() == STACK_STRUCTURE) {
         throwErrorS(SE_STRUCT_FIELD_DUPLICATE, var->child->line, name);
       } else {
         throwErrorS(SE_VARIABLE_DUPLICATE, var->child->line, name);

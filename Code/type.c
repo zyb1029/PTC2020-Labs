@@ -54,7 +54,7 @@ SEType *SEParseExp(STNode *exp) {
     case NOT: {
       CLog(FY_CYAN, "NOT Exp");
       SEType *type = SEParseExp(e2);
-      if (type->kind != BASIC || type->basic != INT) {
+      if (!SECompareType(type, STATIC_TYPE_INT)) {
         throwErrorS(SE_MISMATCHED_OPERANDS, e1->line, NULL);
       }
       return type;
@@ -158,8 +158,8 @@ SEType *SEParseExp(STNode *exp) {
           CLog(FG_CYAN, "Exp AND/OR Exp");
           Log("DUMP LEFT:"); SEDumpType(t1);
           Log("DUMP RIGHT:"); SEDumpType(t2);
-          if (!SECompareType(STATIC_TYPE_INT, t1) ||
-              !SECompareType(STATIC_TYPE_INT, t2)) {
+          if (!SECompareType(t1, STATIC_TYPE_INT) ||
+              !SECompareType(t2, STATIC_TYPE_INT)) {
             throwErrorS(SE_MISMATCHED_OPERANDS, e2->line, NULL);
           }
           return STATIC_TYPE_INT; // always return INT
@@ -167,7 +167,7 @@ SEType *SEParseExp(STNode *exp) {
         case RELOP: {
           CLog(FG_CYAN, "Exp RELOP Exp");
           SEType *t2 = SEParseExp(e3);
-          if (!SECompareType(t1, t2)) {
+          if (t1->kind != BASIC || !SECompareType(t1, t2)) {
             throwErrorS(SE_MISMATCHED_OPERANDS, e2->line, NULL);
           }
           return STATIC_TYPE_INT; // always return INT

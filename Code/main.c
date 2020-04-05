@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "tree.h"
+#include "semantics.h"
 
 extern void yyrestart(FILE *);
 extern int yyparse_wrap(); // defined in syntax.y
@@ -8,6 +9,7 @@ extern int yyparse_wrap(); // defined in syntax.y
 int  errLineno = 0;
 bool hasErrorA = false;
 bool hasErrorB = false;
+bool hasErrorS = false;
 STNode* stroot = NULL;
 
 int main(int argc, char *argv[]) {
@@ -21,10 +23,18 @@ int main(int argc, char *argv[]) {
     return 2;
   }
 
+  // Step 1: call yyparse to get syntax tree.
   yyrestart(f);
   yyparse_wrap();
+  if (hasErrorA || hasErrorB) {
+    return 3;
+  }
+  //printSyntaxTree();
 
-  if (!hasErrorA && !hasErrorB) printSyntaxTree();
-
+  // Step 2: conduct a full semantic scan.
+  semanticScan();
+  if (hasErrorS) {
+    return 0; // avoid checker see this as runtime error
+  }
   return 0;
 }

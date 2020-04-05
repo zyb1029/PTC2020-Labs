@@ -41,11 +41,25 @@ SEType *SEParseExp(STNode *exp) {
   STNode *e2 = e1 ? e1->next : NULL;
   STNode *e3 = e2 ? e2->next : NULL;
   switch (e1->token) {
-    case LP:    // LP Exp RP
-    case MINUS: // MINUS Exp
-    case NOT:   // NOT Exp
+    case LP: // LP Exp RP
       return SEParseExp(e2);
-    case ID:
+    case MINUS: {
+      CLog(FG_CYAN, "MINUS Exp");
+      SEType *type = SEParseExp(e2);
+      if (type->kind != BASIC) {
+        throwErrorS(SE_MISMATCHED_OPERANDS, e1->line, NULL);
+      }
+      return type;
+    }
+    case NOT: {
+      CLog(FY_CYAN, "NOT Exp");
+      SEType *type = SEParseExp(e2);
+      if (type->kind != BASIC || type->basic != INT) {
+        throwErrorS(SE_MISMATCHED_OPERANDS, e1->line, NULL);
+      }
+      return type;
+    }
+    case ID: {
       if (e2 == NULL) {
         STEntry *entry = STSearch(e1->sval);
         if (entry == NULL) {
@@ -76,6 +90,7 @@ SEType *SEParseExp(STNode *exp) {
         return entry->type->function.type;
       }
       break;
+    }
     case INT:
     case FLOAT: {
       return e1->token == INT ? STATIC_TYPE_INT : STATIC_TYPE_FLOAT;
@@ -160,7 +175,7 @@ SEType *SEParseExp(STNode *exp) {
         default: {
           CLog(FG_CYAN, "Exp PLUS/MINUS/STAR/DIV Exp");
           SEType *t2 = SEParseExp(e3);
-          if (!SECompareType(t1, t2)) {
+          if (t1->kind != BASIC || !SECompareType(t1, t2)) {
             throwErrorS(SE_MISMATCHED_OPERANDS, e2->line, NULL);
           }
           return t1; // always treat as t1

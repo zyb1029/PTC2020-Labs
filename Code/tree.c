@@ -40,3 +40,9 @@ void printSyntaxTreeAux(STNode *node, int indent) {
   }
 }
 
+void teardownSyntaxTree(STNode *node) {
+  for (STNode *child = node->child; child != NULL; child = child->next) {
+    teardownSyntaxTree(child);
+  }
+  free(node);
+}

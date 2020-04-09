@@ -33,6 +33,7 @@ int main(int argc, char *argv[]) {
 
   // Step 2: conduct a full semantic scan.
   semanticScan();
+  teardownSyntaxTree(stroot);
   if (hasErrorS) {
     return 0; // avoid checker see this as runtime error
   }

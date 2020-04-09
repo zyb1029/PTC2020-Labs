@@ -28,7 +28,8 @@ typedef struct STNode {
 extern STNode *stroot;
 
 void printSyntaxTree();
-void printSyntaxTreeAux(STNode *, int);
+void printSyntaxTreeAux(STNode *node, int indent);
+void teardownSyntaxTree(STNode *node);
 
 #endif
 

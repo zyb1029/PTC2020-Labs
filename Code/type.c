@@ -62,8 +62,8 @@ SEType *SEParseExp(STNode *exp) {
     case ID: {
       if (e2 == NULL) {
         STEntry *entry = STSearch(e1->sval);
-        if (entry == NULL) {
-          // undefined variable, treat as int
+        if (entry == NULL || STSearchStru(e1->sval) != NULL) {
+          // undefined variable or same name as struct, treat as int
           throwErrorS(SE_VARIABLE_UNDEFINED, e1->line, e1->sval);
           return STATIC_TYPE_INT; 
         } else {

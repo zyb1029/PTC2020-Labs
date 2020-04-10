@@ -17,8 +17,8 @@ enum SEBasicType {
 };
 
 // Forward declarations
-typedef struct STNode STNode;
-typedef struct SEField SEField;
+struct STNode;
+struct SEField;
 
 typedef struct SEType {
   bool extended; // should not be destroyed in local
@@ -32,7 +32,7 @@ typedef struct SEType {
     } array;
     struct SEField *structure;
     struct {
-      STNode *node;
+      struct STNode *node;
       bool defined;
       struct SEType *type;
       struct SEField *signature;
@@ -54,27 +54,27 @@ typedef struct SEFieldChain {
 
 void SEPrepare();
 
-SEType *SEParseExp(STNode *exp);
-SEType *SEParseSpecifier(STNode *specifier);
+SEType *SEParseExp(struct STNode *exp);
+SEType *SEParseSpecifier(struct STNode *specifier);
 
-void SEParseExtDefList(STNode *list);
-void SEParseExtDef(STNode *edef);
-void SEParseExtDecList(STNode *list, SEType *type);
-void SEParseFunDec(STNode *fdec, SEType *type);
+void SEParseExtDefList(struct STNode *list);
+void SEParseExtDef(struct STNode *edef);
+void SEParseExtDecList(struct STNode *list, SEType *type);
+void SEParseFunDec(struct STNode *fdec, SEType *type);
 
-void SEParseCompSt(STNode *comp, SEType *type);
-void SEParseStmtList(STNode *list, SEType *type);
-void SEParseStmt(STNode *stmt, SEType *type);
+void SEParseCompSt(struct STNode *comp, SEType *type);
+void SEParseStmtList(struct STNode *list, SEType *type);
+void SEParseStmt(struct STNode *stmt, SEType *type);
 
 // not assignable == function signature, or struct definition
-SEFieldChain SEParseDefList(STNode *list, bool assignable);
-SEFieldChain SEParseDef(STNode *def, bool assignable);
-SEFieldChain SEParseDecList(STNode *list, SEType *type, bool assignable);
-SEFieldChain SEParseDec(STNode *dec, SEType *type, bool assignable);
-SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable);
-SEFieldChain SEParseVarList(STNode *list);
-SEFieldChain SEParseParamDec(STNode *pdec);
-SEFieldChain SEParseArgs(STNode *args);
+SEFieldChain SEParseDefList(struct STNode *list, bool assignable);
+SEFieldChain SEParseDef(struct STNode *def, bool assignable);
+SEFieldChain SEParseDecList(struct STNode *list, SEType *type, bool assignable);
+SEFieldChain SEParseDec(struct STNode *dec, SEType *type, bool assignable);
+SEFieldChain SEParseVarDec(struct STNode *var, SEType *type, bool assignable);
+SEFieldChain SEParseVarList(struct STNode *list);
+SEFieldChain SEParseParamDec(struct STNode *pdec);
+SEFieldChain SEParseArgs(struct STNode *args);
 
 void SEDumpType(const SEType *type);
 bool SECompareType(const SEType *t1, const SEType *t2);

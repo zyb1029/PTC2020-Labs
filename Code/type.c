@@ -23,14 +23,17 @@ const SEFieldChain DUMMY_FIELD_CHAIN = { &DUMMY_FIELD, &DUMMY_FIELD };
 void SEPrepare() {
   STATIC_TYPE_VOID = &_STATIC_TYPE_VOID;
   STATIC_TYPE_VOID->kind = VOID;
+  STATIC_TYPE_VOID->parent = STATIC_TYPE_VOID;
   STATIC_FIELD_VOID.type = STATIC_TYPE_VOID;
   STATIC_FIELD_VOID.next = NULL;
   STATIC_TYPE_INT = &_STATIC_TYPE_INT;
   STATIC_TYPE_INT->kind = BASIC;
   STATIC_TYPE_INT->basic = INT;
+  STATIC_TYPE_INT->parent = STATIC_TYPE_INT;
   STATIC_TYPE_FLOAT = &_STATIC_TYPE_FLOAT;
   STATIC_TYPE_FLOAT->kind = BASIC;
   STATIC_TYPE_FLOAT->basic = FLOAT;
+  STATIC_TYPE_FLOAT->parent = STATIC_TYPE_FLOAT;
 }
 
 // Parse an expression. Only one type so we don't need a chain.
@@ -214,6 +217,7 @@ SEType *SEParseSpecifier(STNode *specifier) {
         STPushStack(STACK_STRUCTURE);
         type->extended = true; // struct has global scope
         type->kind = STRUCTURE;
+        type->parent = type;
         type->structure = SEParseDefList(tag->next->next, false).head;
         STPopStack();
       }
@@ -315,6 +319,7 @@ void SEParseFunDec(STNode *fdec, SEType *type) {
   if (entry == NULL) {
     func = (SEType *)malloc(sizeof(SEType));
     func->kind = FUNCTION;
+    func->parent = func;
     func->function.node = fdec;
     func->function.defined = fdec->next->token != SEMI;
     func->function.type = type;
@@ -499,6 +504,7 @@ SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
     // VarDec LB INT RB
     SEType *arrayType = (SEType *)malloc(sizeof(SEType));
     arrayType->kind = ARRAY;
+    arrayType->parent = arrayType;
     arrayType->array.size = var->child->next->next->ival;
     arrayType->array.kind = type->kind;
     arrayType->array.type = type;
@@ -610,9 +616,18 @@ void SEDumpType(const SEType *type) {
 #endif
 }
 
+SEType *SEGetParentType(SEType *t) {
+  if (t->parent == t) return t;
+  return t->parent = SEGetParentType(t->parent);
+}
+
 // Compare two types, return true if they are same.
-bool SECompareType(const SEType *t1, const SEType *t2) {
+bool SECompareType(SEType *t1, SEType *t2) {
+  Log("%p (%d) vs %p (%d)", t1, t1->kind, t2, t2->kind);
+  t1 = SEGetParentType(t1);
+  t2 = SEGetParentType(t2);
   if (t1->kind != t2->kind) return false;
+  if (t1->parent == t2->parent) return true;
   SEField *f1 = NULL, *f2 = NULL;
   switch (t1->kind) {
     case VOID:
@@ -623,7 +638,10 @@ bool SECompareType(const SEType *t1, const SEType *t2) {
       // if (t1->array.size != t2->array.size) return false;
       return SECompareType(t1->array.type, t2->array.type);
     case STRUCTURE:
-      return SECompareField(t1->structure, t2->structure);
+      if (SECompareField(t1->structure, t2->structure)) {
+        t2->parent = t1;
+        return true;
+      } else return false;
     case FUNCTION:
       return SECompareType(t1->function.type, t2->function.type)
           && SECompareField(t1->function.signature, t2->function.signature);
@@ -635,7 +653,7 @@ bool SECompareType(const SEType *t1, const SEType *t2) {
 }
 
 // Compare two field chains, return true if they are same.
-bool SECompareField(const SEField *f1, const SEField *f2) {
+bool SECompareField(SEField *f1, SEField *f2) {
   while (f1 != NULL && f2 != NULL) {
     if (!SECompareType(f1->type, f2->type)) return false;
     f1 = f1->next;

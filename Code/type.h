@@ -23,6 +23,7 @@ struct SEField;
 typedef struct SEType {
   bool extended; // should not be destroyed in local
   enum SEBasicType kind;
+  struct SEType *parent; // disjoint-set-unions
   union {
     int basic;
     struct {
@@ -77,8 +78,8 @@ SEFieldChain SEParseParamDec(struct STNode *pdec);
 SEFieldChain SEParseArgs(struct STNode *args);
 
 void SEDumpType(const SEType *type);
-bool SECompareType(const SEType *t1, const SEType *t2);
-bool SECompareField(const SEField *f1, const SEField *f2);
+bool SECompareType(SEType *t1, SEType *t2);
+bool SECompareField(SEField *f1, SEField *f2);
 void SEDestroyType(SEType *type);
 void SEDestroyField(SEField *field);
 

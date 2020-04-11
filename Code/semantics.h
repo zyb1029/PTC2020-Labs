@@ -6,7 +6,7 @@
 #ifndef SEMANTIC_H
 #define SEMANTIC_H
 
-#define SEDebug false // <- debug switch
+#define SEDebug true // <- debug switch
 #if SEDebug
 #define DEBUG
 #endif

@@ -52,7 +52,7 @@ SEType *SEParseExp(STNode *exp) {
       return type;
     }
     case NOT: {
-      CLog(FY_CYAN, "NOT Exp");
+      CLog(FG_CYAN, "NOT Exp");
       SEType *type = SEParseExp(e2);
       if (!SECompareType(type, STATIC_TYPE_INT)) {
         throwErrorS(SE_MISMATCHED_OPERANDS, e1->line, NULL);
@@ -65,7 +65,7 @@ SEType *SEParseExp(STNode *exp) {
         if (entry == NULL || STSearchStru(e1->sval) != NULL) {
           // undefined variable or same name as struct, treat as int
           throwErrorS(SE_VARIABLE_UNDEFINED, e1->line, e1->sval);
-          return STATIC_TYPE_INT; 
+          return STATIC_TYPE_INT;
         } else {
           return entry->type;
         }
@@ -421,12 +421,12 @@ void SEParseStmt(STNode *stmt, SEType *type) {
 #undef malloc
 
 /**
- * SEFieldChain is a struct of head and tail of the chain. 
+ * SEFieldChain is a struct of head and tail of the chain.
  *                chain
  *   +-------------+-------------------+
  *   |                                 |
  * head -> head+1 -> ... -> tail-1 -> tail
- * 
+ *
  * If the node is a struct definition or a function signature,
  * we will want the chain to store its into in ST. Otherwise,
  * we do not care about what the chain contains at all.
@@ -588,6 +588,9 @@ SEFieldChain SEParseArgs(STNode *args) {
 void SEDumpType(const SEType *type) {
 #ifdef DEBUG
   switch (type->kind) {
+    case VOID:
+      Log("VOID");
+      break;
     case BASIC:
       Log("%s", type->basic == INT ? "INT" : "FLOAT");
       break;

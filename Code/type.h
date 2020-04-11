@@ -23,7 +23,7 @@ struct SEField;
 typedef struct SEType {
   bool extended; // should not be destroyed in local
   enum SEBasicType kind;
-  struct SEType *parent; // disjoint-set-unions
+  struct SEType *parent; // disjoint-set-unions, see massimo's m25
   union {
     int basic;
     struct {

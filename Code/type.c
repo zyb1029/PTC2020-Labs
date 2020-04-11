@@ -616,6 +616,8 @@ void SEDumpType(const SEType *type) {
 #endif
 }
 
+// Get parent type in disjoint-set-union.
+// Path is compressed for better performance.
 SEType *SEGetParentType(SEType *t) {
   if (t->parent == t) return t;
   return t->parent = SEGetParentType(t->parent);
@@ -643,8 +645,11 @@ bool SECompareType(SEType *t1, SEType *t2) {
         return true;
       } else return false;
     case FUNCTION:
-      return SECompareType(t1->function.type, t2->function.type)
-          && SECompareField(t1->function.signature, t2->function.signature);
+      if (SECompareType(t1->function.type, t2->function.type) &&
+          SECompareField(t1->function.signature, t2->function.signature)) {
+        t2->parent = t1;
+        return true;
+      } else return false;
     default:
       Panic("compare %p (kind %d) not implemented", t1, t1->kind);
   }

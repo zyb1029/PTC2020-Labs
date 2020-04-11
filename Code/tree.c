@@ -41,7 +41,8 @@ void printSyntaxTreeAux(STNode *node, int indent) {
 }
 
 void teardownSyntaxTree(STNode *node) {
-  for (STNode *child = node->child; child != NULL; child = child->next) {
+  for (STNode *child = node->child, *next = NULL; child != NULL; child = next) {
+    next = child->next; // child will be freed
     teardownSyntaxTree(child);
   }
   free(node);

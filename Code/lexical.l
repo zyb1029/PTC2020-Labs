@@ -25,7 +25,9 @@
       node->token  = t;                                 \
       node->symbol = -1;     /* to be translated */     \
       node->name   = NULL;                              \
-      node->empty  = false;                             \
+      node->empty  = true;                              \
+      node->child  = NULL;                              \
+      node->next   = NULL;                              \
       switch (t) {                                      \
         case INT:                                       \
           node->ival = yylval.ival;                     \
@@ -138,11 +140,10 @@ while { TOKENIFY(WHILE); }
 \{ { TOKENIFY(LC); }
 \} { TOKENIFY(RC); }
 <<EOF>> {
-  TOKENIFY(EOF);
 #if FLEXDEBUG
   printf("EOF on line %d\n", yylineno);
-  yyterminate();
 #endif
+  yyterminate();
 }
 . { throwErrorA("unknown character", true); }
 

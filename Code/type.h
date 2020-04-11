@@ -78,6 +78,7 @@ SEFieldChain SEParseParamDec(struct STNode *pdec);
 SEFieldChain SEParseArgs(struct STNode *args);
 
 void SEDumpType(const SEType *type);
+SEType *SEGetParentType(SEType *t);
 bool SECompareType(SEType *t1, SEType *t2);
 bool SECompareField(SEField *f1, SEField *f2);
 void SEDestroyType(SEType *type);

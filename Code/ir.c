@@ -1,8 +1,8 @@
 #include "ir.h"
-#include "syntax.tab.h"
-#include "table.h"
-#include "token.h"
 #include "tree.h"
+#include "token.h"
+#include "table.h"
+#include "syntax.tab.h"
 #include "debug.h"
 
 // same assertion code as in type.c

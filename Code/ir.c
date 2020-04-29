@@ -32,6 +32,9 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
       
       IRCode *code = IRNewCode(IR_SUB);
       code->binop.result = place;
+      code->binop.op1 = IRNewConstantOperand(0);
+      code->binop.op2 = t1;
+      return IRAppendCode(list, code);
     }
     case NOT: {
       Panic("not implemented!");

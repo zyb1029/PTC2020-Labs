@@ -34,7 +34,7 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
     }
     case ID: {
       if (e2 == NULL) {
-        IRCode *code = IRNewCode(ASSIGN);
+        IRCode *code = IRNewCode(IR_ASSIGN);
         code->assign.left = place;
         code->assign.right = IRNewVariableOperand(e1);
         return IRWrapCode(code);
@@ -46,7 +46,7 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
     }
     case INT:
     case FLOAT: {
-      IRCode *code = IRNewCode(ASSIGN);
+      IRCode *code = IRNewCode(IR_ASSIGN);
       IRCodeList list = { code, code };
       code->assign.left = place;
       code->assign.right = IRNewConstantOperand(e1);
@@ -65,11 +65,11 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
           IROperand var = IRNewVariableOperand(e1);
           IRCodeList list = IRTranslateExp(e3, t1);
           
-          IRCode *code1 = IRNewCode(ASSIGN);
+          IRCode *code1 = IRNewCode(IR_ASSIGN);
           code1->assign.left = var;
           code1->assign.right = t1;
 
-          IRCode *code2 = IRNewCode(ASSIGN);
+          IRCode *code2 = IRNewCode(IR_ASSIGN);
           code2->assign.left = place;
           code2->assign.right = var;
           
@@ -85,7 +85,34 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
           Panic("not implemented!");
         }
         default: {
-          Panic("not implemented!");
+          IROperand t1 = IRNewTempOperand();
+          IROperand t2 = IRNewTempOperand();
+          IRCodeList list1 = IRTranslateExp(e1, t1);
+          IRCodeList list2 = IRTranslateExp(e3, t2);
+
+          IRCode *code = NULL;
+          switch (e2->token) {
+            case PLUS:
+              code = IRNewCode(IR_ADD);
+              break;
+            case MINUS:
+              code = IRNewCode(IR_SUB);
+              break;
+            case STAR: // not MUL
+              code = IRNewCode(IR_MUL);
+              break;
+            case DIV:
+              code = IRNewCode(IR_DIV);
+              break;
+            default:
+              Panic("invalid arithmic code");
+          }
+          code->binop.result = place;
+          code->binop.op1 = t1;
+          code->binop.op2 = t2;
+          
+          IRCodeList list = IRConcatLists(list1, list2);
+          return IRAppendCode(list, code);
         }
       }
     }
@@ -97,7 +124,7 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
 // Allocate a new temporary operand.
 IROperand IRNewTempOperand() {
   IROperand op;
-  op.kind = TEMP;
+  op.kind = IR_TEMP;
   op.number = IRTempNumber++;
   return op;
 }
@@ -106,7 +133,7 @@ IROperand IRNewTempOperand() {
 IROperand IRNewVariableOperand(STNode *id) {
   AssertSTNode(id, "ID");
   IROperand op;
-  op.kind = VARIABLE;
+  op.kind = IR_VARIABLE;
   op.name = id->sval;
   return op;
 }
@@ -114,7 +141,7 @@ IROperand IRNewVariableOperand(STNode *id) {
 // Generate a new constant operand.
 IROperand IRNewConstantOperand(STNode *constant) {
   IROperand op;
-  op.kind = CONSTANT;
+  op.kind = IR_CONSTANT;
   switch (constant->token) {
     case INT:
       op.ivalue = constant->ival;

@@ -14,18 +14,18 @@
 struct STNode;
 
 enum IROperandType {
-  TEMP,
-  VARIABLE,
-  CONSTANT,
-  ADDRESS,
+  IR_TEMP,
+  IR_VARIABLE,
+  IR_CONSTANT,
+  IR_ADDRESS,
 };
 
 enum IRCodeType {
-  ASSIGN,
-  ADD,
-  SUB,
-  MUL,
-  DIV,
+  IR_ASSIGN,
+  IR_ADD,
+  IR_SUB,
+  IR_MUL,
+  IR_DIV,
 };
 
 typedef struct IROperand {

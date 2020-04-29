@@ -14,6 +14,7 @@
 struct STNode;
 
 enum IROperandType {
+  IR_OP_NULL,
   IR_OP_TEMP,
   IR_OP_VARIABLE,
   IR_OP_CONSTANT,
@@ -74,6 +75,7 @@ struct IRCodeList IRTranslateCondPre(struct STNode *exp, struct IROperand place)
 struct IRCodeList IRTranslateCond(struct STNode *exp, struct IROperand label_true, struct IROperand label_false);
 struct IRCodeList IRTranslateStmt(struct STNode *stmt);
 
+struct IROperand IRNewNullOperand();
 struct IROperand IRNewTempOperand();
 struct IROperand IRNewLabelOperand();
 struct IROperand IRNewVariableOperand(struct STNode *id);

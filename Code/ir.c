@@ -128,7 +128,8 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
 }
 
 // Prepare to translate an Cond Exp.
-struct IRCodeList IRTranslateCondPre(struct STNode *exp, IROperand place) {
+IRCodeList IRTranslateCondPre(STNode *exp, IROperand place) {
+  AssertSTNode(exp, "Exp");
   IROperand l1 = IRNewLabelOperand();
   IROperand l2 = IRNewLabelOperand();
 
@@ -152,11 +153,41 @@ struct IRCodeList IRTranslateCondPre(struct STNode *exp, IROperand place) {
 }
 
 // Translate an Exp into an conditional IRCodeList.
-struct IRCodeList IRTranslateCond(struct STNode *exp,
-                                  struct IROperand label_true,
-                                  struct IROperand label_false) {
+IRCodeList IRTranslateCond(STNode *exp, IROperand label_true, IROperand label_false) {
+  AssertSTNode(exp, "Exp");
   Panic("not implemented");
   return STATIC_EMPTY_IR_LIST;
+}
+
+// Translate an Stmt into an IRCodeList.
+IRCodeList IRTranslateStmt(STNode *stmt) {
+  AssertSTNode(stmt, "Stmt");
+  if (stmt->child->next == NULL) {
+    // As we exit CompSt, symbol table is destroyed.
+    // Therefore, do not make recursive translating on CompSt.
+    return STATIC_EMPTY_IR_LIST;
+  } else {
+    switch (stmt->child->token) {
+      case RETURN: { // RETURN Exp SEMI
+      }
+      case IF: { // IF LP Exp RP Stmt [ELSE Stmt]
+      }
+      case WHILE: { // WHILE LP Exp RP Stmt
+      }
+      default: { // Exp SEMI
+        return IRTranslateExp(stmt->child, IRNewNullOperand());
+      }
+    }
+  }
+  Panic("should not reach here");
+  return STATIC_EMPTY_IR_LIST;
+}
+
+// Allocate a new null operand.
+IROperand IRNewNullOperand() {
+  IROperand op;
+  op.kind = IR_OP_NULL;
+  return op;
 }
 
 // Allocate a new temporary operand.

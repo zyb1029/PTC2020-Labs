@@ -6,6 +6,13 @@
 #ifndef IR_H
 #define IR_H
 
+#define IRDebug true // <- debug switch
+#if IRDebug
+#define DEBUG
+#endif
+
+struct STNode;
+
 enum IROperandType {
   VARIABLE,
   CONSTANT,
@@ -45,8 +52,10 @@ typedef struct IRCodeList {
   struct IRCode *head, *tail;
 } IRCodeList;
 
-void IRAppendCode(struct IRCodeList *list, struct IRCode *code);
-void IRConcatLists(struct IRCodeList *list1, struct IRCodeList *list2);
-void IRDestroyList(struct IRCodeList *list);
+struct IRCodeList IRTranslateExp(struct STNode *exp, const char *place, struct IRCodeList L1, struct IRCodeList L2);
+
+struct IRCodeList IRAppendCode(struct IRCodeList list, struct IRCode *code);
+struct IRCodeList IRConcatLists(struct IRCodeList list1, struct IRCodeList list2);
+void IRDestroyList(struct IRCodeList list);
 
 #endif

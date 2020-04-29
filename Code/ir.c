@@ -27,7 +27,11 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
     case LP: // LP Exp RP
       Panic("not implemented!");
     case MINUS: {
-      Panic("not implemented!");
+      IROperand t1 = IRNewTempOperand();
+      IRCodeList list = IRTranslateExp(e2, t1);
+      
+      IRCode *code = IRNewCode(IR_SUB);
+      code->binop.result = place;
     }
     case NOT: {
       Panic("not implemented!");
@@ -44,14 +48,16 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
       }
       break;
     }
-    case INT:
-    case FLOAT: {
+    case INT:{
       IRCode *code = IRNewCode(IR_ASSIGN);
       IRCodeList list = { code, code };
       code->assign.left = place;
-      code->assign.right = IRNewConstantOperand(e1);
+      code->assign.right = IRNewConstantOperand(e1->ival);
       return IRWrapCode(code);
     }
+    case FLOAT: 
+      Panic("unexpected FLOAT");
+      break;
     default: {
       switch (e2->token) {
         case LB: {
@@ -129,7 +135,7 @@ IROperand IRNewTempOperand() {
   return op;
 }
 
-// Generate a new variable operand.
+// Generate a new variable operand from STNode.
 IROperand IRNewVariableOperand(STNode *id) {
   AssertSTNode(id, "ID");
   IROperand op;
@@ -139,19 +145,10 @@ IROperand IRNewVariableOperand(STNode *id) {
 }
 
 // Generate a new constant operand.
-IROperand IRNewConstantOperand(STNode *constant) {
+IROperand IRNewConstantOperand(int value) {
   IROperand op;
   op.kind = IR_CONSTANT;
-  switch (constant->token) {
-    case INT:
-      op.ivalue = constant->ival;
-      break;
-    case FLOAT:
-      op.fvalue = constant->fval;
-      break;
-    default:
-      Panic("invalid constant token");
-  }
+  op.ivalue = value;
   return op;
 }
 

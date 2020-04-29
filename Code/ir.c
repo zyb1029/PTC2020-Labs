@@ -1,8 +1,8 @@
 #include "ir.h"
-#include "tree.h"
+#include "syntax.tab.h"
 #include "table.h"
 #include "token.h"
-#include "syntax.tab.h"
+#include "tree.h"
 #include "debug.h"
 
 // same assertion code as in type.c
@@ -15,7 +15,8 @@
 #endif
 
 static unsigned int IRTempNumber = 0;
-const IRCodeList STATIC_EMPTY_IR_LIST = { NULL, NULL };
+static unsigned int IRLabelNumber = 0;
+const IRCodeList STATIC_EMPTY_IR_LIST = {NULL, NULL};
 
 // Translate an Exp into IRCodeList.
 IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
@@ -24,24 +25,23 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
   STNode *e2 = e1 ? e1->next : NULL;
   STNode *e3 = e2 ? e2->next : NULL;
   switch (e1->token) {
-    case LP: // LP Exp RP
+    case LP:  // LP Exp RP
       Panic("not implemented!");
     case MINUS: {
       IROperand t1 = IRNewTempOperand();
       IRCodeList list = IRTranslateExp(e2, t1);
-      
-      IRCode *code = IRNewCode(IR_SUB);
+
+      IRCode *code = IRNewCode(IR_CODE_SUB);
       code->binop.result = place;
       code->binop.op1 = IRNewConstantOperand(0);
       code->binop.op2 = t1;
       return IRAppendCode(list, code);
     }
-    case NOT: {
-      Panic("not implemented!");
-    }
+    case NOT:
+      return IRTranslateCondPre(exp, place);
     case ID: {
       if (e2 == NULL) {
-        IRCode *code = IRNewCode(IR_ASSIGN);
+        IRCode *code = IRNewCode(IR_CODE_ASSIGN);
         code->assign.left = place;
         code->assign.right = IRNewVariableOperand(e1);
         return IRWrapCode(code);
@@ -51,14 +51,14 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
       }
       break;
     }
-    case INT:{
-      IRCode *code = IRNewCode(IR_ASSIGN);
-      IRCodeList list = { code, code };
+    case INT: {
+      IRCode *code = IRNewCode(IR_CODE_ASSIGN);
+      IRCodeList list = {code, code};
       code->assign.left = place;
       code->assign.right = IRNewConstantOperand(e1->ival);
       return IRWrapCode(code);
     }
-    case FLOAT: 
+    case FLOAT:
       Panic("unexpected FLOAT");
       break;
     default: {
@@ -73,26 +73,23 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
           IROperand t1 = IRNewTempOperand();
           IROperand var = IRNewVariableOperand(e1);
           IRCodeList list = IRTranslateExp(e3, t1);
-          
-          IRCode *code1 = IRNewCode(IR_ASSIGN);
+
+          IRCode *code1 = IRNewCode(IR_CODE_ASSIGN);
           code1->assign.left = var;
           code1->assign.right = t1;
 
-          IRCode *code2 = IRNewCode(IR_ASSIGN);
+          IRCode *code2 = IRNewCode(IR_CODE_ASSIGN);
           code2->assign.left = place;
           code2->assign.right = var;
-          
+
           list = IRAppendCode(list, code1);
           list = IRAppendCode(list, code2);
           return list;
         }
         case AND:
-        case OR: {
-          Panic("not implemented!");
-        }
-        case RELOP: {
-          Panic("not implemented!");
-        }
+        case OR:
+        case RELOP:
+          return IRTranslateCondPre(exp, place);
         default: {
           IROperand t1 = IRNewTempOperand();
           IROperand t2 = IRNewTempOperand();
@@ -102,16 +99,16 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
           IRCode *code = NULL;
           switch (e2->token) {
             case PLUS:
-              code = IRNewCode(IR_ADD);
+              code = IRNewCode(IR_CODE_ADD);
               break;
             case MINUS:
-              code = IRNewCode(IR_SUB);
+              code = IRNewCode(IR_CODE_SUB);
               break;
-            case STAR: // not MUL
-              code = IRNewCode(IR_MUL);
+            case STAR:  // not MUL
+              code = IRNewCode(IR_CODE_MUL);
               break;
             case DIV:
-              code = IRNewCode(IR_DIV);
+              code = IRNewCode(IR_CODE_DIV);
               break;
             default:
               Panic("invalid arithmic code");
@@ -119,7 +116,7 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
           code->binop.result = place;
           code->binop.op1 = t1;
           code->binop.op2 = t2;
-          
+
           IRCodeList list = IRConcatLists(list1, list2);
           return IRAppendCode(list, code);
         }
@@ -130,11 +127,51 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
   return STATIC_EMPTY_IR_LIST;
 }
 
+// Prepare to translate an Cond Exp.
+struct IRCodeList IRTranslateCondPre(struct STNode *exp, IROperand place) {
+  IROperand l1 = IRNewLabelOperand();
+  IROperand l2 = IRNewLabelOperand();
+
+  IRCode *code0 = IRNewCode(IR_CODE_ASSIGN);
+  code0->assign.left = place;
+  code0->assign.right = IRNewConstantOperand(0);
+
+  IRCodeList list = IRTranslateCond(exp, l1, l2);
+
+  IRCode *code1 = IRNewCode(IR_CODE_LABEL);
+  code1->label.label = l1;
+
+  IRCode *code2 = IRNewCode(IR_CODE_ASSIGN);
+  code2->assign.left = place;
+  code2->assign.right = IRNewConstantOperand(1);
+
+  list = IRConcatLists(IRWrapCode(code0), list);
+  list = IRAppendCode(list, code1);
+  list = IRAppendCode(list, code2);
+  return list;
+}
+
+// Translate an Exp into an conditional IRCodeList.
+struct IRCodeList IRTranslateCond(struct STNode *exp,
+                                  struct IROperand label_true,
+                                  struct IROperand label_false) {
+  Panic("not implemented");
+  return STATIC_EMPTY_IR_LIST;
+}
+
 // Allocate a new temporary operand.
 IROperand IRNewTempOperand() {
   IROperand op;
-  op.kind = IR_TEMP;
+  op.kind = IR_OP_TEMP;
   op.number = IRTempNumber++;
+  return op;
+}
+
+// Allocate a new label operand.
+IROperand IRNewLabelOperand() {
+  IROperand op;
+  op.kind = IR_OP_LABEL;
+  op.number = IRLabelNumber++;
   return op;
 }
 
@@ -142,7 +179,7 @@ IROperand IRNewTempOperand() {
 IROperand IRNewVariableOperand(STNode *id) {
   AssertSTNode(id, "ID");
   IROperand op;
-  op.kind = IR_VARIABLE;
+  op.kind = IR_OP_VARIABLE;
   op.name = id->sval;
   return op;
 }
@@ -150,7 +187,7 @@ IROperand IRNewVariableOperand(STNode *id) {
 // Generate a new constant operand.
 IROperand IRNewConstantOperand(int value) {
   IROperand op;
-  op.kind = IR_CONSTANT;
+  op.kind = IR_OP_CONSTANT;
   op.ivalue = value;
   return op;
 }
@@ -173,7 +210,7 @@ IRCodeList IRWrapCode(IRCode *code) {
 
 // Append a code to the end of list.
 IRCodeList IRAppendCode(IRCodeList list, IRCode *code) {
-  IRCodeList ret = { list.head, list.tail };  
+  IRCodeList ret = {list.head, list.tail};
   if (ret.tail == NULL) {
     ret.head = ret.tail = code;
   } else {

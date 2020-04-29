@@ -14,18 +14,22 @@
 struct STNode;
 
 enum IROperandType {
-  IR_TEMP,
-  IR_VARIABLE,
-  IR_CONSTANT,
-  IR_ADDRESS,
+  IR_OP_TEMP,
+  IR_OP_VARIABLE,
+  IR_OP_CONSTANT,
+  IR_OP_ADDRESS,
+  IR_OP_LABEL,
 };
 
 enum IRCodeType {
-  IR_ASSIGN,
-  IR_ADD,
-  IR_SUB,
-  IR_MUL,
-  IR_DIV,
+  IR_CODE_ASSIGN,
+  IR_CODE_ADD,
+  IR_CODE_SUB,
+  IR_CODE_MUL,
+  IR_CODE_DIV,
+  IR_CODE_LABEL,
+  IR_CODE_JUMP,
+  IR_CODE_JUMP_COND,
 };
 
 typedef struct IROperand {
@@ -43,11 +47,20 @@ typedef struct IRCode {
   enum IRCodeType kind;
   union {
     struct {
+      struct IROperand label;
+    } label;
+    struct {
       struct IROperand right, left;
     } assign;
     struct {
       struct IROperand result, op1, op2;
     } binop;
+    struct {
+      struct IROperand dest;
+    } jump;
+    struct {
+      struct IROperand op1, relop, op2, dest;
+    } jump_cond;
   };
   struct IRCode *prev, *next;
 } IRCode;
@@ -57,8 +70,11 @@ typedef struct IRCodeList {
 } IRCodeList;
 
 struct IRCodeList IRTranslateExp(struct STNode *exp, struct IROperand place);
+struct IRCodeList IRTranslateCondPre(struct STNode *exp, struct IROperand place);
+struct IRCodeList IRTranslateCond(struct STNode *exp, struct IROperand label_true, struct IROperand label_false);
 
 struct IROperand IRNewTempOperand();
+struct IROperand IRNewLabelOperand();
 struct IROperand IRNewVariableOperand(struct STNode *id);
 struct IROperand IRNewConstantOperand(int value);
 struct IRCode *IRNewCode(enum IRCodeType kind);

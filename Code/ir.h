@@ -58,6 +58,9 @@ typedef struct IRCodeList {
 
 struct IRCodeList IRTranslateExp(struct STNode *exp, struct IROperand place);
 
+struct IROperand IRNewTempOperand();
+struct IROperand IRNewVariableOperand(struct STNode *id);
+struct IROperand IRNewConstantOperand(struct STNode *constant);
 struct IRCode *IRNewCode(enum IRCodeType kind);
 struct IRCodeList IRWrapCode(struct IRCode *code);
 struct IRCodeList IRAppendCode(struct IRCodeList list, struct IRCode *code);

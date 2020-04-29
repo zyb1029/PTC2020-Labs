@@ -14,6 +14,7 @@
 #define AssertSTNode(node, str)
 #endif
 
+static unsigned int IRTempNumber = 0;
 const IRCodeList STATIC_EMPTY_IR_LIST = { NULL, NULL };
 
 // Translate an Exp into IRCodeList.
@@ -35,8 +36,7 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
       if (e2 == NULL) {
         IRCode *code = IRNewCode(ASSIGN);
         code->assign.left = place;
-        code->assign.right.kind = VARIABLE;
-        code->assign.right.name = e2->sval;
+        code->assign.right = IRNewVariableOperand(e1);
         return IRWrapCode(code);
       } else {
         // function call
@@ -49,12 +49,7 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
       IRCode *code = IRNewCode(ASSIGN);
       IRCodeList list = { code, code };
       code->assign.left = place;
-      code->assign.right.kind = CONSTANT;
-      if (e1->token == INT) {
-        code->assign.right.ivalue = e1->ival;
-      } else {
-        code->assign.right.fvalue = e1->fval;
-      }
+      code->assign.right = IRNewConstantOperand(e1);
       return IRWrapCode(code);
     }
     default: {
@@ -66,7 +61,21 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
           Panic("not implemented!");
         }
         case ASSIGNOP: {
-          Panic("not implemented!");
+          IROperand t1 = IRNewTempOperand();
+          IROperand var = IRNewVariableOperand(e1);
+          IRCodeList list = IRTranslateExp(e3, t1);
+          
+          IRCode *code1 = IRNewCode(ASSIGN);
+          code1->assign.left = var;
+          code1->assign.right = t1;
+
+          IRCode *code2 = IRNewCode(ASSIGN);
+          code2->assign.left = place;
+          code2->assign.right = var;
+          
+          list = IRAppendCode(list, code1);
+          list = IRAppendCode(list, code2);
+          return list;
         }
         case AND:
         case OR: {
@@ -85,6 +94,40 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
   return STATIC_EMPTY_IR_LIST;
 }
 
+// Allocate a new temporary operand.
+IROperand IRNewTempOperand() {
+  IROperand op;
+  op.kind = TEMP;
+  op.number = IRTempNumber++;
+  return op;
+}
+
+// Generate a new variable operand.
+IROperand IRNewVariableOperand(STNode *id) {
+  AssertSTNode(id, "ID");
+  IROperand op;
+  op.kind = VARIABLE;
+  op.name = id->sval;
+  return op;
+}
+
+// Generate a new constant operand.
+IROperand IRNewConstantOperand(STNode *constant) {
+  IROperand op;
+  op.kind = CONSTANT;
+  switch (constant->token) {
+    case INT:
+      op.ivalue = constant->ival;
+      break;
+    case FLOAT:
+      op.fvalue = constant->fval;
+      break;
+    default:
+      Panic("invalid constant token");
+  }
+  return op;
+}
+
 // Allocate memory and initialize a code.
 IRCode *IRNewCode(enum IRCodeType kind) {
   IRCode *code = (IRCode *)malloc(sizeof(IRCode));
@@ -94,7 +137,7 @@ IRCode *IRNewCode(enum IRCodeType kind) {
 }
 
 // Wrap a single code to IRCodeList.
-struct IRCodeList IRWrapCode(struct IRCode *code) {
+IRCodeList IRWrapCode(IRCode *code) {
   IRCodeList list;
   list.head = code;
   list.tail = code;

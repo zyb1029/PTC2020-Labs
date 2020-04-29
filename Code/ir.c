@@ -1,6 +1,9 @@
-#include "debug.h"
 #include "ir.h"
 #include "tree.h"
+#include "table.h"
+#include "token.h"
+#include "syntax.tab.h"
+#include "debug.h"
 
 // same assertion code as in type.c
 #ifdef DEBUG
@@ -11,14 +14,91 @@
 #define AssertSTNode(node, str)
 #endif
 
-/**
- * Translators: no recursive calls on translate functions.
- * Thus all sub IR lists must be prepared by semantic scanner.
- * */
+const IRCodeList STATIC_EMPTY_IR_LIST = { NULL, NULL };
 
 // Translate an Exp into IRCodeList.
-IRCodeList IRTranslateExp(STNode *exp, const char *place, IRCodeList L1, IRCodeList L2) {
+IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
   AssertSTNode(exp, "Exp");
+  STNode *e1 = exp->child;
+  STNode *e2 = e1 ? e1->next : NULL;
+  STNode *e3 = e2 ? e2->next : NULL;
+  switch (e1->token) {
+    case LP: // LP Exp RP
+      Panic("not implemented!");
+    case MINUS: {
+      Panic("not implemented!");
+    }
+    case NOT: {
+      Panic("not implemented!");
+    }
+    case ID: {
+      if (e2 == NULL) {
+        IRCode *code = IRNewCode(ASSIGN);
+        code->assign.left = place;
+        code->assign.right.kind = VARIABLE;
+        code->assign.right.name = e2->sval;
+        return IRWrapCode(code);
+      } else {
+        // function call
+        Panic("not implemented!");
+      }
+      break;
+    }
+    case INT:
+    case FLOAT: {
+      IRCode *code = IRNewCode(ASSIGN);
+      IRCodeList list = { code, code };
+      code->assign.left = place;
+      code->assign.right.kind = CONSTANT;
+      if (e1->token == INT) {
+        code->assign.right.ivalue = e1->ival;
+      } else {
+        code->assign.right.fvalue = e1->fval;
+      }
+      return IRWrapCode(code);
+    }
+    default: {
+      switch (e2->token) {
+        case LB: {
+          Panic("not implemented!");
+        }
+        case DOT: {
+          Panic("not implemented!");
+        }
+        case ASSIGNOP: {
+          Panic("not implemented!");
+        }
+        case AND:
+        case OR: {
+          Panic("not implemented!");
+        }
+        case RELOP: {
+          Panic("not implemented!");
+        }
+        default: {
+          Panic("not implemented!");
+        }
+      }
+    }
+  }
+  Panic("should not reach here");
+  return STATIC_EMPTY_IR_LIST;
+}
+
+// Allocate memory and initialize a code.
+IRCode *IRNewCode(enum IRCodeType kind) {
+  IRCode *code = (IRCode *)malloc(sizeof(IRCode));
+  code->kind = kind;
+  code->prev = code->next = NULL;
+  return code;
+}
+
+// Wrap a single code to IRCodeList.
+struct IRCodeList IRWrapCode(struct IRCode *code) {
+  IRCodeList list;
+  list.head = code;
+  list.tail = code;
+  return list;
 }
 
 // Append a code to the end of list.

@@ -14,6 +14,7 @@
 struct STNode;
 
 enum IROperandType {
+  TEMP,
   VARIABLE,
   CONSTANT,
   ADDRESS,
@@ -30,8 +31,11 @@ enum IRCodeType {
 typedef struct IROperand {
   enum IROperandType kind;
   union {
-    int var_no;
-    int value;
+    int number;
+    int ivalue;
+    float fvalue;
+    const char *name;
+    unsigned int address;
   };
 } IROperand;
 
@@ -52,8 +56,10 @@ typedef struct IRCodeList {
   struct IRCode *head, *tail;
 } IRCodeList;
 
-struct IRCodeList IRTranslateExp(struct STNode *exp, const char *place, struct IRCodeList L1, struct IRCodeList L2);
+struct IRCodeList IRTranslateExp(struct STNode *exp, struct IROperand place);
 
+struct IRCode *IRNewCode(enum IRCodeType kind);
+struct IRCodeList IRWrapCode(struct IRCode *code);
 struct IRCodeList IRAppendCode(struct IRCodeList list, struct IRCode *code);
 struct IRCodeList IRConcatLists(struct IRCodeList list1, struct IRCodeList list2);
 void IRDestroyList(struct IRCodeList list);

@@ -155,7 +155,15 @@ IRCodeList IRTranslateCondPre(STNode *exp, IROperand place) {
 // Translate an Exp into an conditional IRCodeList.
 IRCodeList IRTranslateCond(STNode *exp, IROperand label_true, IROperand label_false) {
   AssertSTNode(exp, "Exp");
-  Panic("not implemented");
+  if (exp->token == NOT) {
+    // NOT Exp
+    return IRTranslateCond(exp->next, label_false, label_true);
+  } else if (exp->next != NULL) {
+    Panic("not implemented");
+  } else {
+    // Exp (like if(0), while(1))
+    Panic("not implemented");
+  }
   return STATIC_EMPTY_IR_LIST;
 }
 

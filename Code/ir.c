@@ -52,7 +52,7 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
       SEType *type = entry->type;
       if (e2 == NULL) {
         if (place.kind != IR_OP_NULL) {
-          IRCode *code = IRNewCode(IR_CODE_ASSIGN);
+          IRCode *code = IRNewCode(type->kind == BASIC ? IR_CODE_ASSIGN : IR_CODE_ADDR);
           code->assign.left = place;
           code->assign.right = IRNewVariableOperand(e1->sval);
           return IRWrapPair(IRWrapCode(code), type, type->kind != BASIC);
@@ -554,10 +554,13 @@ IROperand IRNewVariableOperand(const char *name) {
   STEntry *entry = STSearchCurr(name);
   Assert(entry != NULL, "entry %s not found in ST", name);
   Assert(entry->number >= 0, "invalid entry number %d", entry->number);
+  if (entry->number == 0) {
+    entry->number = ++IRVariableNumber;
+  }
 
   IROperand op;
   op.kind = IR_OP_VARIABLE;
-  op.number = entry->number == 0 ? ++IRVariableNumber : entry->number;
+  op.number = entry->number;
   return op;
 }
 

@@ -155,15 +155,48 @@ IRCodeList IRTranslateCondPre(STNode *exp, IROperand place) {
 // Translate an Exp into an conditional IRCodeList.
 IRCodeList IRTranslateCond(STNode *exp, IROperand label_true, IROperand label_false) {
   AssertSTNode(exp, "Exp");
-  if (exp->token == NOT) {
+  if (exp->child->token == NOT) {
     // NOT Exp
-    return IRTranslateCond(exp->next, label_false, label_true);
-  } else if (exp->next != NULL) {
-    Panic("not implemented");
+    return IRTranslateCond(exp->child->next, label_false, label_true);
+  } else if (exp->child->next != NULL) {
+    Assert(exp->child->next->next != NULL);
+    STNode *exp1 = exp->child;
+    STNode *exp2 = exp1->next->next;
+    switch (exp1->next->token) {
+      case RELOP: {
+        // Exp1 RELOP Exp2
+        IROperand t1 = IRNewTempOperand();
+        IROperand t2 = IRNewTempOperand();
+
+        IRCodeList list = IRTranslateExp(exp1, t1);
+        IRCodeList list2 = IRTranslateExp(exp2, t2);
+        list = IRConcatLists(list, list2);
+
+        IRCode *jump1 = IRNewCode(IR_CODE_JUMP_COND);
+        jump1->jump_cond.op1 = t1;
+        jump1->jump_cond.op2 = t2;
+        jump1->jump_cond.relop = IRNewRelopOperand(exp1->next->rval);
+        jump1->jump_cond.dest = label_true;
+        list = IRAppendCode(list, jump1);
+
+        IRCode *jump2 = IRNewCode(IR_CODE_JUMP);
+        jump2->jump.dest = label_false;
+        list = IRAppendCode(list, jump2);
+        return list;
+      }
+      case AND: {
+        // Exp1 AND Exp2
+      }
+      case OR: {
+        // Exp1 OR Exp2
+      }
+      default:
+        Panic("unknown condition format");
+    }
   } else {
     // Exp (like if(0), while(1))
     IROperand t1 = IRNewTempOperand();
-    IRCodeList list = IRTranslateExp(exp, t1);
+    IRCodeList list = IRTranslateExp(exp->child, t1);
 
     IRCode *jump = IRNewCode(IR_CODE_JUMP_COND);
     jump->jump_cond.op1 = t1;

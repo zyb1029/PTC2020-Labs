@@ -287,12 +287,8 @@ IRCodeList IRTranslateCond(STNode *exp, IROperand label_true, IROperand label_fa
 // Translate an CompSt into an IRCodeList.
 IRCodeList IRTranslateCompSt(STNode *comp) {
   AssertSTNode(comp, "CompSt");
-  IRCodeList list = STATIC_EMPTY_IR_LIST;
-  STNode *defList = comp->child->next;
-  STNode *stmtList = defList->next;
-  // FIXME: translate DefList
-  list = IRTranslateStmtList(stmtList);
-  return list;
+  IRCodeList list = IRTranslateDefList(comp->child->next);
+  return IRConcatLists(list, IRTranslateStmtList(comp->child->next->next));
 }
 
 // Translate a DefList into an IRCodeList.
@@ -306,25 +302,53 @@ IRCodeList IRTranslateDefList(STNode *list) {
 // Translate a Def into an IRCodeList.
 IRCodeList IRTranslateDef(STNode *def) {
   AssertSTNode(def, "Def");
-  Panic("not implemented");
+  return IRTranslateDecList(def->child->next);
 }
 
 // Translate a DecList into an IRCodeList.
 IRCodeList IRTranslateDecList(STNode *list) {
   AssertSTNode(list, "DecList");
-  Panic("not implemented");
+  IRCodeList ret = IRTranslateDec(list->child);
+  if (list->child->next != NULL) {
+    ret = IRConcatLists(ret, IRTranslateDecList(list->child->next->next));
+  }
+  return ret;
 }
 
 // Translate a Dec into an IRCodeList.
 IRCodeList IRTranslateDec(STNode *dec) {
   AssertSTNode(dec, "Dec");
-  Panic("not implemented");
-}
+  IRCodeList list = STATIC_EMPTY_IR_LIST;
 
-// Translate a VarDec into an IRCodeList.
-IRCodeList IRTranslateVarDec(STNode *var) {
-  AssertSTNode(var, "VarDec");
-  Panic("not implemented");
+  // find name of variable and get IR number  
+  STNode *var = dec->child;
+  while (var && var->token != ID) {
+    var = var->child;
+  }
+  Assert(var, "no ID inside VarDec");
+  IROperand v = IRNewVariableOperand(var->sval);
+
+  // check whether we need DEC an array or a struct
+  STEntry *entry = STSearchCurr(var->sval);
+  Assert(entry, "entry not found in ST");
+  if (entry->type->kind == ARRAY || entry->type->kind == STRUCTURE) {
+    IRCode *code = IRNewCode(IR_CODE_DEC);
+    code->dec.variable = v;
+    code->dec.size = IRNewConstantOperand(entry->type->size);
+    list = IRAppendCode(list, code);
+  }
+  
+  // check whether there is an assignment
+  if (dec->child->next != NULL) {
+    IROperand t1 = IRNewTempOperand();
+    list = IRConcatLists(list, IRTranslateExp(dec->child->next->next, t1));
+
+    IRCode *code = IRNewCode(IR_CODE_ASSIGN);
+    code->assign.left = v;
+    code->assign.right = t1;
+    list = IRAppendCode(list, code);
+  }
+  return list;
 }
 
 // Translate an StmtList into an IRCodeList.
@@ -635,7 +659,11 @@ size_t IRParseCode(char *s, IRCode *code) {
       break;
     }
     case IR_CODE_DEC: {
-      Panic("not implemented");
+      Assert(code->dec.size.kind == IR_OP_CONSTANT, "size if not constant");
+      s += sprintf(s, "DEC ");
+      s += IRParseOperand(s, &code->dec.variable);
+      s += sprintf(s, " %u", code->dec.size.ivalue); // special case
+      break;
     }
     case IR_CODE_ARG: {
       s += sprintf(s, "ARG ");

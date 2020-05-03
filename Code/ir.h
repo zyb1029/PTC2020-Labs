@@ -83,6 +83,9 @@ typedef struct IRCode {
       struct IROperand result, function;
     } call;
     struct {
+      struct IROperand variable, size;
+    } dec;
+    struct {
       struct IROperand variable;
     } read, write, arg;
     struct {

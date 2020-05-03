@@ -488,3 +488,44 @@ void IRDestroyList(IRCodeList list) {
     free(code);
   }
 }
+
+// IR queue: save IR of inner CompSts.
+static IRQueueItem *IR_QUEUE_HEAD = NULL;
+static IRQueueItem *IR_QUEUE_TAIL = NULL;
+
+// Check if the IR queue is empty.
+bool IRQueueEmpty() { return IR_QUEUE_HEAD == NULL; }
+
+// Push an IR list into the IR queue.
+void IRQueuePush(IRCodeList list) {
+  IRQueueItem *item = (IRQueueItem *)malloc(sizeof(IRQueueItem));
+  item->list = list;
+  item->prev = item->next = NULL;
+  if (IRQueueEmpty()) {
+    IR_QUEUE_HEAD = IR_QUEUE_TAIL = item;
+  } else {
+    IR_QUEUE_TAIL->next = item;
+    item->prev = IR_QUEUE_TAIL;
+    IR_QUEUE_TAIL = item;
+  }
+}
+
+// Pop an IR list from the IR queue.
+IRCodeList IRQueuePop() {
+  Assert(!IRQueueEmpty(), "IR queue empty");
+  IRCodeList list = IR_QUEUE_HEAD->list;
+  IRQueueItem *item = IR_QUEUE_HEAD;
+  IR_QUEUE_HEAD = IR_QUEUE_HEAD->next;
+  if (IR_QUEUE_HEAD == NULL) {
+    IR_QUEUE_TAIL = NULL;
+  }
+  free(item);  // free the IRQueue item.
+  return list;
+}
+
+// Clear the IR queue.
+void IRQueueClear() {
+  while (!IRQueueEmpty()) {
+    IRQueuePop();
+  }
+}

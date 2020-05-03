@@ -18,10 +18,11 @@
 int anonymous = 0; // anonymous structure counter
 SEType _STATIC_TYPE_VOID, _STATIC_TYPE_INT, _STATIC_TYPE_FLOAT;
 SEType *STATIC_TYPE_VOID, *STATIC_TYPE_INT, *STATIC_TYPE_FLOAT;
-SEField STATIC_FIELD_VOID, DUMMY_FIELD;
+SEField STATIC_FIELD_VOID, STATIC_FIELD_INT, DUMMY_FIELD;
 const SEFieldChain DUMMY_FIELD_CHAIN = { &DUMMY_FIELD, &DUMMY_FIELD };
 
 void SEPrepare() {
+  // Prepare basic types
   STATIC_TYPE_VOID = &_STATIC_TYPE_VOID;
   STATIC_TYPE_VOID->kind = VOID;
   STATIC_TYPE_VOID->size = -1;
@@ -33,11 +34,30 @@ void SEPrepare() {
   STATIC_TYPE_INT->size = 4;
   STATIC_TYPE_INT->basic = INT;
   STATIC_TYPE_INT->parent = STATIC_TYPE_INT;
+  STATIC_FIELD_INT.type = STATIC_TYPE_INT;
+  STATIC_FIELD_INT.next = NULL;
   STATIC_TYPE_FLOAT = &_STATIC_TYPE_FLOAT;
   STATIC_TYPE_FLOAT->kind = BASIC;
   STATIC_TYPE_FLOAT->size = 4;
   STATIC_TYPE_FLOAT->basic = FLOAT;
   STATIC_TYPE_FLOAT->parent = STATIC_TYPE_FLOAT;
+
+  // Add READ and WRITE functions
+  SEType *readType = (SEType *)malloc(sizeof(SEType));
+  readType->kind = FUNCTION;
+  readType->function.defined = true;
+  readType->function.node = NULL;
+  readType->function.type = STATIC_TYPE_INT;
+  readType->function.signature = &STATIC_FIELD_VOID;
+  STInsertFunc("read", readType);
+
+  SEType *writeType = (SEType *)malloc(sizeof(SEType));
+  writeType->kind = FUNCTION;
+  writeType->function.defined = true;
+  writeType->function.node = NULL;
+  writeType->function.type = STATIC_TYPE_INT;
+  writeType->function.signature = &STATIC_FIELD_INT;
+  STInsertFunc("write", writeType);
 }
 
 // Parse an expression. Only one type so we don't need a chain.
@@ -713,7 +733,8 @@ void SEDestroyType(SEType *type) {
         // structures must be destroyed individually
         SEDestroyType(type->function.type);
       }
-      if (type->function.signature != &STATIC_FIELD_VOID) {
+      if (type->function.signature != &STATIC_FIELD_VOID &&
+          type->function.signature != &STATIC_FIELD_INT) {
         SEDestroyField(type->function.signature);
       }
       free(type);
@@ -729,6 +750,8 @@ void SEDestroyType(SEType *type) {
 void SEDestroyField(SEField *field) {
   SEField *next = NULL;
   if (field == &DUMMY_FIELD) return;
+  if (field == &STATIC_FIELD_VOID) return;
+  if (field == &STATIC_FIELD_INT) return;
   while (field != NULL) {
     next = field->next;
     if (field->kind != STRUCTURE) {

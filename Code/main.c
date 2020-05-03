@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include "tree.h"
 #include "semantics.h"
+#include "ir.h"
 
 extern void yyrestart(FILE *);
 extern int yyparse_wrap(); // defined in syntax.y
@@ -11,6 +12,7 @@ bool hasErrorA = false;
 bool hasErrorB = false;
 bool hasErrorS = false;
 STNode* stroot = NULL;
+IRCodeList irlist = {NULL, NULL};
 
 int main(int argc, char *argv[]) {
   if (argc <= 1) {
@@ -32,10 +34,12 @@ int main(int argc, char *argv[]) {
   //printSyntaxTree();
 
   // Step 2: conduct a full semantic scan.
+  // Step 3: translate to IR during the scan.
   semanticScan();
   teardownSyntaxTree(stroot);
   if (hasErrorS) {
-    return 0; // avoid checker see this as runtime error
+    return 4; // avoid checker see this as runtime error
   }
+
   return 0;
 }

@@ -40,6 +40,7 @@ enum IRCodeType {
   IR_CODE_READ,
   IR_CODE_WRITE,
   IR_CODE_ARG,
+  IR_CODE_FUNCTION,
 };
 
 typedef struct IROperand {
@@ -81,6 +82,9 @@ typedef struct IRCode {
     struct {
       struct IROperand variable;
     } read, write, arg;
+    struct {
+      struct IROperand function;
+    } function;
   };
   struct IRCode *prev, *next;
 } IRCode;
@@ -100,9 +104,12 @@ typedef struct IRQueueItem {
 struct IRCodeList IRTranslateExp(struct STNode *exp, struct IROperand place);
 struct IRCodeList IRTranslateCondPre(struct STNode *exp, struct IROperand place);
 struct IRCodeList IRTranslateCond(struct STNode *exp, struct IROperand label_true, struct IROperand label_false);
-struct IRCodeList IRTranslateCompSt(struct STNode *compst);
+struct IRCodeList IRTranslateCompSt(struct STNode *comp);
 struct IRCodeList IRTranslateStmt(struct STNode *stmt);
 struct IRCodeList IRTranslateArgs(struct STNode *args, struct IRCodeList *arg_list);
+
+// This function is unique, it operates on the global variable irlist.
+void IRTranslateFunc(const char *name);
 
 struct IROperand IRNewNullOperand();
 struct IROperand IRNewTempOperand();

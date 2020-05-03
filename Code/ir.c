@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include "ir.h"
 #include "tree.h"
 #include "token.h"
@@ -266,8 +267,8 @@ IRCodeList IRTranslateCond(STNode *exp, IROperand label_true, IROperand label_fa
 }
 
 // Translate an CompSt into an IRCodeList.
-IRCodeList IRTranslateCompSt(STNode *compst) {
-  AssertSTNode(compst, "CompSt");
+IRCodeList IRTranslateCompSt(STNode *comp) {
+  AssertSTNode(comp, "CompSt");
   Panic("not implemented");
   return STATIC_EMPTY_IR_LIST;
 }
@@ -382,6 +383,20 @@ IRCodeList IRTranslateArgs(STNode *args, IRCodeList *arg_list) {
     list = IRConcatLists(list, IRTranslateArgs(exp->next->next, arg_list));
   }
   return list;
+}
+
+// This function is unique.
+// All codes are translated as CompSt and pushed into IR queue.
+// Therefore we only need to add a function, pop the code from queue,
+// and link all new codes to the global IR list.
+extern IRCodeList irlist; // defined in main.c
+void IRTranslateFunc(const char *name) {
+  Assert(!IRQueueEmpty(), "IR queue empty when adding func");
+  IRCode *code = IRNewCode(IR_CODE_FUNCTION);
+  code->function.function.kind = IR_OP_FUNCTION;
+  code->function.function.name = name;
+  irlist = IRAppendCode(irlist, code);
+  irlist = IRConcatLists(irlist, IRQueuePop());
 }
 
 // Allocate a new null operand.

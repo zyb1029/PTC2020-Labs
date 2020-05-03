@@ -2,6 +2,7 @@
 #include "tree.h"
 #include "type.h"
 #include "table.h"
+#include "ir.h"
 #include "semantics.h"
 #include "syntax.tab.h"
 #include "debug.h"
@@ -359,6 +360,9 @@ void SEParseFunDec(STNode *fdec, SEType *type) {
     SEParseCompSt(fdec->next, type);
   }
   STPopStack();
+  // At this moment, the code of the function is in IR queue.
+  // We need to pop it from queue and link to the global list.
+  IRTranslateFunc(name);
 }
 
 // Parse a composed statement list and check for RETURN statements.
@@ -369,6 +373,9 @@ void SEParseCompSt(STNode *comp, SEType *type) {
   // CompSt -> LC DefList StmtList RC
   SEParseDefList(comp->child->next, true);
   SEParseStmtList(comp->child->next->next, type);
+  // After returning, the stack will be destroyed.
+  // Therefore we need to conduct a translation and push code to queue.
+  IRQueuePush(IRTranslateCompSt(comp));
 }
 #undef malloc
 

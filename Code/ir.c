@@ -177,6 +177,12 @@ IRCodeList IRTranslateStmt(STNode *stmt) {
   } else {
     switch (stmt->child->token) {
       case RETURN: { // RETURN Exp SEMI
+        IROperand t1 = IRNewTempOperand();
+        IRCodeList list = IRTranslateExp(stmt->child->next, t1);
+        IRCode *code = IRNewCode(IR_CODE_RETURN);
+        code->ret.value = t1;
+
+        return IRAppendCode(list, code);
       }
       case IF: { // IF LP Exp RP Stmt [ELSE Stmt]
       }

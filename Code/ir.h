@@ -31,6 +31,7 @@ enum IRCodeType {
   IR_CODE_LABEL,
   IR_CODE_JUMP,
   IR_CODE_JUMP_COND,
+  IR_CODE_RETURN,
 };
 
 typedef struct IROperand {
@@ -62,6 +63,9 @@ typedef struct IRCode {
     struct {
       struct IROperand op1, relop, op2, dest;
     } jump_cond;
+    struct {
+      struct IROperand value;
+    } ret;
   };
   struct IRCode *prev, *next;
 } IRCode;

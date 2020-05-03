@@ -277,9 +277,10 @@ IRCodeList IRTranslateStmt(STNode *stmt) {
   AssertSTNode(stmt, "Stmt");
   if (stmt->child->next == NULL) {
     // As we exit CompSt, symbol table is destroyed.
-    // Therefore, do not make recursive translating on CompSt.
-    // FIXME: HOW TO IMPLEMENT THIS?
-    return IRTranslateCompSt(stmt->child);
+    // Therefore, we first translate inner codes and push them into IR queue.
+    // When translating the higher-level codes, we pop the queue and get the code.
+    Assert(!IRQueueEmpty(), "IR queue empty when translating Stmt");
+    return IRQueuePop();  // FIFO queue
   } else {
     switch (stmt->child->token) {
       case RETURN: { // RETURN Exp SEMI
@@ -512,7 +513,7 @@ void IRQueuePush(IRCodeList list) {
 
 // Pop an IR list from the IR queue.
 IRCodeList IRQueuePop() {
-  Assert(!IRQueueEmpty(), "IR queue empty");
+  Assert(!IRQueueEmpty(), "IR queue empty when popping");
   IRCodeList list = IR_QUEUE_HEAD->list;
   IRQueueItem *item = IR_QUEUE_HEAD;
   IR_QUEUE_HEAD = IR_QUEUE_HEAD->next;

@@ -186,9 +186,29 @@ IRCodeList IRTranslateCond(STNode *exp, IROperand label_true, IROperand label_fa
       }
       case AND: {
         // Exp1 AND Exp2
+        IROperand l1 = IRNewLabelOperand();
+        
+        IRCodeList list = IRTranslateCond(exp1, l1, label_false);
+        IRCode *label = IRNewCode(IR_CODE_LABEL);
+        label->label.label = l1;
+        list = IRAppendCode(list, label);
+
+        IRCodeList list2 = IRTranslateCond(exp2, label_true, label_false);
+        list = IRConcatLists(list, list2);
+        return list;
       }
       case OR: {
         // Exp1 OR Exp2
+        IROperand l1 = IRNewLabelOperand();
+        
+        IRCodeList list = IRTranslateCond(exp1, label_true, l1);
+        IRCode *label = IRNewCode(IR_CODE_LABEL);
+        label->label.label = l1;
+        list = IRAppendCode(list, label);
+
+        IRCodeList list2 = IRTranslateCond(exp2, label_true, label_false);
+        list = IRConcatLists(list, list2);
+        return list;
       }
       default:
         Panic("unknown condition format");

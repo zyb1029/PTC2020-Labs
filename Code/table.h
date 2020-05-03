@@ -12,6 +12,7 @@
 // Be careful, STNode is already taken in 'tree.c'.
 typedef struct STEntry {
   const char *id;
+  unsigned int number; // used for IR variables
   SEType *type;
 } STEntry;
 

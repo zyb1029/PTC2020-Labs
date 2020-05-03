@@ -17,8 +17,6 @@
 #define AssertSTNode(node, str)
 #endif
 
-static unsigned int IRTempNumber = 0;
-static unsigned int IRLabelNumber = 0;
 const IRCodeList STATIC_EMPTY_IR_LIST = {NULL, NULL};
 
 // Translate an Exp into IRCodeList.
@@ -50,7 +48,7 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
         if (place.kind != IR_OP_NULL) {  
           IRCode *code = IRNewCode(IR_CODE_ASSIGN);
           code->assign.left = place;
-          code->assign.right = IRNewVariableOperand(e1);
+          code->assign.right = IRNewVariableOperand(e1->sval);
           return IRWrapCode(code);
         } else {
           return STATIC_EMPTY_IR_LIST;
@@ -121,7 +119,7 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
         }
         case ASSIGNOP: {
           IROperand t1 = IRNewTempOperand();
-          IROperand var = IRNewVariableOperand(e1->child);
+          IROperand var = IRNewVariableOperand(e1->child->sval);
           IRCodeList list = IRTranslateExp(e3, t1);
 
           IRCode *code1 = IRNewCode(IR_CODE_ASSIGN);
@@ -297,6 +295,38 @@ IRCodeList IRTranslateCompSt(STNode *comp) {
   return list;
 }
 
+// Translate a DefList into an IRCodeList.
+IRCodeList IRTranslateDefList(STNode *list) {
+  AssertSTNode(list, "DefList");
+  if (list->empty) return STATIC_EMPTY_IR_LIST;
+  IRCodeList ret = IRTranslateDef(list->child);
+  return IRConcatLists(ret, IRTranslateDefList(list->child->next));
+}
+
+// Translate a Def into an IRCodeList.
+IRCodeList IRTranslateDef(STNode *def) {
+  AssertSTNode(def, "Def");
+  Panic("not implemented");
+}
+
+// Translate a DecList into an IRCodeList.
+IRCodeList IRTranslateDecList(STNode *list) {
+  AssertSTNode(list, "DecList");
+  Panic("not implemented");
+}
+
+// Translate a Dec into an IRCodeList.
+IRCodeList IRTranslateDec(STNode *dec) {
+  AssertSTNode(dec, "Dec");
+  Panic("not implemented");
+}
+
+// Translate a VarDec into an IRCodeList.
+IRCodeList IRTranslateVarDec(STNode *var) {
+  AssertSTNode(var, "VarDec");
+  Panic("not implemented");
+}
+
 // Translate an StmtList into an IRCodeList.
 IRCodeList IRTranslateStmtList(STNode *list) {
   AssertSTNode(list, "StmtList");
@@ -439,27 +469,33 @@ IROperand IRNewNullOperand() {
 }
 
 // Allocate a new temporary operand.
+static unsigned int IRTempNumber = 0;
 IROperand IRNewTempOperand() {
   IROperand op;
   op.kind = IR_OP_TEMP;
-  op.number = IRTempNumber++;
+  op.number = ++IRTempNumber;
   return op;
 }
 
 // Allocate a new label operand.
+static unsigned int IRLabelNumber = 0;
 IROperand IRNewLabelOperand() {
   IROperand op;
   op.kind = IR_OP_LABEL;
-  op.number = IRLabelNumber++;
+  op.number = ++IRLabelNumber;
   return op;
 }
 
 // Generate a new variable operand from STNode.
-IROperand IRNewVariableOperand(STNode *id) {
-  AssertSTNode(id, "ID");
+static unsigned int IRVariableNumber = 0;
+IROperand IRNewVariableOperand(const char *name) {
+  STEntry *entry = STSearchCurr(name);
+  Assert(entry != NULL, "entry %s is not found in ST", name);
+  Assert(entry->number >= 0, "invalid entry number %d", entry->number);
+
   IROperand op;
   op.kind = IR_OP_VARIABLE;
-  op.name = id->sval;
+  op.number = entry->number == 0 ? ++IRVariableNumber : entry->number;
   return op;
 }
 
@@ -491,9 +527,9 @@ IROperand IRNewFunctionOperand(const char *name) {
 size_t IRParseOperand(char *s, IROperand *op) {
   switch (op->kind) {
     case IR_OP_TEMP:
-      return sprintf(s, "t%d", op->number);
+      return sprintf(s, "t%u", op->number);
     case IR_OP_LABEL:
-      return sprintf(s, "label%d", op->number);
+      return sprintf(s, "label%u", op->number);
     case IR_OP_RELOP: {
       switch (op->relop) {
         case RELOP_EQ:
@@ -511,7 +547,7 @@ size_t IRParseOperand(char *s, IROperand *op) {
       }
     }
     case IR_OP_VARIABLE:
-      return sprintf(s, "%s", op->name);
+      return sprintf(s, "v%u", op->number);
     case IR_OP_ADDRESS:
       return sprintf(s, "ADDRESS"); // TODO
     case IR_OP_CONSTANT:

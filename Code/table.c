@@ -54,6 +54,7 @@ void STPopStack() {
 void STInsertStru(const char *id, SEType *type) {
   STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
   entry->id = id;
+  entry->number = -1;
   entry->type = type;
   Log("Insert to stru ST: %p %p \"%s\"", entry, type, id);
   RBInsert(&(struStack->root), (void *)entry, STRBCompare);
@@ -63,6 +64,7 @@ void STInsertStru(const char *id, SEType *type) {
 void STInsertFunc(const char *id, SEType *type) {
   STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
   entry->id = id;
+  entry->number = -1;
   entry->type = type;
   Log("Insert to func ST: %p %p \"%s\"", entry, type, id);
   RBInsert(&(funcStack->root), (void *)entry, STRBCompare);
@@ -72,6 +74,7 @@ void STInsertFunc(const char *id, SEType *type) {
 void STInsertCurr(const char *id, SEType *type) {
   STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
   entry->id = id;
+  entry->number = 0;
   entry->type = type;
   Log("Insert to curr ST: %p %p \"%s\"", entry, type, id);
   RBInsert(&(currStack->root), (void *)entry, STRBCompare);

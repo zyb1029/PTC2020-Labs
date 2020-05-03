@@ -49,7 +49,7 @@ enum IRCodeType {
 typedef struct IROperand {
   enum IROperandType kind;
   union {
-    int number;
+    unsigned int number;
     int ivalue;
     float fvalue;
     const char *name;
@@ -108,6 +108,11 @@ struct IRCodeList IRTranslateExp(struct STNode *exp, struct IROperand place);
 struct IRCodeList IRTranslateCondPre(struct STNode *exp, struct IROperand place);
 struct IRCodeList IRTranslateCond(struct STNode *exp, struct IROperand label_true, struct IROperand label_false);
 struct IRCodeList IRTranslateCompSt(struct STNode *comp);
+struct IRCodeList IRTranslateDefList(struct STNode *list);
+struct IRCodeList IRTranslateDef(struct STNode *def);
+struct IRCodeList IRTranslateDecList(struct STNode *list);
+struct IRCodeList IRTranslateDec(struct STNode *dec);
+struct IRCodeList IRTranslateVarDec(struct STNode *var);
 struct IRCodeList IRTranslateStmtList(struct STNode *list);
 struct IRCodeList IRTranslateStmt(struct STNode *stmt);
 struct IRCodeList IRTranslateArgs(struct STNode *args, struct IRCodeList *arg_list);
@@ -118,7 +123,7 @@ void IRTranslateFunc(const char *name);
 struct IROperand IRNewNullOperand();
 struct IROperand IRNewTempOperand();
 struct IROperand IRNewLabelOperand();
-struct IROperand IRNewVariableOperand(struct STNode *id);
+struct IROperand IRNewVariableOperand(const char *name);
 struct IROperand IRNewConstantOperand(int value);
 struct IROperand IRNewRelopOperand(enum ENUM_RELOP relop);
 struct IROperand IRNewFunctionOperand(const char *name);

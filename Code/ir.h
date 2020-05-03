@@ -23,7 +23,6 @@ enum IROperandType {
   IR_OP_LABEL,
   IR_OP_VARIABLE,
   IR_OP_CONSTANT,
-  IR_OP_ADDRESS,
   IR_OP_RELOP,
   IR_OP_FUNCTION,
 };
@@ -36,6 +35,9 @@ enum IRCodeType {
   IR_CODE_SUB,
   IR_CODE_MUL,
   IR_CODE_DIV,
+  IR_CODE_ADDR,
+  IR_CODE_LOAD,
+  IR_CODE_SAVE,
   IR_CODE_JUMP,
   IR_CODE_JUMP_COND,
   IR_CODE_RETURN,
@@ -67,7 +69,7 @@ typedef struct IRCode {
     } label;
     struct {
       struct IROperand right, left;
-    } assign;
+    } assign, addr, load, save;
     struct {
       struct IROperand result, op1, op2;
     } binop;
@@ -100,10 +102,11 @@ typedef struct IRCodeList {
   struct IRCode *head, *tail;
 } IRCodeList;
 
-// List+Type, for Exp only
+// List+Type+Addr, for Exp only
 typedef struct IRCodePair {
   struct IRCodeList list;
   struct SEType *type;
+  bool addr;
 } IRCodePair;
 
 // The code segment is put into a FIFO queue.
@@ -144,7 +147,7 @@ size_t IRWriteCode(int fd, IRCode *code);
 
 struct IRCode *IRNewCode(enum IRCodeType kind);
 struct IRCodeList IRWrapCode(struct IRCode *code);
-struct IRCodePair IRWrapPair(struct IRCodeList list, struct SEType *type);
+struct IRCodePair IRWrapPair(struct IRCodeList list, struct SEType *type, bool addr);
 struct IRCodeList IRAppendCode(struct IRCodeList list, struct IRCode *code);
 struct IRCodeList IRConcatLists(struct IRCodeList list1, struct IRCodeList list2);
 void IRDestroyList(struct IRCodeList list);

@@ -1,12 +1,13 @@
+#include "ir.h"
+
 #include <stdbool.h>
 #include <unistd.h>
 
-#include "ir.h"
-#include "tree.h"
-#include "token.h"
-#include "table.h"
-#include "syntax.tab.h"
 #include "debug.h"
+#include "syntax.tab.h"
+#include "table.h"
+#include "token.h"
+#include "tree.h"
 
 // same assertion code as in type.c
 #ifdef DEBUG
@@ -29,7 +30,7 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
   STNode *e3 = e2 ? e2->next : NULL;
   switch (e1->token) {
     case LP:  // LP Exp RP
-      Panic("not implemented!");
+      return IRTranslateExp(e2, place);
     case MINUS: {
       IROperand t1 = IRNewTempOperand();
       IRCodePair pair = IRTranslateExp(e2, t1);
@@ -44,19 +45,19 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
       return pair;
     }
     case NOT:
-      return IRWrapPair(IRTranslateCondPre(exp, place), STATIC_TYPE_INT);
+      return IRWrapPair(IRTranslateCondPre(exp, place), STATIC_TYPE_INT, false);
     case ID: {
-      STEntry *entry = STSearchCurr(exp->sval);
+      STEntry *entry = STSearchCurr(e1->sval);
       Assert(entry != NULL, "entry %s not found in ST", exp->sval);
       SEType *type = entry->type;
       if (e2 == NULL) {
-        if (place.kind != IR_OP_NULL) {  
+        if (place.kind != IR_OP_NULL) {
           IRCode *code = IRNewCode(IR_CODE_ASSIGN);
           code->assign.left = place;
           code->assign.right = IRNewVariableOperand(e1->sval);
-          return IRWrapPair(IRWrapCode(code), type);
+          return IRWrapPair(IRWrapCode(code), type, type->kind != BASIC);
         } else {
-          return IRWrapPair(STATIC_EMPTY_IR_LIST, type);
+          return IRWrapPair(STATIC_EMPTY_IR_LIST, type, false);
         }
       } else {
         // function calls can't be ignored as they may have side effects!
@@ -69,12 +70,12 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
           if (!strcmp(e1->sval, "read")) {
             IRCode *code = IRNewCode(IR_CODE_READ);
             code->read.variable = place;
-            return IRWrapPair(IRWrapCode(code), type);
+            return IRWrapPair(IRWrapCode(code), STATIC_TYPE_INT, false);
           } else {
             IRCode *code = IRNewCode(IR_CODE_CALL);
             code->call.result = place;
             code->call.function = IRNewFunctionOperand(e1->sval);
-            return IRWrapPair(IRWrapCode(code), type);
+            return IRWrapPair(IRWrapCode(code), type, type->kind != BASIC);
           }
         } else {
           // ID(args...)
@@ -87,14 +88,14 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
             code->write.variable = arg_list.head->arg.variable;
             list = IRAppendCode(list, code);
             IRDestroyList(arg_list);  // argument list no longer useful
-            return IRWrapPair(list, type);
+            return IRWrapPair(list, STATIC_TYPE_INT, false);
           } else {
             IRCode *code = IRNewCode(IR_CODE_CALL);
             code->call.result = place;
             code->call.function = IRNewFunctionOperand(e1->sval);
             list = IRConcatLists(list, arg_list);
             list = IRAppendCode(list, code);
-            return IRWrapPair(list, type);
+            return IRWrapPair(list, type, type->kind != BASIC);
           }
         }
       }
@@ -106,9 +107,9 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
         IRCodeList list = {code, code};
         code->assign.left = place;
         code->assign.right = IRNewConstantOperand(e1->ival);
-        return IRWrapPair(IRWrapCode(code), STATIC_TYPE_INT);
+        return IRWrapPair(IRWrapCode(code), STATIC_TYPE_INT, false);
       } else {
-        return IRWrapPair(STATIC_EMPTY_IR_LIST, STATIC_TYPE_INT);
+        return IRWrapPair(STATIC_EMPTY_IR_LIST, STATIC_TYPE_INT, false);
       }
     }
     case FLOAT:
@@ -120,18 +121,47 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
           Panic("not implemented!");
         }
         case DOT: {
-          Panic("not implemented!");
+          IROperand t1 = IRNewTempOperand();
+          IRCodePair pair = IRTranslateExp(e1, t1);
+          IRCodeList list = pair.list;
+          SEType *type = pair.type;
+          SEField *field = NULL;
+          size_t offset = 0;
+          for (field = type->structure; field != NULL; field = field->next) {
+            if (!strcmp(field->name, e3->sval)) {
+              type = field->type;
+              break;
+            } else {
+              offset += field->type->size;
+            }
+          }
+          Assert(field != NULL, "invalid offset in struct");
+          
+          IRCode *code = IRNewCode(IR_CODE_ADD);
+          code->binop.result = t1;
+          code->binop.op1 = t1;
+          code->binop.op2 = IRNewConstantOperand(offset);
+          list = IRAppendCode(list, code);
+          return IRWrapPair(list, type, true);
         }
         case ASSIGNOP: {
           IROperand t1 = IRNewTempOperand();
-          IROperand var = IRNewVariableOperand(e1->child->sval);
           IRCodePair pair = IRTranslateExp(e3, t1);
+
+          IROperand var = IRNewNullOperand();
+          if (e1->child->token == ID) {
+            // assign to local variable
+            var = IRNewVariableOperand(e1->child->sval);
+          } else {
+            // assign to address (array/struct)
+            var = IRNewTempOperand();
+            pair.list = IRConcatLists(pair.list, IRTranslateExp(e1, var).list);
+          }
 
           IRCode *code1 = IRNewCode(IR_CODE_ASSIGN);
           code1->assign.left = var;
           code1->assign.right = t1;
           pair.list = IRAppendCode(pair.list, code1);
-
           if (place.kind != IR_OP_NULL) {
             IRCode *code2 = IRNewCode(IR_CODE_ASSIGN);
             code2->assign.left = place;
@@ -143,7 +173,7 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
         case AND:
         case OR:
         case RELOP:
-          return IRWrapPair(IRTranslateCondPre(exp, place), STATIC_TYPE_INT);
+          return IRWrapPair(IRTranslateCondPre(exp, place), STATIC_TYPE_INT, false);
         default: {
           IROperand t1 = IRNewTempOperand();
           IROperand t2 = IRNewTempOperand();
@@ -180,7 +210,7 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
     }
   }
   Panic("should not reach here");
-  return IRWrapPair(STATIC_EMPTY_IR_LIST, STATIC_TYPE_INT);
+  return IRWrapPair(STATIC_EMPTY_IR_LIST, STATIC_TYPE_INT, false);
 }
 
 // Prepare to translate an Cond Exp.
@@ -209,7 +239,8 @@ IRCodeList IRTranslateCondPre(STNode *exp, IROperand place) {
 }
 
 // Translate an Exp into an conditional IRCodeList.
-IRCodeList IRTranslateCond(STNode *exp, IROperand label_true, IROperand label_false) {
+IRCodeList IRTranslateCond(STNode *exp, IROperand label_true,
+                           IROperand label_false) {
   AssertSTNode(exp, "Exp");
   if (exp->child->token == NOT) {
     // NOT Exp
@@ -243,7 +274,7 @@ IRCodeList IRTranslateCond(STNode *exp, IROperand label_true, IROperand label_fa
       case AND: {
         // Exp1 AND Exp2
         IROperand l1 = IRNewLabelOperand();
-        
+
         IRCodeList list = IRTranslateCond(exp1, l1, label_false);
         IRCode *label = IRNewCode(IR_CODE_LABEL);
         label->label.label = l1;
@@ -256,7 +287,7 @@ IRCodeList IRTranslateCond(STNode *exp, IROperand label_true, IROperand label_fa
       case OR: {
         // Exp1 OR Exp2
         IROperand l1 = IRNewLabelOperand();
-        
+
         IRCodeList list = IRTranslateCond(exp1, label_true, l1);
         IRCode *label = IRNewCode(IR_CODE_LABEL);
         label->label.label = l1;
@@ -325,7 +356,7 @@ IRCodeList IRTranslateDec(STNode *dec) {
   AssertSTNode(dec, "Dec");
   IRCodeList list = STATIC_EMPTY_IR_LIST;
 
-  // find name of variable and get IR number  
+  // find name of variable and get IR number
   STNode *var = dec->child;
   while (var && var->token != ID) {
     var = var->child;
@@ -342,7 +373,7 @@ IRCodeList IRTranslateDec(STNode *dec) {
     code->dec.size = IRNewConstantOperand(entry->type->size);
     list = IRAppendCode(list, code);
   }
-  
+
   // check whether there is an assignment
   if (dec->child->next != NULL) {
     IROperand t1 = IRNewTempOperand();
@@ -370,12 +401,13 @@ IRCodeList IRTranslateStmt(STNode *stmt) {
   if (stmt->child->next == NULL) {
     // As we exit CompSt, symbol table is destroyed.
     // Therefore, we first translate inner codes and push them into IR queue.
-    // When translating the higher-level codes, we pop the queue and get the code.
+    // When translating the higher-level codes, we pop the queue and get the
+    // code.
     Assert(!IRQueueEmpty(), "IR queue empty when translating Stmt");
     return IRQueuePop();  // FIFO queue
   } else {
     switch (stmt->child->token) {
-      case RETURN: { // RETURN Exp SEMI
+      case RETURN: {  // RETURN Exp SEMI
         IROperand t1 = IRNewTempOperand();
         IRCodeList list = IRTranslateExp(stmt->child->next, t1).list;
         IRCode *code = IRNewCode(IR_CODE_RETURN);
@@ -383,7 +415,7 @@ IRCodeList IRTranslateStmt(STNode *stmt) {
 
         return IRAppendCode(list, code);
       }
-      case IF: { // IF LP Exp RP Stmt [ELSE Stmt]
+      case IF: {  // IF LP Exp RP Stmt [ELSE Stmt]
         STNode *exp = stmt->child->next->next;
         STNode *stmt1 = exp->next->next;
         STNode *stmt2 = stmt1->next ? stmt1->next->next : NULL;
@@ -410,7 +442,7 @@ IRCodeList IRTranslateStmt(STNode *stmt) {
 
           list = IRAppendCode(list, jump);
           list = IRAppendCode(list, label2);
-          
+
           IRCodeList list2 = IRTranslateStmt(stmt2);
           list = IRConcatLists(list, list2);
 
@@ -420,7 +452,7 @@ IRCodeList IRTranslateStmt(STNode *stmt) {
         }
         return list;
       }
-      case WHILE: { // WHILE LP Exp RP Stmt
+      case WHILE: {  // WHILE LP Exp RP Stmt
         STNode *exp = stmt->child->next->next;
         STNode *body = exp->next->next;
 
@@ -450,7 +482,7 @@ IRCodeList IRTranslateStmt(STNode *stmt) {
         list = IRAppendCode(list, label3);
         return list;
       }
-      default: { // Exp SEMI
+      default: {  // Exp SEMI
         return IRTranslateExp(stmt->child, IRNewNullOperand()).list;
       }
     }
@@ -465,11 +497,11 @@ IRCodeList IRTranslateArgs(STNode *args, IRCodeList *arg_list) {
   STNode *exp = args->child;
   IROperand t1 = IRNewTempOperand();
   IRCodeList list = IRTranslateExp(exp, t1).list;
-  
+
   IRCode *code = IRNewCode(IR_CODE_ARG);
   code->arg.variable = t1;
   *arg_list = IRConcatLists(IRWrapCode(code), *arg_list);
-  
+
   if (exp->next) {
     list = IRConcatLists(list, IRTranslateArgs(exp->next->next, arg_list));
   }
@@ -480,7 +512,7 @@ IRCodeList IRTranslateArgs(STNode *args, IRCodeList *arg_list) {
 // All codes are translated as CompSt and pushed into IR queue.
 // Therefore we only need to add a function, pop the code from queue,
 // and link all new codes to the global IR list.
-extern IRCodeList irlist; // defined in main.c
+extern IRCodeList irlist;  // defined in main.c
 void IRTranslateFunc(const char *name) {
   Assert(!IRQueueEmpty(), "IR queue empty when adding func");
   IRCode *code = IRNewCode(IR_CODE_FUNCTION);
@@ -571,14 +603,12 @@ size_t IRParseOperand(char *s, IROperand *op) {
           return sprintf(s, "<=");
         case RELOP_GT:
           return sprintf(s, ">");
-        default: // RELOP_GE
+        default:  // RELOP_GE
           return sprintf(s, ">=");
       }
     }
     case IR_OP_VARIABLE:
       return sprintf(s, "v%u", op->number);
-    case IR_OP_ADDRESS:
-      return sprintf(s, "ADDRESS"); // TODO
     case IR_OP_CONSTANT:
       return sprintf(s, "#%d", op->ivalue);
     case IR_OP_FUNCTION:
@@ -642,6 +672,25 @@ size_t IRParseCode(char *s, IRCode *code) {
       s += IRParseOperand(s, &code->binop.op2);
       break;
     }
+    case IR_CODE_ADDR: {
+      s += IRParseOperand(s, &code->addr.left);
+      s += sprintf(s, " := &");
+      s += IRParseOperand(s, &code->addr.right);
+      break;
+    }
+    case IR_CODE_LOAD: {
+      s += IRParseOperand(s, &code->load.left);
+      s += sprintf(s, " := *");
+      s += IRParseOperand(s, &code->load.right);
+      break;
+    }
+    case IR_CODE_SAVE: {
+      s += sprintf(s, "*");
+      s += IRParseOperand(s, &code->save.left);
+      s += sprintf(s, " := ");
+      s += IRParseOperand(s, &code->save.right);
+      break;
+    }
     case IR_CODE_JUMP: {
       s += sprintf(s, "GOTO ");
       s += IRParseOperand(s, &code->jump.dest);
@@ -667,7 +716,7 @@ size_t IRParseCode(char *s, IRCode *code) {
       Assert(code->dec.size.kind == IR_OP_CONSTANT, "size if not constant");
       s += sprintf(s, "DEC ");
       s += IRParseOperand(s, &code->dec.variable);
-      s += sprintf(s, " %u", code->dec.size.ivalue); // special case
+      s += sprintf(s, " %u", code->dec.size.ivalue);  // special case
       break;
     }
     case IR_CODE_ARG: {
@@ -723,10 +772,11 @@ IRCodeList IRWrapCode(IRCode *code) {
 }
 
 // Wrap a code list and a type to IRCodePair.
-IRCodePair IRWrapPair(IRCodeList list, SEType *type) {
+IRCodePair IRWrapPair(IRCodeList list, SEType *type, bool addr) {
   IRCodePair pair;
   pair.list = list;
   pair.type = type;
+  pair.addr = addr;
   return pair;
 }
 

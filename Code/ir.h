@@ -7,6 +7,7 @@
 #define IR_H
 
 #include <stdbool.h>
+#include "token.h"
 
 #define IRDebug true // <- debug switch
 #if IRDebug
@@ -107,6 +108,7 @@ struct IRCodeList IRTranslateExp(struct STNode *exp, struct IROperand place);
 struct IRCodeList IRTranslateCondPre(struct STNode *exp, struct IROperand place);
 struct IRCodeList IRTranslateCond(struct STNode *exp, struct IROperand label_true, struct IROperand label_false);
 struct IRCodeList IRTranslateCompSt(struct STNode *comp);
+struct IRCodeList IRTranslateStmtList(struct STNode *list);
 struct IRCodeList IRTranslateStmt(struct STNode *stmt);
 struct IRCodeList IRTranslateArgs(struct STNode *args, struct IRCodeList *arg_list);
 

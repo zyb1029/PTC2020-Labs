@@ -7,6 +7,7 @@
 #define SE_TYPE_H
 
 #include <stdbool.h>
+#include <unistd.h>
 
 enum SEBasicType {
   VOID,

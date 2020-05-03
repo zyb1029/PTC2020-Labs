@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include "tree.h"
 #include "semantics.h"
 #include "ir.h"
@@ -39,6 +40,11 @@ int main(int argc, char *argv[]) {
   teardownSyntaxTree(stroot);
   if (hasErrorS) {
     return 4; // avoid checker see this as runtime error
+  }
+
+  for (IRCode *code = irlist.head; code != NULL; code = code->next) {
+    IRWriteCode(1, code);
+    write(1, "\n", 1);
   }
 
   return 0;

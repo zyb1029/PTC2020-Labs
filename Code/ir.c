@@ -106,7 +106,7 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
         }
         case ASSIGNOP: {
           IROperand t1 = IRNewTempOperand();
-          IROperand var = IRNewVariableOperand(e1);
+          IROperand var = IRNewVariableOperand(e1->child);
           IRCodeList list = IRTranslateExp(e3, t1);
 
           IRCode *code1 = IRNewCode(IR_CODE_ASSIGN);
@@ -271,8 +271,20 @@ IRCodeList IRTranslateCond(STNode *exp, IROperand label_true, IROperand label_fa
 // Translate an CompSt into an IRCodeList.
 IRCodeList IRTranslateCompSt(STNode *comp) {
   AssertSTNode(comp, "CompSt");
-  Panic("not implemented");
-  return STATIC_EMPTY_IR_LIST;
+  IRCodeList list = STATIC_EMPTY_IR_LIST;
+  STNode *defList = comp->child->next;
+  STNode *stmtList = defList->next;
+  // FIXME: translate DefList
+  list = IRTranslateStmtList(stmtList);
+  return list;
+}
+
+// Translate an StmtList into an IRCodeList.
+IRCodeList IRTranslateStmtList(STNode *list) {
+  AssertSTNode(list, "StmtList");
+  if (list->empty) return STATIC_EMPTY_IR_LIST;
+  IRCodeList ret = IRTranslateStmt(list->child);
+  return IRConcatLists(ret, IRTranslateStmtList(list->child->next));
 }
 
 // Translate an Stmt into an IRCodeList.
@@ -638,7 +650,9 @@ IRCodeList IRAppendCode(IRCodeList list, IRCode *code) {
 
 // Concat list2 to the end of list1.
 IRCodeList IRConcatLists(IRCodeList list1, IRCodeList list2) {
-  if (list1.tail == NULL) {
+  if (list2.head == NULL) {
+    return list1;  // concat with empty list
+  } else if (list1.tail == NULL) {
     return list2;  // might be empty
   } else {
     list1.tail->next = list2.head;

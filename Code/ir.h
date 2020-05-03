@@ -15,6 +15,7 @@
 #endif
 
 struct STNode;
+struct SEType;
 
 enum IROperandType {
   IR_OP_NULL,
@@ -99,6 +100,12 @@ typedef struct IRCodeList {
   struct IRCode *head, *tail;
 } IRCodeList;
 
+// List+Type, for Exp only
+typedef struct IRCodePair {
+  struct IRCodeList list;
+  struct SEType *type;
+} IRCodePair;
+
 // The code segment is put into a FIFO queue.
 // Codes are translated when the symbol table is destroyed.
 // They are pushed into a queue and used when translating higher level codes.
@@ -107,7 +114,7 @@ typedef struct IRQueueItem {
   struct IRQueueItem *prev, *next;
 } IRQueueItem;
 
-struct IRCodeList IRTranslateExp(struct STNode *exp, struct IROperand place);
+struct IRCodePair IRTranslateExp(struct STNode *exp, struct IROperand place);
 struct IRCodeList IRTranslateCondPre(struct STNode *exp, struct IROperand place);
 struct IRCodeList IRTranslateCond(struct STNode *exp, struct IROperand label_true, struct IROperand label_false);
 struct IRCodeList IRTranslateCompSt(struct STNode *comp);
@@ -137,6 +144,7 @@ size_t IRWriteCode(int fd, IRCode *code);
 
 struct IRCode *IRNewCode(enum IRCodeType kind);
 struct IRCodeList IRWrapCode(struct IRCode *code);
+struct IRCodePair IRWrapPair(struct IRCodeList list, struct SEType *type);
 struct IRCodeList IRAppendCode(struct IRCodeList list, struct IRCode *code);
 struct IRCodeList IRConcatLists(struct IRCodeList list1, struct IRCodeList list2);
 void IRDestroyList(struct IRCodeList list);

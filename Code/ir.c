@@ -136,12 +136,13 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
             }
           }
           Assert(field != NULL, "invalid offset in struct");
-          
-          IRCode *code = IRNewCode(IR_CODE_ADD);
-          code->binop.result = t1;
-          code->binop.op1 = t1;
-          code->binop.op2 = IRNewConstantOperand(offset);
-          list = IRAppendCode(list, code);
+          if (offset > 0) {
+            IRCode *code = IRNewCode(IR_CODE_ADD);
+            code->binop.result = t1;
+            code->binop.op1 = t1;
+            code->binop.op2 = IRNewConstantOperand(offset);
+            list = IRAppendCode(list, code);
+          }
           return IRWrapPair(list, type, true);
         }
         case ASSIGNOP: {

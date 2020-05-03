@@ -52,7 +52,7 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
       SEType *type = entry->type;
       if (e2 == NULL) {
         if (place.kind != IR_OP_NULL) {
-          IRCode *code = IRNewCode(type->kind == BASIC ? IR_CODE_ASSIGN : IR_CODE_ADDR);
+          IRCode *code = IRNewCode(type->kind == BASIC ? IR_CODE_ASSIGN : IR_CODE_DEREF);
           code->assign.left = place;
           code->assign.right = IRNewVariableOperand(e1->sval);
           return IRWrapPair(IRWrapCode(code), type, type->kind != BASIC);
@@ -149,19 +149,30 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
           IROperand t1 = IRNewTempOperand();
           IRCodePair pair = IRTranslateExp(e3, t1);
 
+          if (pair.addr) {
+            IRCode *code = IRNewCode(IR_CODE_LOAD);
+            code->load.left = t1;
+            code->load.right = t1;
+            pair.list = IRAppendCode(pair.list, code);
+            pair.addr = false;
+          }
+
           IROperand var = IRNewNullOperand();
+          IRCode *code1 = NULL;
           if (e1->child->token == ID) {
             // assign to local variable
             var = IRNewVariableOperand(e1->child->sval);
+            code1 = IRNewCode(IR_CODE_ASSIGN);
+            code1->assign.left = var;
+            code1->assign.right = t1;
           } else {
             // assign to address (array/struct)
             var = IRNewTempOperand();
             pair.list = IRConcatLists(pair.list, IRTranslateExp(e1, var).list);
+            code1 = IRNewCode(IR_CODE_SAVE);
+            code1->save.left = var;
+            code1->save.right = t1;
           }
-
-          IRCode *code1 = IRNewCode(IR_CODE_ASSIGN);
-          code1->assign.left = var;
-          code1->assign.right = t1;
           pair.list = IRAppendCode(pair.list, code1);
           if (place.kind != IR_OP_NULL) {
             IRCode *code2 = IRNewCode(IR_CODE_ASSIGN);
@@ -676,7 +687,7 @@ size_t IRParseCode(char *s, IRCode *code) {
       s += IRParseOperand(s, &code->binop.op2);
       break;
     }
-    case IR_CODE_ADDR: {
+    case IR_CODE_DEREF: {
       s += IRParseOperand(s, &code->addr.left);
       s += sprintf(s, " := &");
       s += IRParseOperand(s, &code->addr.right);

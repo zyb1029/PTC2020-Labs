@@ -21,6 +21,7 @@ enum IROperandType {
   IR_OP_ADDRESS,
   IR_OP_LABEL,
   IR_OP_RELOP,
+  IR_OP_FUNCTION,
 };
 
 enum IRCodeType {
@@ -33,6 +34,9 @@ enum IRCodeType {
   IR_CODE_JUMP,
   IR_CODE_JUMP_COND,
   IR_CODE_RETURN,
+  IR_CODE_CALL,
+  IR_CODE_READ,
+  IR_CODE_WRITE,
 };
 
 typedef struct IROperand {
@@ -68,6 +72,15 @@ typedef struct IRCode {
     struct {
       struct IROperand value;
     } ret;
+    struct {
+      struct IROperand result, function;
+    } call;
+    struct {
+      struct IROperand variable;
+    } read;
+    struct {
+      struct IROperand variable;
+    } write;
   };
   struct IRCode *prev, *next;
 } IRCode;
@@ -88,6 +101,7 @@ struct IROperand IRNewLabelOperand();
 struct IROperand IRNewVariableOperand(struct STNode *id);
 struct IROperand IRNewConstantOperand(int value);
 struct IROperand IRNewRelopOperand(enum ENUM_RELOP relop);
+struct IROperand IRNewFunctionOperand(const char *name);
 struct IRCode *IRNewCode(enum IRCodeType kind);
 struct IRCodeList IRWrapCode(struct IRCode *code);
 struct IRCodeList IRAppendCode(struct IRCodeList list, struct IRCode *code);

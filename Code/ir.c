@@ -47,7 +47,22 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
         return IRWrapCode(code);
       } else {
         // function call
-        Panic("not implemented!");
+        if (e3->token == RP) {
+          // ID()
+          if (!strcmp(e1->sval, "read")) {
+            IRCode *code = IRNewCode(IR_CODE_READ);
+            code->read.variable = place;
+            return IRWrapCode(code);
+          } else {
+            IRCode *code = IRNewCode(IR_CODE_CALL);
+            code->call.result = place;
+            code->call.function = IRNewFunctionOperand(e1->sval);
+            return IRWrapCode(code);
+          }
+        } else {
+          // ID(args...)
+          Panic("not implemented");
+        }
       }
       break;
     }
@@ -379,6 +394,14 @@ IROperand IRNewRelopOperand(enum ENUM_RELOP relop) {
   IROperand op;
   op.kind = IR_OP_RELOP;
   op.relop = relop;
+  return op;
+}
+
+// Generate a new function operand.
+IROperand IRNewFunctionOperand(const char *name) {
+  IROperand op;
+  op.kind = IR_OP_FUNCTION;
+  op.name = name;
   return op;
 }
 

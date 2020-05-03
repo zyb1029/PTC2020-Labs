@@ -1,4 +1,6 @@
 #include <stdbool.h>
+#include <unistd.h>
+
 #include "ir.h"
 #include "tree.h"
 #include "token.h"
@@ -453,6 +455,156 @@ IROperand IRNewFunctionOperand(const char *name) {
   op.kind = IR_OP_FUNCTION;
   op.name = name;
   return op;
+}
+
+// Parse an operand to string
+size_t IRParseOperand(char *s, IROperand *op) {
+  switch (op->kind) {
+    case IR_OP_TEMP:
+      return sprintf(s, "_IR_T%d", op->number);
+    case IR_OP_LABEL:
+      return sprintf(s, "_IR_L%d", op->number);
+    case IR_OP_RELOP: {
+      switch (op->relop) {
+        case RELOP_EQ:
+          return sprintf(s, "==");
+        case RELOP_NE:
+          return sprintf(s, "!=");
+        case RELOP_LT:
+          return sprintf(s, "<");
+        case RELOP_LE:
+          return sprintf(s, "<=");
+        case RELOP_GT:
+          return sprintf(s, ">");
+        default: // RELOP_GE
+          return sprintf(s, ">=");
+      }
+    }
+    case IR_OP_VARIABLE:
+      return sprintf(s, "%s", op->name);
+    case IR_OP_ADDRESS:
+      return sprintf(s, "ADDRESS"); // TODO
+    case IR_OP_CONSTANT:
+      return sprintf(s, "#%d", op->ivalue);
+    case IR_OP_FUNCTION:
+      return sprintf(s, "%s", op->name);
+    default:
+      return sprintf(s, "(NULL)");
+  }
+}
+
+// Parse an IR code to string.
+size_t IRParseCode(char *s, IRCode *code) {
+  char *beg = s;
+  switch (code->kind) {
+    case IR_CODE_LABEL: {
+      s += sprintf(s, "LABEL ");
+      s += IRParseOperand(s, &code->label.label);
+      s += sprintf(s, " :");
+      break;
+    }
+    case IR_CODE_FUNCTION: {
+      s += sprintf(s, "FUNCTION ");
+      s += IRParseOperand(s, &code->function.function);
+      s += sprintf(s, " :");
+      break;
+    }
+    case IR_CODE_ASSIGN: {
+      s += IRParseOperand(s, &code->assign.left);
+      s += sprintf(s, " := ");
+      s += IRParseOperand(s, &code->assign.right);
+      break;
+    }
+    case IR_CODE_ADD: {
+      s += IRParseOperand(s, &code->binop.result);
+      s += sprintf(s, " := ");
+      s += IRParseOperand(s, &code->binop.op1);
+      s += sprintf(s, " + ");
+      s += IRParseOperand(s, &code->binop.op2);
+      break;
+    }
+    case IR_CODE_SUB: {
+      s += IRParseOperand(s, &code->binop.result);
+      s += sprintf(s, " := ");
+      s += IRParseOperand(s, &code->binop.op1);
+      s += sprintf(s, " - ");
+      s += IRParseOperand(s, &code->binop.op2);
+      break;
+    }
+    case IR_CODE_MUL: {
+      s += IRParseOperand(s, &code->binop.result);
+      s += sprintf(s, " := ");
+      s += IRParseOperand(s, &code->binop.op1);
+      s += sprintf(s, " * ");
+      s += IRParseOperand(s, &code->binop.op2);
+      break;
+    }
+    case IR_CODE_DIV: {
+      s += IRParseOperand(s, &code->binop.result);
+      s += sprintf(s, " := ");
+      s += IRParseOperand(s, &code->binop.op1);
+      s += sprintf(s, " / ");
+      s += IRParseOperand(s, &code->binop.op2);
+      break;
+    }
+    case IR_CODE_JUMP: {
+      s += sprintf(s, "GOTO ");
+      s += IRParseOperand(s, &code->jump.dest);
+      break;
+    }
+    case IR_CODE_JUMP_COND: {
+      s += sprintf(s, "IF ");
+      s += IRParseOperand(s, &code->jump_cond.op1);
+      s += sprintf(s, " ");
+      s += IRParseOperand(s, &code->jump_cond.relop);
+      s += sprintf(s, " ");
+      s += IRParseOperand(s, &code->jump_cond.op2);
+      s += sprintf(s, " GOTO ");
+      s += IRParseOperand(s, &code->jump_cond.dest);
+      break;
+    }
+    case IR_CODE_RETURN: {
+      s += sprintf(s, "RETURN ");
+      s += IRParseOperand(s, &code->ret.value);
+      break;
+    }
+    case IR_CODE_DEC: {
+      Panic("not implemented");
+    }
+    case IR_CODE_ARG: {
+      s += sprintf(s, "ARG ");
+      s += IRParseOperand(s, &code->arg.variable);
+      break;
+    }
+    case IR_CODE_CALL: {
+      s += IRParseOperand(s, &code->call.result);
+      s += sprintf(s, " := CALL ");
+      s += IRParseOperand(s, &code->call.function);
+      break;
+    }
+    case IR_CODE_PARAM: {
+      Panic("not implemented");
+    }
+    case IR_CODE_READ: {
+      s += sprintf(s, "READ ");
+      s += IRParseOperand(s, &code->read.variable);
+      break;
+    }
+    case IR_CODE_WRITE: {
+      s += sprintf(s, "WRITE ");
+      s += IRParseOperand(s, &code->write.variable);
+      break;
+    }
+    default:
+      Panic("should not reach here");
+  }
+  return s - beg;
+}
+
+// Parse and output a line of IR code to file.
+static char ir_buffer[512] = {};
+size_t IRWriteCode(int fd, IRCode *code) {
+  return write(fd, ir_buffer, IRParseCode(ir_buffer, code));
 }
 
 // Allocate memory and initialize a code.

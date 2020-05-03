@@ -61,7 +61,24 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
           }
         } else {
           // ID(args...)
-          Panic("not implemented");
+          IRCodeList arg_list = STATIC_EMPTY_IR_LIST;
+          IRCodeList list = IRTranslateArgs(e3, &arg_list);
+
+          if (!strcmp(e1->sval, "write")) {
+            Assert(arg_list.head != NULL, "empty arguments to WRITE");
+            IRCode *code = IRNewCode(IR_CODE_WRITE);
+            code->write.variable = arg_list.head->arg.variable;
+            list = IRAppendCode(list, code);
+            IRDestroyList(arg_list);  // argument list no longer useful
+            return list;
+          } else {
+            IRCode *code = IRNewCode(IR_CODE_CALL);
+            code->call.result = place;
+            code->call.function = IRNewFunctionOperand(e1->sval);
+            list = IRConcatLists(list, arg_list);
+            list = IRAppendCode(list, code);
+            return list;
+          }
         }
       }
       break;
@@ -174,7 +191,7 @@ IRCodeList IRTranslateCond(STNode *exp, IROperand label_true, IROperand label_fa
     // NOT Exp
     return IRTranslateCond(exp->child->next, label_false, label_true);
   } else if (exp->child->next != NULL) {
-    Assert(exp->child->next->next != NULL);
+    Assert(exp->child->next->next != NULL, "invalid cond format");
     STNode *exp1 = exp->child;
     STNode *exp2 = exp1->next->next;
     switch (exp1->next->token) {
@@ -347,6 +364,23 @@ IRCodeList IRTranslateStmt(STNode *stmt) {
   }
   Panic("should not reach here");
   return STATIC_EMPTY_IR_LIST;
+}
+
+// Translate an Args into an IRCodeList.
+IRCodeList IRTranslateArgs(STNode *args, IRCodeList *arg_list) {
+  AssertSTNode(args, "Args");
+  STNode *exp = args->child;
+  IROperand t1 = IRNewTempOperand();
+  IRCodeList list = IRTranslateExp(exp, t1);
+  
+  IRCode *code = IRNewCode(IR_CODE_ARG);
+  code->arg.variable = t1;
+  *arg_list = IRConcatLists(IRWrapCode(code), *arg_list);
+  
+  if (exp->next) {
+    list = IRConcatLists(list, IRTranslateArgs(exp->next->next, arg_list));
+  }
+  return list;
 }
 
 // Allocate a new null operand.

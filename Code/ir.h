@@ -73,6 +73,7 @@ typedef struct IRCodeList {
 struct IRCodeList IRTranslateExp(struct STNode *exp, struct IROperand place);
 struct IRCodeList IRTranslateCondPre(struct STNode *exp, struct IROperand place);
 struct IRCodeList IRTranslateCond(struct STNode *exp, struct IROperand label_true, struct IROperand label_false);
+struct IRCodeList IRTranslateCompSt(struct STNode *compst);
 struct IRCodeList IRTranslateStmt(struct STNode *stmt);
 
 struct IROperand IRNewNullOperand();

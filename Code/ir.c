@@ -159,13 +159,21 @@ IRCodeList IRTranslateCond(STNode *exp, IROperand label_true, IROperand label_fa
   return STATIC_EMPTY_IR_LIST;
 }
 
+// Translate an CompSt into an IRCodeList.
+IRCodeList IRTranslateCompSt(STNode *compst) {
+  AssertSTNode(compst, "CompSt");
+  Panic("not implemented");
+  return STATIC_EMPTY_IR_LIST;
+}
+
 // Translate an Stmt into an IRCodeList.
 IRCodeList IRTranslateStmt(STNode *stmt) {
   AssertSTNode(stmt, "Stmt");
   if (stmt->child->next == NULL) {
     // As we exit CompSt, symbol table is destroyed.
     // Therefore, do not make recursive translating on CompSt.
-    return STATIC_EMPTY_IR_LIST;
+    // FIXME: HOW TO IMPLEMENT THIS?
+    return IRTranslateCompSt(stmt->child);
   } else {
     switch (stmt->child->token) {
       case RETURN: { // RETURN Exp SEMI

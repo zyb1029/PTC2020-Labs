@@ -23,15 +23,18 @@ const SEFieldChain DUMMY_FIELD_CHAIN = { &DUMMY_FIELD, &DUMMY_FIELD };
 void SEPrepare() {
   STATIC_TYPE_VOID = &_STATIC_TYPE_VOID;
   STATIC_TYPE_VOID->kind = VOID;
+  STATIC_TYPE_VOID->size = -1;
   STATIC_TYPE_VOID->parent = STATIC_TYPE_VOID;
   STATIC_FIELD_VOID.type = STATIC_TYPE_VOID;
   STATIC_FIELD_VOID.next = NULL;
   STATIC_TYPE_INT = &_STATIC_TYPE_INT;
   STATIC_TYPE_INT->kind = BASIC;
+  STATIC_TYPE_INT->size = 4;
   STATIC_TYPE_INT->basic = INT;
   STATIC_TYPE_INT->parent = STATIC_TYPE_INT;
   STATIC_TYPE_FLOAT = &_STATIC_TYPE_FLOAT;
   STATIC_TYPE_FLOAT->kind = BASIC;
+  STATIC_TYPE_FLOAT->size = 4;
   STATIC_TYPE_FLOAT->basic = FLOAT;
   STATIC_TYPE_FLOAT->parent = STATIC_TYPE_FLOAT;
 }
@@ -217,8 +220,12 @@ SEType *SEParseSpecifier(STNode *specifier) {
         STPushStack(STACK_STRUCTURE);
         type->extended = true; // struct has global scope
         type->kind = STRUCTURE;
+        type->size = 0;
         type->parent = type;
         type->structure = SEParseDefList(tag->next->next, false).head;
+        for (SEField *field = type->structure; field; field = field->next) {
+          type->size += field->type->size;
+        }
         STPopStack();
       }
       if (tag->empty) {
@@ -319,6 +326,7 @@ void SEParseFunDec(STNode *fdec, SEType *type) {
   if (entry == NULL) {
     func = (SEType *)malloc(sizeof(SEType));
     func->kind = FUNCTION;
+    func->size = -1;
     func->parent = func;
     func->function.node = fdec;
     func->function.defined = fdec->next->token != SEMI;
@@ -502,10 +510,12 @@ SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
   AssertSTNode(var, "VarDec");
   if (var->child->next) {
     // VarDec LB INT RB
+    int arraySize = var->child->next->next->ival;
     SEType *arrayType = (SEType *)malloc(sizeof(SEType));
     arrayType->kind = ARRAY;
+    arrayType->size = type->size * arraySize;
     arrayType->parent = arrayType;
-    arrayType->array.size = var->child->next->next->ival;
+    arrayType->array.size = arraySize;
     arrayType->array.kind = type->kind;
     arrayType->array.type = type;
     return SEParseVarDec(var->child, arrayType, assignable);

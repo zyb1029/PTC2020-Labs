@@ -34,20 +34,27 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
       IROperand t1 = IRNewTempOperand();
       IRCodeList list = IRTranslateExp(e2, t1);
 
-      IRCode *code = IRNewCode(IR_CODE_SUB);
-      code->binop.result = place;
-      code->binop.op1 = IRNewConstantOperand(0);
-      code->binop.op2 = t1;
-      return IRAppendCode(list, code);
+      if (place.kind != IR_OP_NULL) {
+        IRCode *code = IRNewCode(IR_CODE_SUB);
+        code->binop.result = place;
+        code->binop.op1 = IRNewConstantOperand(0);
+        code->binop.op2 = t1;
+        list = IRAppendCode(list, code);
+      }
+      return list;
     }
     case NOT:
       return IRTranslateCondPre(exp, place);
     case ID: {
       if (e2 == NULL) {
-        IRCode *code = IRNewCode(IR_CODE_ASSIGN);
-        code->assign.left = place;
-        code->assign.right = IRNewVariableOperand(e1);
-        return IRWrapCode(code);
+        if (place.kind != IR_OP_NULL) {  
+          IRCode *code = IRNewCode(IR_CODE_ASSIGN);
+          code->assign.left = place;
+          code->assign.right = IRNewVariableOperand(e1);
+          return IRWrapCode(code);
+        } else {
+          return STATIC_EMPTY_IR_LIST;
+        }
       } else {
         // function call
         if (e3->token == RP) {
@@ -87,11 +94,15 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
       break;
     }
     case INT: {
-      IRCode *code = IRNewCode(IR_CODE_ASSIGN);
-      IRCodeList list = {code, code};
-      code->assign.left = place;
-      code->assign.right = IRNewConstantOperand(e1->ival);
-      return IRWrapCode(code);
+      if (place.kind != IR_OP_NULL) {
+        IRCode *code = IRNewCode(IR_CODE_ASSIGN);
+        IRCodeList list = {code, code};
+        code->assign.left = place;
+        code->assign.right = IRNewConstantOperand(e1->ival);
+        return IRWrapCode(code);
+      } else {
+        return STATIC_EMPTY_IR_LIST;
+      }
     }
     case FLOAT:
       Panic("unexpected FLOAT");
@@ -112,13 +123,14 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
           IRCode *code1 = IRNewCode(IR_CODE_ASSIGN);
           code1->assign.left = var;
           code1->assign.right = t1;
-
-          IRCode *code2 = IRNewCode(IR_CODE_ASSIGN);
-          code2->assign.left = place;
-          code2->assign.right = var;
-
           list = IRAppendCode(list, code1);
-          list = IRAppendCode(list, code2);
+
+          if (place.kind != IR_OP_NULL) {
+            IRCode *code2 = IRNewCode(IR_CODE_ASSIGN);
+            code2->assign.left = place;
+            code2->assign.right = var;
+            list = IRAppendCode(list, code2);
+          }
           return list;
         }
         case AND:
@@ -130,30 +142,32 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
           IROperand t2 = IRNewTempOperand();
           IRCodeList list1 = IRTranslateExp(e1, t1);
           IRCodeList list2 = IRTranslateExp(e3, t2);
-
-          IRCode *code = NULL;
-          switch (e2->token) {
-            case PLUS:
-              code = IRNewCode(IR_CODE_ADD);
-              break;
-            case MINUS:
-              code = IRNewCode(IR_CODE_SUB);
-              break;
-            case STAR:  // not MUL
-              code = IRNewCode(IR_CODE_MUL);
-              break;
-            case DIV:
-              code = IRNewCode(IR_CODE_DIV);
-              break;
-            default:
-              Panic("invalid arithmic code");
-          }
-          code->binop.result = place;
-          code->binop.op1 = t1;
-          code->binop.op2 = t2;
-
           IRCodeList list = IRConcatLists(list1, list2);
-          return IRAppendCode(list, code);
+
+          if (place.kind != IR_OP_NULL) {
+            IRCode *code = NULL;
+            switch (e2->token) {
+              case PLUS:
+                code = IRNewCode(IR_CODE_ADD);
+                break;
+              case MINUS:
+                code = IRNewCode(IR_CODE_SUB);
+                break;
+              case STAR:  // not MUL
+                code = IRNewCode(IR_CODE_MUL);
+                break;
+              case DIV:
+                code = IRNewCode(IR_CODE_DIV);
+                break;
+              default:
+                Panic("invalid arithmic code");
+            }
+            code->binop.result = place;
+            code->binop.op1 = t1;
+            code->binop.op2 = t2;
+            list = IRAppendCode(list, code);
+          }
+          return list;
         }
       }
     }

@@ -185,6 +185,41 @@ IRCodeList IRTranslateStmt(STNode *stmt) {
         return IRAppendCode(list, code);
       }
       case IF: { // IF LP Exp RP Stmt [ELSE Stmt]
+        STNode *exp = stmt->child->next->next;
+        STNode *stmt1 = exp->next->next;
+        STNode *stmt2 = stmt1->next ? stmt1->next->next : NULL;
+
+        IROperand l1 = IRNewLabelOperand();
+        IROperand l2 = IRNewLabelOperand();
+
+        IRCode *label1 = IRNewCode(IR_CODE_LABEL);
+        label1->label.label = l1;
+        IRCode *label2 = IRNewCode(IR_CODE_LABEL);
+        label2->label.label = l2;
+
+        IRCodeList list = IRTranslateCond(exp, l1, l2);
+        IRCodeList list1 = IRTranslateStmt(stmt1);
+        list = IRAppendCode(list, label1);
+        list = IRConcatLists(list, list1);
+
+        if (stmt2 == NULL) {
+          list = IRAppendCode(list, label2);
+        } else {
+          IROperand l3 = IRNewLabelOperand();
+          IRCode *jump = IRNewCode(IR_CODE_JUMP);
+          jump->jump.dest = l3;
+
+          list = IRAppendCode(list, jump);
+          list = IRAppendCode(list, label2);
+          
+          IRCodeList list2 = IRTranslateStmt(stmt2);
+          list = IRConcatLists(list, list2);
+
+          IRCode *label3 = IRNewCode(IR_CODE_LABEL);
+          label3->label.label = l3;
+          list = IRAppendCode(list, label3);
+        }
+        return list;
       }
       case WHILE: { // WHILE LP Exp RP Stmt
       }

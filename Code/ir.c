@@ -269,7 +269,7 @@ IRCodeList IRTranslateCond(STNode *exp, IROperand label_true, IROperand label_fa
   } else {
     // Exp (like if(0), while(1))
     IROperand t1 = IRNewTempOperand();
-    IRCodeList list = IRTranslateExp(exp->child, t1);
+    IRCodeList list = IRTranslateExp(exp, t1);
 
     IRCode *jump = IRNewCode(IR_CODE_JUMP_COND);
     jump->jump_cond.op1 = t1;
@@ -278,9 +278,9 @@ IRCodeList IRTranslateCond(STNode *exp, IROperand label_true, IROperand label_fa
     jump->jump_cond.dest = label_true;
     list = IRAppendCode(list, jump);
 
-    IRCode *label = IRNewCode(IR_CODE_LABEL);
-    label->label.label = label_false;
-    list = IRAppendCode(list, label);
+    jump = IRNewCode(IR_CODE_JUMP);
+    jump->jump.dest = label_false;
+    list = IRAppendCode(list, jump);
     return list;
   }
   return STATIC_EMPTY_IR_LIST;
@@ -491,9 +491,9 @@ IROperand IRNewFunctionOperand(const char *name) {
 size_t IRParseOperand(char *s, IROperand *op) {
   switch (op->kind) {
     case IR_OP_TEMP:
-      return sprintf(s, "_IR_T%d", op->number);
+      return sprintf(s, "t%d", op->number);
     case IR_OP_LABEL:
-      return sprintf(s, "_IR_L%d", op->number);
+      return sprintf(s, "label%d", op->number);
     case IR_OP_RELOP: {
       switch (op->relop) {
         case RELOP_EQ:

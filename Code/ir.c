@@ -222,6 +222,34 @@ IRCodeList IRTranslateStmt(STNode *stmt) {
         return list;
       }
       case WHILE: { // WHILE LP Exp RP Stmt
+        STNode *exp = stmt->child->next->next;
+        STNode *body = exp->next->next;
+
+        IROperand l1 = IRNewLabelOperand();
+        IROperand l2 = IRNewLabelOperand();
+        IROperand l3 = IRNewLabelOperand();
+
+        IRCode *label1 = IRNewCode(IR_CODE_LABEL);
+        IRCode *label2 = IRNewCode(IR_CODE_LABEL);
+        IRCode *label3 = IRNewCode(IR_CODE_LABEL);
+
+        label1->label.label = l1;
+        label2->label.label = l2;
+        label3->label.label = l3;
+
+        IRCodeList list = IRWrapCode(label1);
+        IRCodeList cond = IRTranslateCond(exp, l2, l3);
+        list = IRConcatLists(list, cond);
+        list = IRAppendCode(list, label2);
+
+        IRCodeList code = IRTranslateStmt(body);
+        list = IRConcatLists(list, code);
+
+        IRCode *jump = IRNewCode(IR_CODE_JUMP);
+        jump->jump.dest = l1;
+        list = IRAppendCode(list, jump);
+        list = IRAppendCode(list, label3);
+        return list;
       }
       default: { // Exp SEMI
         return IRTranslateExp(stmt->child, IRNewNullOperand());

@@ -118,15 +118,35 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
     default: {
       switch (e2->token) {
         case LB: {
-          Panic("not implemented!");
+          IRCodePair pair = IRTranslateExp(e1, place);
+          IRCodeList list = pair.list;
+          SEType *type = pair.type;
+          Assert(type->kind = ARRAY, "type is not array");
+
+          IROperand t1 = IRNewTempOperand();
+          IRCodePair pair2 = IRTranslateExp(e3, t1);
+          list = IRConcatLists(list, pair2.list);
+
+          IRCode *code = IRNewCode(IR_CODE_MUL);
+          code->binop.result = t1;
+          code->binop.op1 = t1;
+          code->binop.op2 = IRNewConstantOperand(type->array.type->size);
+          list = IRAppendCode(list, code);
+
+          code = IRNewCode(IR_CODE_ADD);
+          code->binop.result = place;
+          code->binop.op1 = place;
+          code->binop.op2 = t1;
+          list = IRAppendCode(list, code);
+          return IRWrapPair(list, type, true);
         }
         case DOT: {
-          IROperand t1 = IRNewTempOperand();
-          IRCodePair pair = IRTranslateExp(e1, t1);
+          IRCodePair pair = IRTranslateExp(e1, place);
           IRCodeList list = pair.list;
           SEType *type = pair.type;
           SEField *field = NULL;
           size_t offset = 0;
+          Assert(type->kind = STRUCTURE, "type is not structure");
           for (field = type->structure; field != NULL; field = field->next) {
             if (!strcmp(field->name, e3->sval)) {
               type = field->type;
@@ -138,8 +158,8 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
           Assert(field != NULL, "invalid offset in struct");
           if (offset > 0) {
             IRCode *code = IRNewCode(IR_CODE_ADD);
-            code->binop.result = t1;
-            code->binop.op1 = t1;
+            code->binop.result = place;
+            code->binop.op1 = place;
             code->binop.op2 = IRNewConstantOperand(offset);
             list = IRAppendCode(list, code);
           }

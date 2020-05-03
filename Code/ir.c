@@ -56,7 +56,11 @@ IRCodeList IRTranslateExp(STNode *exp, IROperand place) {
           return STATIC_EMPTY_IR_LIST;
         }
       } else {
-        // function call
+        // function calls can't be ignored as they may have side effects!
+        // if place is empty, we need to create a temp variable.
+        if (place.kind == IR_OP_NULL) {
+          place = IRNewTempOperand();
+        }
         if (e3->token == RP) {
           // ID()
           if (!strcmp(e1->sval, "read")) {

@@ -20,6 +20,7 @@ enum IROperandType {
   IR_OP_CONSTANT,
   IR_OP_ADDRESS,
   IR_OP_LABEL,
+  IR_OP_RELOP,
 };
 
 enum IRCodeType {
@@ -42,6 +43,7 @@ typedef struct IROperand {
     float fvalue;
     const char *name;
     unsigned int address;
+    enum ENUM_RELOP relop;
   };
 } IROperand;
 
@@ -85,6 +87,7 @@ struct IROperand IRNewTempOperand();
 struct IROperand IRNewLabelOperand();
 struct IROperand IRNewVariableOperand(struct STNode *id);
 struct IROperand IRNewConstantOperand(int value);
+struct IROperand IRNewRelopOperand(enum ENUM_RELOP relop);
 struct IRCode *IRNewCode(enum IRCodeType kind);
 struct IRCodeList IRWrapCode(struct IRCode *code);
 struct IRCodeList IRAppendCode(struct IRCodeList list, struct IRCode *code);

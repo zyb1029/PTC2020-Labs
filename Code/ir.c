@@ -162,7 +162,20 @@ IRCodeList IRTranslateCond(STNode *exp, IROperand label_true, IROperand label_fa
     Panic("not implemented");
   } else {
     // Exp (like if(0), while(1))
-    Panic("not implemented");
+    IROperand t1 = IRNewTempOperand();
+    IRCodeList list = IRTranslateExp(exp, t1);
+
+    IRCode *jump = IRNewCode(IR_CODE_JUMP_COND);
+    jump->jump_cond.op1 = t1;
+    jump->jump_cond.op2 = IRNewConstantOperand(0);
+    jump->jump_cond.relop = IRNewRelopOperand(RELOP_NE);
+    jump->jump_cond.dest = label_true;
+    list = IRAppendCode(list, jump);
+
+    IRCode *label = IRNewCode(IR_CODE_LABEL);
+    label->label.label = label_false;
+    list = IRAppendCode(list, label);
+    return list;
   }
   return STATIC_EMPTY_IR_LIST;
 }
@@ -305,6 +318,14 @@ IROperand IRNewConstantOperand(int value) {
   IROperand op;
   op.kind = IR_OP_CONSTANT;
   op.ivalue = value;
+  return op;
+}
+
+// Generate a new relation-operator operand.
+IROperand IRNewRelopOperand(enum ENUM_RELOP relop) {
+  IROperand op;
+  op.kind = IR_OP_RELOP;
+  op.relop = relop;
   return op;
 }
 

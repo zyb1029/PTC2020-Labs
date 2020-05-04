@@ -559,6 +559,7 @@ void IRTranslateFunc(const char *name) {
   Assert(entry != NULL, "func %s not found in ST", name);
   Assert(entry->type->kind == FUNCTION, "type is not func");
   for (SEField *field = entry->type->function.signature; field; field = field->next) {
+    if (field->kind == VOID) break;
     code = IRNewCode(IR_CODE_PARAM);
     code->param.variable = IRNewVariableOperand(field->name);
     irlist = IRAppendCode(irlist, code);

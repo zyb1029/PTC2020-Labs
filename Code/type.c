@@ -379,10 +379,10 @@ void SEParseFunDec(STNode *fdec, SEType *type) {
   if (fdec->next->token != SEMI) {
     SEParseCompSt(fdec->next, type);
   }
-  STPopStack();
   // At this moment, the code of the function is in IR queue.
   // We need to pop it from queue and link to the global list.
   IRTranslateFunc(name);
+  STPopStack();  // After translation, stack can be poped.
 }
 
 // Parse a composed statement list and check for RETURN statements.

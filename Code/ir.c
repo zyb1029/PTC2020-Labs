@@ -146,7 +146,7 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
             code->load.right = place;
             list = IRAppendCode(list, code);
           }
-          return IRWrapPair(list, type, !deref);
+          return IRWrapPair(list, type->array.type, !deref);
         }
         case DOT: {
           IRCodePair pair = IRTranslateExp(e1, place, false);
@@ -154,7 +154,7 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
           SEType *type = pair.type;
           SEField *field = NULL;
           size_t offset = 0;
-          Assert(type->kind = STRUCTURE, "type is not structure");
+          Assert(type->kind == STRUCTURE, "type is not structure");
           for (field = type->structure; field != NULL; field = field->next) {
             if (!strcmp(field->name, e3->sval)) {
               type = field->type;

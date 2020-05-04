@@ -292,7 +292,7 @@ IRCodeList IRTranslateCond(STNode *exp, IROperand label_true,
   if (exp->child->token == NOT) {
     // NOT Exp
     return IRTranslateCond(exp->child->next, label_false, label_true);
-  } else if (exp->child->next != NULL) {
+  } else if (exp->child->token != MINUS && exp->child->next != NULL) {
     Assert(exp->child->next->next != NULL, "invalid cond format");
     STNode *exp1 = exp->child;
     STNode *exp2 = exp1->next->next;

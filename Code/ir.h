@@ -53,8 +53,6 @@ enum IRCodeType {
 };
 
 typedef struct IROperand {
-
-  
   enum IROperandType kind;
   union {
     unsigned int number;

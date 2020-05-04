@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include "token.h"
 
-#define IRDebug true // <- debug switch
+#define IRDebug false // <- debug switch
 #if IRDebug
 #define DEBUG
 #endif
@@ -114,14 +114,6 @@ typedef struct IRCodePair {
   bool addr;
 } IRCodePair;
 
-// The code segment is put into a FIFO queue.
-// Codes are translated when the symbol table is destroyed.
-// They are pushed into a queue and used when translating higher level codes.
-typedef struct IRQueueItem {
-  struct IRCodeList list;
-  struct IRQueueItem *prev, *next;
-} IRQueueItem;
-
 struct IRCodePair IRTranslateExp(struct STNode *exp, struct IROperand place, bool deref);
 struct IRCodeList IRTranslateCondPre(struct STNode *exp, struct IROperand place);
 struct IRCodeList IRTranslateCond(struct STNode *exp, struct IROperand label_true, struct IROperand label_false);
@@ -136,7 +128,7 @@ struct IRCodeList IRTranslateStmt(struct STNode *stmt);
 struct IRCodeList IRTranslateArgs(struct STNode *args, struct IRCodeList *arg_list);
 
 // This function is unique, it operates on the global variable irlist.
-void IRTranslateFunc(const char *name);
+void IRTranslateFunc(const char *name, struct STNode *comp);
 
 struct IROperand IRNewNullOperand();
 struct IROperand IRNewTempOperand();
@@ -156,9 +148,5 @@ struct IRCodePair IRWrapPair(struct IRCodeList list, struct SEType *type, bool a
 struct IRCodeList IRAppendCode(struct IRCodeList list, struct IRCode *code);
 struct IRCodeList IRConcatLists(struct IRCodeList list1, struct IRCodeList list2);
 void IRDestroyList(struct IRCodeList list);
-
-bool IRQueueEmpty();
-void IRQueuePush(struct IRCodeList list);
-struct IRCodeList IRQueuePop();
 
 #endif

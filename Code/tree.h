@@ -11,6 +11,8 @@
 #include <stdbool.h>
 #include "token.h"
 
+struct IRCode *code;
+
 typedef struct STNode {
   int line, column;
   int token, symbol;
@@ -22,6 +24,9 @@ typedef struct STNode {
     enum ENUM_RELOP rval;
     char            sval[64];
   };
+  struct {
+    struct IRCode *head, *tail;
+  } ir;
   struct STNode *child, *next;
 } STNode;
 

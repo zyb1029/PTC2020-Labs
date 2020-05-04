@@ -19,15 +19,17 @@
   #define printType(t) do { /* t */ } while (0)
   #define TOKENIFY(t)                                   \
     do {                                                \
-      STNode *node = (STNode *)malloc(sizeof(STNode));  \
-      node->line   = yylineno;                          \
-      node->column = yycolumn;                          \
-      node->token  = t;                                 \
-      node->symbol = -1;     /* to be translated */     \
-      node->name   = NULL;                              \
-      node->empty  = true;                              \
-      node->child  = NULL;                              \
-      node->next   = NULL;                              \
+      STNode *node  = (STNode *)malloc(sizeof(STNode)); \
+      node->line    = yylineno;                         \
+      node->column  = yycolumn;                         \
+      node->token   = t;                                \
+      node->symbol  = -1;     /* to be translated */    \
+      node->name    = NULL;                             \
+      node->empty   = true;                             \
+      node->ir.head = NULL;   /* IR code */             \
+      node->ir.tail = NULL;                             \
+      node->child   = NULL;                             \
+      node->next    = NULL;                             \
       switch (t) {                                      \
         case INT:                                       \
           node->ival = yylval.ival;                     \

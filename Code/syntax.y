@@ -32,13 +32,15 @@
         (Cur).first_line   = (Cur).last_line  = yylineno;                                 \
         (Cur).first_column = (Cur).last_column = yycolumn;                                \
       }                                                                                   \
-      STNode *node = (STNode *)malloc(sizeof(STNode));                                    \
-      node->line   = (Cur).first_line;                                                    \
-      node->column = (Cur).first_column;                                                  \
-      node->token  = -1; /* nterm is not a token */                                       \
-      node->symbol = yyr1[yyn];                                                           \
-      node->name   = yytname[node->symbol];                                               \
-      node->empty  = N == 0;                                                              \
+      STNode *node  = (STNode *)malloc(sizeof(STNode));                                   \
+      node->line    = (Cur).first_line;                                                   \
+      node->column  = (Cur).first_column;                                                 \
+      node->token   = -1; /* nterm is not a token */                                      \
+      node->symbol  = yyr1[yyn];                                                          \
+      node->name    = yytname[node->symbol];                                              \
+      node->empty   = N == 0;                                                             \
+      node->ir.head = NULL;   /* IR code */                                               \
+      node->ir.tail = NULL;                                                               \
       if (N != 0 && healthy) {                                                            \
         for (int child = 1; child <= N; ++child) {                                        \
           if ((YYRHSLOC(Rhs, child).st_node)->symbol == -1) {                             \

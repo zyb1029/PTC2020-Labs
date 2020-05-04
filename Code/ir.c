@@ -363,7 +363,11 @@ IRCodeList IRTranslateCond(STNode *exp, IROperand label_true,
 IRCodeList IRTranslateCompSt(STNode *comp) {
   AssertSTNode(comp, "CompSt");
   IRCodeList list = IRTranslateDefList(comp->child->next);
-  return IRConcatLists(list, IRTranslateStmtList(comp->child->next->next));
+  IRCodeList list2 = IRTranslateStmtList(comp->child->next->next);
+  list = IRConcatLists(list, list2);
+  comp->ir.head = list.head;
+  comp->ir.tail = list.tail;
+  return list;  // save IR into STNode and return
 }
 
 // Translate a DefList into an IRCodeList.
@@ -440,11 +444,13 @@ IRCodeList IRTranslateStmt(STNode *stmt) {
   AssertSTNode(stmt, "Stmt");
   if (stmt->child->next == NULL) {
     // As we exit CompSt, symbol table is destroyed.
-    // Therefore, we first translate inner codes and push them into IR queue.
-    // When translating the higher-level codes, we pop the queue and get the
-    // code.
-    Assert(!IRQueueEmpty(), "IR queue empty when translating Stmt");
-    return IRQueuePop();  // FIFO queue
+    // Therefore, we first translate inner codes and put list into STNode.
+    STNode *comp = stmt->child;
+    IRCodeList list = {
+      .head = comp->ir.head,
+      .tail = comp->ir.tail,
+    };
+    return list;
   } else {
     switch (stmt->child->token) {
       case RETURN: {  // RETURN Exp SEMI
@@ -553,9 +559,7 @@ IRCodeList IRTranslateArgs(STNode *args, IRCodeList *arg_list) {
 // Therefore we only need to add a function, pop the code from queue,
 // and link all new codes to the global IR list.
 extern IRCodeList irlist;  // defined in main.c
-void IRTranslateFunc(const char *name) {
-  Assert(!IRQueueEmpty(), "IR queue empty when adding func");
-  
+void IRTranslateFunc(const char *name, STNode *comp) {
   // Add declaration of function
   IRCode *code = IRNewCode(IR_CODE_FUNCTION);
   code->function.function.kind = IR_OP_FUNCTION;
@@ -574,7 +578,11 @@ void IRTranslateFunc(const char *name) {
   }
 
   // Concat the list of function body (stored in IR queue)
-  irlist = IRConcatLists(irlist, IRQueuePop());
+  IRCodeList list = {
+    .head = comp->ir.head,
+    .tail = comp->ir.tail,
+  };
+  irlist = IRConcatLists(irlist, list);
 }
 
 // Allocate a new null operand.
@@ -879,46 +887,5 @@ void IRDestroyList(IRCodeList list) {
   for (IRCode *code = list.head, *next = NULL; code != NULL; code = next) {
     next = code->next;  // safe loop
     free(code);
-  }
-}
-
-// IR queue: save IR of inner CompSts.
-static IRQueueItem *IR_QUEUE_HEAD = NULL;
-static IRQueueItem *IR_QUEUE_TAIL = NULL;
-
-// Check if the IR queue is empty.
-bool IRQueueEmpty() { return IR_QUEUE_HEAD == NULL; }
-
-// Push an IR list into the IR queue.
-void IRQueuePush(IRCodeList list) {
-  IRQueueItem *item = (IRQueueItem *)malloc(sizeof(IRQueueItem));
-  item->list = list;
-  item->prev = item->next = NULL;
-  if (IRQueueEmpty()) {
-    IR_QUEUE_HEAD = IR_QUEUE_TAIL = item;
-  } else {
-    IR_QUEUE_TAIL->next = item;
-    item->prev = IR_QUEUE_TAIL;
-    IR_QUEUE_TAIL = item;
-  }
-}
-
-// Pop an IR list from the IR queue.
-IRCodeList IRQueuePop() {
-  Assert(!IRQueueEmpty(), "IR queue empty when popping");
-  IRCodeList list = IR_QUEUE_HEAD->list;
-  IRQueueItem *item = IR_QUEUE_HEAD;
-  IR_QUEUE_HEAD = IR_QUEUE_HEAD->next;
-  if (IR_QUEUE_HEAD == NULL) {
-    IR_QUEUE_TAIL = NULL;
-  }
-  free(item);  // free the IRQueue item.
-  return list;
-}
-
-// Clear the IR queue.
-void IRQueueClear() {
-  while (!IRQueueEmpty()) {
-    IRQueuePop();
   }
 }

@@ -337,26 +337,26 @@ IRCodeList IRTranslateCond(STNode *exp, IROperand label_true,
         return list;
       }
       default:
-        Panic("unknown condition format");
+        // go through to the general case
+        break;
     }
-  } else {
-    // Exp (like if(0), while(1))
-    IROperand t1 = IRNewTempOperand();
-    IRCodeList list = IRTranslateExp(exp, t1, true).list;
-
-    IRCode *jump = IRNewCode(IR_CODE_JUMP_COND);
-    jump->jump_cond.op1 = t1;
-    jump->jump_cond.op2 = IRNewConstantOperand(0);
-    jump->jump_cond.relop = IRNewRelopOperand(RELOP_NE);
-    jump->jump_cond.dest = label_true;
-    list = IRAppendCode(list, jump);
-
-    jump = IRNewCode(IR_CODE_JUMP);
-    jump->jump.dest = label_false;
-    list = IRAppendCode(list, jump);
-    return list;
   }
-  return STATIC_EMPTY_IR_LIST;
+
+  // General case: Exp (like if(0), while(1))
+  IROperand t1 = IRNewTempOperand();
+  IRCodeList list = IRTranslateExp(exp, t1, true).list;
+
+  IRCode *jump = IRNewCode(IR_CODE_JUMP_COND);
+  jump->jump_cond.op1 = t1;
+  jump->jump_cond.op2 = IRNewConstantOperand(0);
+  jump->jump_cond.relop = IRNewRelopOperand(RELOP_NE);
+  jump->jump_cond.dest = label_true;
+  list = IRAppendCode(list, jump);
+
+  jump = IRNewCode(IR_CODE_JUMP);
+  jump->jump.dest = label_false;
+  list = IRAppendCode(list, jump);
+  return list;
 }
 
 // Translate an CompSt into an IRCodeList.

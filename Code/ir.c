@@ -47,7 +47,7 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
     case NOT:
       return IRWrapPair(IRTranslateCondPre(exp, place), STATIC_TYPE_INT, false);
     case ID: {
-      STEntry *entry = STSearchCurr(e1->sval);
+      STEntry *entry = STSearch(e1->sval);
       Assert(entry != NULL, "entry %s not found in ST", exp->sval);
       SEType *type = entry->type;
       if (e2 == NULL) {
@@ -396,7 +396,7 @@ IRCodeList IRTranslateDec(STNode *dec) {
   Assert(var, "no ID inside VarDec");
   IROperand v = IRNewVariableOperand(var->sval);
 
-  // check whether we need DEC an array or a struct
+  // check whether we need DEC an array or a struct (local variable)
   STEntry *entry = STSearchCurr(var->sval);
   Assert(entry, "entry %s not found in ST", var->sval);
   if (entry->type->kind == ARRAY || entry->type->kind == STRUCTURE) {
@@ -582,7 +582,7 @@ IROperand IRNewLabelOperand() {
 // Generate a new variable operand from STNode.
 static unsigned int IRVariableNumber = 0;
 IROperand IRNewVariableOperand(const char *name) {
-  STEntry *entry = STSearchCurr(name);
+  STEntry *entry = STSearch(name);
   Assert(entry != NULL, "entry %s not found in ST", name);
   Assert(entry->number >= 0, "invalid entry number %d", entry->number);
   if (entry->number == 0) {

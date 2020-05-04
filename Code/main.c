@@ -16,18 +16,23 @@ STNode* stroot = NULL;
 IRCodeList irlist = {NULL, NULL};
 
 int main(int argc, char *argv[]) {
-  if (argc <= 1) {
-    fprintf(stderr, "Usage: parser file\n");
+  if (argc <= 2) {
+    fprintf(stderr, "Usage: parser source_file output_file\n");
     return 1;
   }
-  FILE *f = fopen(argv[1], "r");
-  if (!f) {
+  FILE *fin = fopen(argv[1], "r");
+  if (fin == NULL) {
     perror(argv[1]);
+    return 2;
+  }
+  FILE *fout = fopen(argv[2], "w+");
+  if (fout == NULL) {
+    perror(argv[2]);
     return 2;
   }
 
   // Step 1: call yyparse to get syntax tree.
-  yyrestart(f);
+  yyrestart(fin);
   yyparse_wrap();
   if (hasErrorA || hasErrorB) {
     return 3;
@@ -43,8 +48,7 @@ int main(int argc, char *argv[]) {
   }
 
   for (IRCode *code = irlist.head; code != NULL; code = code->next) {
-    IRWriteCode(1, code);
-    write(1, "\n", 1);
+    IRWriteCode(fout, code);
   }
 
   return 0;

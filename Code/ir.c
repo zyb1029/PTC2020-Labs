@@ -810,8 +810,9 @@ size_t IRParseCode(char *s, IRCode *code) {
 
 // Parse and output a line of IR code to file.
 static char ir_buffer[512] = {};
-size_t IRWriteCode(int fd, IRCode *code) {
-  return write(fd, ir_buffer, IRParseCode(ir_buffer, code));
+size_t IRWriteCode(FILE *f, IRCode *code) {
+  IRParseCode(ir_buffer, code);
+  return fprintf(f, "%s\n", ir_buffer);
 }
 
 // Allocate memory and initialize a code.

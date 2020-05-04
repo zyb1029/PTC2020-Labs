@@ -6,6 +6,7 @@
 #ifndef IR_H
 #define IR_H
 
+#include <stdio.h>
 #include <stdbool.h>
 #include "token.h"
 
@@ -147,7 +148,7 @@ struct IROperand IRNewFunctionOperand(const char *name);
 
 size_t IRParseOperand(char *s, IROperand *op);
 size_t IRParseCode(char *s, IRCode *code);
-size_t IRWriteCode(int fd, IRCode *code);
+size_t IRWriteCode(FILE *f, IRCode *code);
 
 struct IRCode *IRNewCode(enum IRCodeType kind);
 struct IRCodeList IRWrapCode(struct IRCode *code);

@@ -76,7 +76,7 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
             IRCode *code = IRNewCode(IR_CODE_CALL);
             code->call.result = place;
             code->call.function = IRNewFunctionOperand(e1->sval);
-            return IRWrapPair(IRWrapCode(code), type, type->kind != BASIC);
+            return IRWrapPair(IRWrapCode(code), type->function.type, type->function.type->kind != BASIC);
           }
         } else {
           // ID(args...)
@@ -96,7 +96,7 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
             code->call.function = IRNewFunctionOperand(e1->sval);
             list = IRConcatLists(list, arg_list);
             list = IRAppendCode(list, code);
-            return IRWrapPair(list, type, type->kind != BASIC);
+            return IRWrapPair(list, type->function.type, type->function.type->kind != BASIC);
           }
         }
       }
@@ -835,6 +835,12 @@ IRCodePair IRWrapPair(IRCodeList list, SEType *type, bool addr) {
 
 // Append a code to the end of list.
 IRCodeList IRAppendCode(IRCodeList list, IRCode *code) {
+  Assert(code, "appending null code");
+#ifdef DEBUG
+  char tmp[256] = {};
+  IRParseCode(tmp, code);
+  CLog(FG_YELLOW, "%s", tmp);
+#endif
   IRCodeList ret = {list.head, list.tail};
   if (ret.tail == NULL) {
     ret.head = ret.tail = code;

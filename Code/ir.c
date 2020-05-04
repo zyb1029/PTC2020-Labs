@@ -257,22 +257,27 @@ IRCodeList IRTranslateCondPre(STNode *exp, IROperand place) {
   AssertSTNode(exp, "Exp");
   IROperand l1 = IRNewLabelOperand();
   IROperand l2 = IRNewLabelOperand();
+  IRCodeList list = STATIC_EMPTY_IR_LIST;
 
-  IRCode *code0 = IRNewCode(IR_CODE_ASSIGN);
-  code0->assign.left = place;
-  code0->assign.right = IRNewConstantOperand(0);
+  if (place.kind != IR_OP_NULL) {
+    IRCode *code0 = IRNewCode(IR_CODE_ASSIGN);
+    code0->assign.left = place;
+    code0->assign.right = IRNewConstantOperand(0);
+    list = IRAppendCode(list, code0);
+  }
 
-  IRCodeList list = IRTranslateCond(exp, l1, l2);
-  list = IRConcatLists(IRWrapCode(code0), list);
+  list = IRConcatLists(list, IRTranslateCond(exp, l1, l2));
 
   IRCode *label1 = IRNewCode(IR_CODE_LABEL);
   label1->label.label = l1;
   list = IRAppendCode(list, label1);
 
-  IRCode *code2 = IRNewCode(IR_CODE_ASSIGN);
-  code2->assign.left = place;
-  code2->assign.right = IRNewConstantOperand(1);
-  list = IRAppendCode(list, code2);
+  if (place.kind != IR_OP_NULL) {
+    IRCode *code2 = IRNewCode(IR_CODE_ASSIGN);
+    code2->assign.left = place;
+    code2->assign.right = IRNewConstantOperand(1);
+    list = IRAppendCode(list, code2);
+  }
 
   IRCode *label2 = IRNewCode(IR_CODE_LABEL);
   label2->label.label = l2;

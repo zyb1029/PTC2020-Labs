@@ -204,7 +204,7 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
           if (place.kind != IR_OP_NULL) {
             IRCode *code2 = IRNewCode(IR_CODE_ASSIGN);
             code2->assign.left = place;
-            code2->assign.right = t1;
+            code2->assign.right = t1;  // var may be an address, use t1 instead
             pair.list = IRAppendCode(pair.list, code2);
           }
           return pair;

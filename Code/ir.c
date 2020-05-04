@@ -52,9 +52,10 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
       SEType *type = entry->type;
       if (e2 == NULL) {
         if (place.kind != IR_OP_NULL) {
-          IRCode *code = IRNewCode(type->kind == BASIC ? IR_CODE_ASSIGN : IR_CODE_DEREF);
+          IROperand var = IRNewVariableOperand(e1->sval);
+          IRCode *code = IRNewCode(var.kind == IR_OP_MEMBLOCK ? IR_CODE_DEREF : IR_CODE_ASSIGN);
           code->assign.left = place;
-          code->assign.right = IRNewVariableOperand(e1->sval);
+          code->assign.right = var;
           return IRWrapPair(IRWrapCode(code), type, type->kind != BASIC);
         } else {
           return IRWrapPair(STATIC_EMPTY_IR_LIST, type, false);
@@ -400,6 +401,7 @@ IRCodeList IRTranslateDec(STNode *dec) {
   STEntry *entry = STSearchCurr(var->sval);
   Assert(entry, "entry %s not found in ST", var->sval);
   if (entry->type->kind == ARRAY || entry->type->kind == STRUCTURE) {
+    Assert(v.kind == IR_OP_MEMBLOCK, "not declaring a memblock");
     IRCode *code = IRNewCode(IR_CODE_DEC);
     code->dec.variable = v;
     code->dec.size = IRNewConstantOperand(entry->type->size);
@@ -605,7 +607,12 @@ IROperand IRNewVariableOperand(const char *name) {
   }
 
   IROperand op;
-  op.kind = IR_OP_VARIABLE;
+  if (entry->type->kind != BASIC) {
+    op.kind = entry->allocate ? IR_OP_MEMBLOCK : IR_OP_VADDRESS;
+  } else {
+    op.kind = IR_OP_VARIABLE;
+  }
+  Log("%s: %s", name, (op.kind == IR_OP_MEMBLOCK ? "MEM" : (op.kind == IR_OP_VADDRESS ? "ADD" : "VAR")));
   op.number = entry->number;
   return op;
 }
@@ -658,6 +665,8 @@ size_t IRParseOperand(char *s, IROperand *op) {
       }
     }
     case IR_OP_VARIABLE:
+    case IR_OP_VADDRESS:
+    case IR_OP_MEMBLOCK:
       return sprintf(s, "v%u", op->number);
     case IR_OP_CONSTANT:
       return sprintf(s, "#%d", op->ivalue);

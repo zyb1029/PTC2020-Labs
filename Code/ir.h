@@ -22,6 +22,8 @@ enum IROperandType {
   IR_OP_TEMP,
   IR_OP_LABEL,
   IR_OP_VARIABLE,
+  IR_OP_VADDRESS,
+  IR_OP_MEMBLOCK,
   IR_OP_CONSTANT,
   IR_OP_RELOP,
   IR_OP_FUNCTION,
@@ -50,6 +52,8 @@ enum IRCodeType {
 };
 
 typedef struct IROperand {
+
+  
   enum IROperandType kind;
   union {
     unsigned int number;

@@ -55,6 +55,7 @@ void STInsertStru(const char *id, SEType *type) {
   STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
   entry->id = id;
   entry->number = -1;
+  entry->allocate = false;
   entry->type = type;
   Log("Insert to stru ST: %p %p \"%s\"", entry, type, id);
   RBInsert(&(struStack->root), (void *)entry, STRBCompare);
@@ -65,16 +66,18 @@ void STInsertFunc(const char *id, SEType *type) {
   STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
   entry->id = id;
   entry->number = -1;
+  entry->allocate = false;
   entry->type = type;
   Log("Insert to func ST: %p %p \"%s\"", entry, type, id);
   RBInsert(&(funcStack->root), (void *)entry, STRBCompare);
 }
 
 // Insert a symbol into current (local) ST.
-void STInsertCurr(const char *id, SEType *type) {
+void STInsertCurr(const char *id, SEType *type, bool allocate) {
   STEntry *entry = (STEntry *)malloc(sizeof(STEntry));
   entry->id = id;
   entry->number = 0;
+  entry->allocate = allocate;
   entry->type = type;
   Log("Insert to curr ST: %p %p \"%s\"", entry, type, id);
   RBInsert(&(currStack->root), (void *)entry, STRBCompare);

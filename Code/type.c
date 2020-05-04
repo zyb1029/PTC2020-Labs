@@ -559,7 +559,8 @@ SEFieldChain SEParseVarDec(STNode *var, SEType *type, bool assignable) {
       // variables cannot share name with structures.
       throwErrorS(SE_VARIABLE_DUPLICATE, var->child->line, name);
     } else {
-      STInsertCurr(var->child->sval, type);
+      Log("%s: assignable=%s", var->child->sval, assignable ? "yes" : "no");
+      STInsertCurr(var->child->sval, type, assignable);
       CLog(FG_GREEN, "new variable \"%s\"", var->child->sval);
     }
     if (assignable) {

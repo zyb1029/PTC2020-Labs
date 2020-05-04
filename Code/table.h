@@ -13,6 +13,7 @@
 typedef struct STEntry {
   const char *id;
   unsigned int number; // used for IR variables
+  bool allocate; // used for IR memblocks
   SEType *type;
 } STEntry;
 
@@ -36,7 +37,7 @@ void STPopStack();
 
 void STInsertStru(const char *id, SEType *type);
 void STInsertFunc(const char *id, SEType *type);
-void STInsertCurr(const char *id, SEType *type);
+void STInsertCurr(const char *id, SEType *type, bool allocate);
 
 STEntry *STSearch(const char *id);
 STEntry *STSearchStru(const char *id);

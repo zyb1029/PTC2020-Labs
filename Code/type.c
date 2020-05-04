@@ -15,6 +15,8 @@
 #define AssertSTNode(node, str)
 #endif
 
+extern bool hasErrorS;
+
 int anonymous = 0; // anonymous structure counter
 SEType _STATIC_TYPE_VOID, _STATIC_TYPE_INT, _STATIC_TYPE_FLOAT;
 SEType *STATIC_TYPE_VOID, *STATIC_TYPE_INT, *STATIC_TYPE_FLOAT;
@@ -381,7 +383,9 @@ void SEParseFunDec(STNode *fdec, SEType *type) {
   }
   // At this moment, the code of the function is in IR queue.
   // We need to pop it from queue and link to the global list.
-  IRTranslateFunc(name, fdec->next);
+  if (!hasErrorS) {
+    IRTranslateFunc(name, fdec->next);
+  }
   STPopStack();  // After translation, stack can be poped.
 }
 
@@ -395,7 +399,9 @@ void SEParseCompSt(STNode *comp, SEType *type) {
   SEParseStmtList(comp->child->next->next, type);
   // After returning, the stack will be destroyed.
   // Therefore we need to save the IR list into STNode.
-  IRTranslateCompSt(comp);  // IR is saved by callee.
+  if (!hasErrorS) {
+    IRTranslateCompSt(comp);  // IR is saved by callee.
+  }
 }
 #undef malloc
 

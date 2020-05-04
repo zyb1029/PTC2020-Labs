@@ -137,13 +137,15 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
           code->binop.op2 = IRNewConstantOperand(type->array.type->size);
           list = IRAppendCode(list, code);
 
-          code = IRNewCode(IR_CODE_ADD);
-          code->binop.result = place;
-          code->binop.op1 = place;
-          code->binop.op2 = t1;
-          list = IRAppendCode(list, code);
+          if (place.kind != IR_OP_NULL) {
+            code = IRNewCode(IR_CODE_ADD);
+            code->binop.result = place;
+            code->binop.op1 = place;
+            code->binop.op2 = t1;
+            list = IRAppendCode(list, code);
+          }
 
-          if (deref) {
+          if (deref && place.kind != IR_OP_NULL) {
             code = IRNewCode(IR_CODE_LOAD);
             code->load.left = place;
             code->load.right = place;
@@ -167,7 +169,7 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
             }
           }
           Assert(field != NULL, "invalid offset in struct");
-          if (offset > 0) {
+          if (offset > 0 && place.kind != IR_OP_NULL) {
             IRCode *code = IRNewCode(IR_CODE_ADD);
             code->binop.result = place;
             code->binop.op1 = place;
@@ -175,7 +177,7 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
             list = IRAppendCode(list, code);
           }
 
-          if (deref) {
+          if (deref && place.kind != IR_OP_NULL) {
             IRCode *code = IRNewCode(IR_CODE_LOAD);
             code->load.left = place;
             code->load.right = place;

@@ -121,7 +121,7 @@ typedef struct IRQueueItem {
   struct IRQueueItem *prev, *next;
 } IRQueueItem;
 
-struct IRCodePair IRTranslateExp(struct STNode *exp, struct IROperand place);
+struct IRCodePair IRTranslateExp(struct STNode *exp, struct IROperand place, bool deref);
 struct IRCodeList IRTranslateCondPre(struct STNode *exp, struct IROperand place);
 struct IRCodeList IRTranslateCond(struct STNode *exp, struct IROperand label_true, struct IROperand label_false);
 struct IRCodeList IRTranslateCompSt(struct STNode *comp);

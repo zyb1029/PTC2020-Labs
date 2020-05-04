@@ -23,17 +23,17 @@ extern SEType *STATIC_TYPE_VOID, *STATIC_TYPE_INT, *STATIC_TYPE_FLOAT;
 const IRCodeList STATIC_EMPTY_IR_LIST = {NULL, NULL};
 
 // Translate an Exp into IRCodeList with SEType as a pair.
-IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
+IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
   AssertSTNode(exp, "Exp");
   STNode *e1 = exp->child;
   STNode *e2 = e1 ? e1->next : NULL;
   STNode *e3 = e2 ? e2->next : NULL;
   switch (e1->token) {
     case LP:  // LP Exp RP
-      return IRTranslateExp(e2, place);
+      return IRTranslateExp(e2, place, deref);
     case MINUS: {
       IROperand t1 = IRNewTempOperand();
-      IRCodePair pair = IRTranslateExp(e2, t1);
+      IRCodePair pair = IRTranslateExp(e2, t1, true);
 
       if (place.kind != IR_OP_NULL) {
         IRCode *code = IRNewCode(IR_CODE_SUB);
@@ -119,13 +119,13 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
     default: {
       switch (e2->token) {
         case LB: {
-          IRCodePair pair = IRTranslateExp(e1, place);
+          IRCodePair pair = IRTranslateExp(e1, place, false);
           IRCodeList list = pair.list;
           SEType *type = pair.type;
           Assert(type->kind = ARRAY, "type is not array");
 
           IROperand t1 = IRNewTempOperand();
-          IRCodePair pair2 = IRTranslateExp(e3, t1);
+          IRCodePair pair2 = IRTranslateExp(e3, t1, true);
           list = IRConcatLists(list, pair2.list);
 
           IRCode *code = IRNewCode(IR_CODE_MUL);
@@ -139,10 +139,17 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
           code->binop.op1 = place;
           code->binop.op2 = t1;
           list = IRAppendCode(list, code);
-          return IRWrapPair(list, type, true);
+
+          if (deref) {
+            code = IRNewCode(IR_CODE_LOAD);
+            code->load.left = place;
+            code->load.right = place;
+            list = IRAppendCode(list, code);
+          }
+          return IRWrapPair(list, type, !deref);
         }
         case DOT: {
-          IRCodePair pair = IRTranslateExp(e1, place);
+          IRCodePair pair = IRTranslateExp(e1, place, false);
           IRCodeList list = pair.list;
           SEType *type = pair.type;
           SEField *field = NULL;
@@ -164,19 +171,18 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
             code->binop.op2 = IRNewConstantOperand(offset);
             list = IRAppendCode(list, code);
           }
-          return IRWrapPair(list, type, true);
+
+          if (deref) {
+            IRCode *code = IRNewCode(IR_CODE_LOAD);
+            code->load.left = place;
+            code->load.right = place;
+            list = IRAppendCode(list, code);
+          }
+          return IRWrapPair(list, type, !deref);
         }
         case ASSIGNOP: {
           IROperand t1 = IRNewTempOperand();
-          IRCodePair pair = IRTranslateExp(e3, t1);
-
-          if (pair.addr) {
-            IRCode *code = IRNewCode(IR_CODE_LOAD);
-            code->load.left = t1;
-            code->load.right = t1;
-            pair.list = IRAppendCode(pair.list, code);
-            pair.addr = false;
-          }
+          IRCodePair pair = IRTranslateExp(e3, t1, true);
 
           IROperand var = IRNewNullOperand();
           IRCode *code1 = NULL;
@@ -189,7 +195,7 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
           } else {
             // assign to address (array/struct)
             var = IRNewTempOperand();
-            pair.list = IRConcatLists(pair.list, IRTranslateExp(e1, var).list);
+            pair.list = IRConcatLists(pair.list, IRTranslateExp(e1, var, false).list);
             code1 = IRNewCode(IR_CODE_SAVE);
             code1->save.left = var;
             code1->save.right = t1;
@@ -210,8 +216,8 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place) {
         default: {
           IROperand t1 = IRNewTempOperand();
           IROperand t2 = IRNewTempOperand();
-          IRCodePair pair = IRTranslateExp(e1, t1);
-          IRCodePair pair2 = IRTranslateExp(e3, t2);
+          IRCodePair pair = IRTranslateExp(e1, t1, true);
+          IRCodePair pair2 = IRTranslateExp(e3, t2, true);
           pair.list = IRConcatLists(pair.list, pair2.list);
 
           if (place.kind != IR_OP_NULL) {
@@ -288,8 +294,8 @@ IRCodeList IRTranslateCond(STNode *exp, IROperand label_true,
         IROperand t1 = IRNewTempOperand();
         IROperand t2 = IRNewTempOperand();
 
-        IRCodePair pair = IRTranslateExp(exp1, t1);
-        IRCodePair pair2 = IRTranslateExp(exp2, t2);
+        IRCodePair pair = IRTranslateExp(exp1, t1, true);
+        IRCodePair pair2 = IRTranslateExp(exp2, t2, true);
         IRCodeList list = IRConcatLists(pair.list, pair2.list);
 
         IRCode *jump1 = IRNewCode(IR_CODE_JUMP_COND);
@@ -336,7 +342,7 @@ IRCodeList IRTranslateCond(STNode *exp, IROperand label_true,
   } else {
     // Exp (like if(0), while(1))
     IROperand t1 = IRNewTempOperand();
-    IRCodeList list = IRTranslateExp(exp, t1).list;
+    IRCodeList list = IRTranslateExp(exp, t1, true).list;
 
     IRCode *jump = IRNewCode(IR_CODE_JUMP_COND);
     jump->jump_cond.op1 = t1;
@@ -411,7 +417,7 @@ IRCodeList IRTranslateDec(STNode *dec) {
   // check whether there is an assignment
   if (dec->child->next != NULL) {
     IROperand t1 = IRNewTempOperand();
-    list = IRConcatLists(list, IRTranslateExp(dec->child->next->next, t1).list);
+    list = IRConcatLists(list, IRTranslateExp(dec->child->next->next, t1, true).list);
 
     IRCode *code = IRNewCode(IR_CODE_ASSIGN);
     code->assign.left = v;
@@ -443,7 +449,7 @@ IRCodeList IRTranslateStmt(STNode *stmt) {
     switch (stmt->child->token) {
       case RETURN: {  // RETURN Exp SEMI
         IROperand t1 = IRNewTempOperand();
-        IRCodeList list = IRTranslateExp(stmt->child->next, t1).list;
+        IRCodeList list = IRTranslateExp(stmt->child->next, t1, true).list;
         IRCode *code = IRNewCode(IR_CODE_RETURN);
         code->ret.value = t1;
 
@@ -517,7 +523,7 @@ IRCodeList IRTranslateStmt(STNode *stmt) {
         return list;
       }
       default: {  // Exp SEMI
-        return IRTranslateExp(stmt->child, IRNewNullOperand()).list;
+        return IRTranslateExp(stmt->child, IRNewNullOperand(), true).list;
       }
     }
   }
@@ -530,7 +536,7 @@ IRCodeList IRTranslateArgs(STNode *args, IRCodeList *arg_list) {
   AssertSTNode(args, "Args");
   STNode *exp = args->child;
   IROperand t1 = IRNewTempOperand();
-  IRCodeList list = IRTranslateExp(exp, t1).list;
+  IRCodeList list = IRTranslateExp(exp, t1, true).list;
 
   IRCode *code = IRNewCode(IR_CODE_ARG);
   code->arg.variable = t1;

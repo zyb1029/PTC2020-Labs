@@ -80,8 +80,11 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
           }
         } else {
           // ID(args...)
+          STEntry *entry = STSearchFunc(e1->sval);
+          Assert(entry != NULL, "func not found in ST");
+
           IRCodeList arg_list = STATIC_EMPTY_IR_LIST;
-          IRCodeList list = IRTranslateArgs(e3, &arg_list);
+          IRCodeList list = IRTranslateArgs(e3, entry->type->function.signature, &arg_list);
 
           if (!strcmp(e1->sval, "write")) {
             Assert(arg_list.head != NULL, "empty arguments to WRITE");
@@ -546,18 +549,22 @@ IRCodeList IRTranslateStmt(STNode *stmt) {
 }
 
 // Translate an Args into an IRCodeList.
-IRCodeList IRTranslateArgs(STNode *args, IRCodeList *arg_list) {
+// Field is used to get the type of argument and whether to deref.
+// The IR code list is appended to the end of arg_list.
+IRCodeList IRTranslateArgs(STNode *args, SEField *field, IRCodeList *arg_list) {
   AssertSTNode(args, "Args");
+  Assert(field != NULL, "field is null in args");
   STNode *exp = args->child;
   IROperand t1 = IRNewTempOperand();
-  IRCodeList list = IRTranslateExp(exp, t1, true).list;
+
+  IRCodeList list = IRTranslateExp(exp, t1, field->type->kind == BASIC).list;
 
   IRCode *code = IRNewCode(IR_CODE_ARG);
   code->arg.variable = t1;
   *arg_list = IRConcatLists(IRWrapCode(code), *arg_list);
 
   if (exp->next) {
-    list = IRConcatLists(list, IRTranslateArgs(exp->next->next, arg_list));
+    list = IRConcatLists(list, IRTranslateArgs(exp->next->next, field->next, arg_list));
   }
   return list;
 }

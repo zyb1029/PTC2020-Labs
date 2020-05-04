@@ -17,6 +17,7 @@
 
 struct STNode;
 struct SEType;
+struct SEField;
 
 enum IROperandType {
   IR_OP_NULL,
@@ -123,7 +124,7 @@ struct IRCodeList IRTranslateDec(struct STNode *dec);
 struct IRCodeList IRTranslateVarDec(struct STNode *var);
 struct IRCodeList IRTranslateStmtList(struct STNode *list);
 struct IRCodeList IRTranslateStmt(struct STNode *stmt);
-struct IRCodeList IRTranslateArgs(struct STNode *args, struct IRCodeList *arg_list);
+struct IRCodeList IRTranslateArgs(struct STNode *args, struct SEField *field, struct IRCodeList *arg_list);
 
 // This function is unique, it operates on the global variable irlist.
 void IRTranslateFunc(const char *name, struct STNode *comp);

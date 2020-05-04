@@ -547,10 +547,24 @@ IRCodeList IRTranslateArgs(STNode *args, IRCodeList *arg_list) {
 extern IRCodeList irlist;  // defined in main.c
 void IRTranslateFunc(const char *name) {
   Assert(!IRQueueEmpty(), "IR queue empty when adding func");
+  
+  // Add declaration of function
   IRCode *code = IRNewCode(IR_CODE_FUNCTION);
   code->function.function.kind = IR_OP_FUNCTION;
   code->function.function.name = name;
   irlist = IRAppendCode(irlist, code);
+  
+  // Traverse all parameters of the function
+  STEntry *entry = STSearchFunc(name);
+  Assert(entry != NULL, "func %s not found in ST", name);
+  Assert(entry->type->kind == FUNCTION, "type is not func");
+  for (SEField *field = entry->type->function.signature; field; field = field->next) {
+    code = IRNewCode(IR_CODE_PARAM);
+    code->param.variable = IRNewVariableOperand(field->name);
+    irlist = IRAppendCode(irlist, code);
+  }
+
+  // Concat the list of function body (stored in IR queue)
   irlist = IRConcatLists(irlist, IRQueuePop());
 }
 
@@ -759,14 +773,16 @@ size_t IRParseCode(char *s, IRCode *code) {
       s += IRParseOperand(s, &code->arg.variable);
       break;
     }
+    case IR_CODE_PARAM: {
+      s += sprintf(s, "PARAM ");
+      s += IRParseOperand(s, &code->arg.variable);
+      break;
+    }
     case IR_CODE_CALL: {
       s += IRParseOperand(s, &code->call.result);
       s += sprintf(s, " := CALL ");
       s += IRParseOperand(s, &code->call.function);
       break;
-    }
-    case IR_CODE_PARAM: {
-      Panic("not implemented");
     }
     case IR_CODE_READ: {
       s += sprintf(s, "READ ");

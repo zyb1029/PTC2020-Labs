@@ -90,7 +90,7 @@ typedef struct IRCode {
     } dec;
     struct {
       struct IROperand variable;
-    } read, write, arg;
+    } read, write, arg, param;
     struct {
       struct IROperand function;
     } function;

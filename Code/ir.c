@@ -690,35 +690,27 @@ size_t IRParseCode(char *s, IRCode *code) {
       s += IRParseOperand(s, &code->assign.right);
       break;
     }
-    case IR_CODE_ADD: {
-      s += IRParseOperand(s, &code->binop.result);
-      s += sprintf(s, " := ");
-      s += IRParseOperand(s, &code->binop.op1);
-      s += sprintf(s, " + ");
-      s += IRParseOperand(s, &code->binop.op2);
-      break;
-    }
-    case IR_CODE_SUB: {
-      s += IRParseOperand(s, &code->binop.result);
-      s += sprintf(s, " := ");
-      s += IRParseOperand(s, &code->binop.op1);
-      s += sprintf(s, " - ");
-      s += IRParseOperand(s, &code->binop.op2);
-      break;
-    }
-    case IR_CODE_MUL: {
-      s += IRParseOperand(s, &code->binop.result);
-      s += sprintf(s, " := ");
-      s += IRParseOperand(s, &code->binop.op1);
-      s += sprintf(s, " * ");
-      s += IRParseOperand(s, &code->binop.op2);
-      break;
-    }
+    case IR_CODE_ADD:
+    case IR_CODE_SUB:
+    case IR_CODE_MUL:
     case IR_CODE_DIV: {
+      char op = ' ';
+      switch (code->kind) {
+        case IR_CODE_ADD:
+          op = '+'; break;
+        case IR_CODE_SUB:
+          op = '-'; break;
+        case IR_CODE_MUL:
+          op = '*'; break;
+        case IR_CODE_DIV:
+          op = '/'; break;
+        default:
+          Panic("invalid arithmic operand");
+      }
       s += IRParseOperand(s, &code->binop.result);
       s += sprintf(s, " := ");
       s += IRParseOperand(s, &code->binop.op1);
-      s += sprintf(s, " / ");
+      s += sprintf(s, " %c ", op);
       s += IRParseOperand(s, &code->binop.op2);
       break;
     }

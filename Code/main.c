@@ -42,14 +42,16 @@ int main(int argc, char *argv[]) {
   // Step 2: conduct a full semantic scan.
   // Step 3: translate to IR during the scan.
   semanticScan();
-  teardownSyntaxTree(stroot);
   if (hasErrorS) {
-    return 4; // avoid checker see this as runtime error
+    return 4;
   }
 
   for (IRCode *code = irlist.head; code != NULL; code = code->next) {
     IRWriteCode(fout, code);
   }
+
+  // do not teardown until all work is done!
+  teardownSyntaxTree(stroot);
 
   return 0;
 }

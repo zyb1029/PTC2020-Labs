@@ -979,15 +979,14 @@ IRCodeList IRAppendCode(IRCodeList list, IRCode *code) {
   IRParseCode(tmp, code);
   CLog(FG_YELLOW, "%s", tmp);
 #endif
-  IRCodeList ret = {list.head, list.tail};
-  if (ret.tail == NULL) {
-    ret.head = ret.tail = code;
+  if (list.tail == NULL) {
+    list.head = list.tail = code;
   } else {
-    ret.tail->next = code;
-    code->prev = ret.tail;
-    ret.tail = code;
+    list.tail->next = code;
+    code->prev = list.tail;
+    list.tail = code;
   }
-  return ret;
+  return list;
 }
 
 // Concat list2 to the end of list1.

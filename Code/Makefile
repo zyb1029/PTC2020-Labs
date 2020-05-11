@@ -18,7 +18,7 @@ LFO = $(LFC:.c=.o)
 YFO = $(YFC:.c=.o)
 
 parser: syntax $(filter-out $(LFO),$(OBJS))
-	$(CC) -ggdb3 -o parser $(filter-out $(LFO),$(OBJS)) -lfl -ly
+	$(CC) -ggdb3 -o parser $(filter-out $(LFO),$(OBJS)) -ll -ly
 
 syntax: lexical syntax-c
 	$(CC) -ggdb3 -c $(YFC) -o $(YFO)

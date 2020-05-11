@@ -198,7 +198,7 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
       if (e1->child->token == ID) {
         // assign to local variable
         var = IRNewVariableOperand(e1->child->sval);
-        if (var.size >= 4) {
+        if (var.size > 4) {
           // copy memory area
           /**
            * iter = 0

@@ -21,6 +21,7 @@ bool OCUpdateOperand(struct IROperand *op);
 OCNode *OCFind(struct IROperand op);
 void OCActivate(struct IROperand op);
 void OCDeactivate(struct IROperand op);
+void OCCreate(struct IROperand op);
 void OCInsert(struct IROperand op, int value);
 int OCComp(const void *a, const void *b);
 

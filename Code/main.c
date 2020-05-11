@@ -1,18 +1,19 @@
-#include <stdio.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include "tree.h"
-#include "semantics.h"
 #include "ir.h"
+#include "opt.h"
+#include "semantics.h"
+#include "tree.h"
+#include <stdbool.h>
+#include <stdio.h>
+#include <unistd.h>
 
 extern void yyrestart(FILE *);
 extern int yyparse_wrap(); // defined in syntax.y
 
-int  errLineno = 0;
+int errLineno = 0;
 bool hasErrorA = false;
 bool hasErrorB = false;
 bool hasErrorS = false;
-STNode* stroot = NULL;
+STNode *stroot = NULL;
 IRCodeList irlist = {NULL, NULL};
 
 int main(int argc, char *argv[]) {
@@ -37,7 +38,7 @@ int main(int argc, char *argv[]) {
   if (hasErrorA || hasErrorB) {
     return 3;
   }
-  //printSyntaxTree();
+  // printSyntaxTree();
 
   // Step 2: conduct a full semantic scan.
   // Step 3: translate to IR during the scan.
@@ -46,6 +47,7 @@ int main(int argc, char *argv[]) {
     return 4;
   }
 
+  optimize();
   for (IRCode *code = irlist.head; code != NULL; code = code->next) {
     IRWriteCode(fout, code);
   }

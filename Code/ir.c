@@ -989,6 +989,22 @@ IRCodeList IRAppendCode(IRCodeList list, IRCode *code) {
   return list;
 }
 
+// Remove a code from the list.
+IRCodeList IRRemoveCode(IRCodeList list, IRCode *code) {
+  if (code == list.head) {
+    list.head = code->next;
+    list.head->prev = NULL;
+  } else if (code == list.tail) {
+    list.tail = code->prev;
+    list.tail->next = NULL;
+  } else {
+    code->prev->next = code->next;
+    code->next->prev = code->prev;
+  }
+  code->prev = code->next = NULL;
+  return list;
+}
+
 // Concat list2 to the end of list1.
 IRCodeList IRConcatLists(IRCodeList list1, IRCodeList list2) {
   if (list2.head == NULL) {

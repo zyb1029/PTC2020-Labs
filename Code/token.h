@@ -22,6 +22,8 @@ enum ENUM_RELOP {
   RELOP_NE, // !=
 };
 
+enum ENUM_RELOP RELOP_REV(enum ENUM_RELOP relop);
+
 /* Custom YYSTYPE, use struct instead of union */
 #define YYSTYPE YYSTYPE
 typedef struct YYSTYPE {

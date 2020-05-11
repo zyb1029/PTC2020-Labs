@@ -146,6 +146,7 @@ struct IRCode *IRNewCode(enum IRCodeType kind);
 struct IRCodeList IRWrapCode(struct IRCode *code);
 struct IRCodePair IRWrapPair(struct IRCodeList list, struct SEType *type, bool addr);
 struct IRCodeList IRAppendCode(struct IRCodeList list, struct IRCode *code);
+struct IRCodeList IRRemoveCode(struct IRCodeList list, struct IRCode *code);
 struct IRCodeList IRConcatLists(struct IRCodeList list1, struct IRCodeList list2);
 void IRDestroyList(struct IRCodeList list);
 

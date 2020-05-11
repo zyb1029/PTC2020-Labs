@@ -28,11 +28,10 @@ void optimize() {
       break;
     }
     case IR_CODE_ASSIGN: {
-      OCUpdateOperand(&code->assign.right);
+      OCCreate(code->assign.left);
+      OCReplace(&code->assign.right);
       if (code->assign.right.kind == IR_OP_CONSTANT) {
         OCInsert(code->assign.left, code->assign.right.ivalue);
-      } else {
-        OCCreate(code->assign.left);
       }
       break;
     }
@@ -41,8 +40,9 @@ void optimize() {
     case IR_CODE_MUL:
     case IR_CODE_DIV: {
       IROperand res = code->binop.result;
-      OCUpdateOperand(&code->binop.op1);
-      OCUpdateOperand(&code->binop.op2);
+      OCCreate(code->binop.result);
+      OCReplace(&code->binop.op1);
+      OCReplace(&code->binop.op2);
       if (code->binop.op1.kind == IR_OP_CONSTANT &&
           code->binop.op2.kind == IR_OP_CONSTANT) {
         if (code->kind != IR_CODE_DIV || code->binop.op2.ivalue != 0) {
@@ -71,12 +71,11 @@ void optimize() {
           break;
         }
       }
-      OCCreate(code->binop.result);
       break;
     }
     case IR_CODE_JUMP_COND: {
-      OCUpdateOperand(&code->jump_cond.op1);
-      OCUpdateOperand(&code->jump_cond.op2);
+      OCReplace(&code->jump_cond.op1);
+      OCReplace(&code->jump_cond.op2);
       break;
     }
     case IR_CODE_LOAD: {
@@ -84,18 +83,18 @@ void optimize() {
       break;
     }
     case IR_CODE_WRITE: {
-      OCUpdateOperand(&code->write.variable);
+      OCReplace(&code->write.variable);
       break;
     }
     case IR_CODE_RETURN: {
-      OCUpdateOperand(&code->ret.value);
+      OCReplace(&code->ret.value);
       break;
     }
     default:
       break;
     }
   }
-  // return;
+  return;
 
   // Step 2: delete all inactive variables
   Log("optimization step 2");
@@ -209,6 +208,19 @@ void optimize() {
   }
 }
 
+// Optimize an operand with constant value if possible.
+// Return true if the operand is replaced by a constant.
+bool OCReplace(IROperand *op) {
+  if (op->kind == IR_OP_TEMP || op->kind == IR_OP_VARIABLE) {
+    OCNode *node = OCFind(*op);
+    if (node != NULL && node->timestamp >= valid_ts) {
+      *op = IRNewConstantOperand(node->value);
+      return true;
+    }
+  }
+  return false;
+}
+
 // Find the constant from the RB tree.
 OCNode *OCFind(IROperand op) {
   if (op.kind == IR_OP_TEMP || op.kind == IR_OP_VARIABLE) {
@@ -237,19 +249,6 @@ void OCDeactivate(IROperand op) {
   if (node != NULL) {
     node->active = false;
   }
-}
-
-// Optimize an operand with constant value if possible.
-// Return true if the operand is replaced by a constant.
-bool OCUpdateOperand(IROperand *op) {
-  if (op->kind == IR_OP_TEMP || op->kind == IR_OP_VARIABLE) {
-    OCNode *node = OCFind(*op);
-    if (node != NULL && node->timestamp >= valid_ts) {
-      *op = IRNewConstantOperand(node->value);
-      return true;
-    }
-  }
-  return false;
 }
 
 // Create a new operand in RB and set invalid.

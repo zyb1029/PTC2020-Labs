@@ -16,8 +16,7 @@ typedef struct OCNode {
 
 void optimize();
 
-bool OCUpdateOperand(struct IROperand *op);
-
+bool OCReplace(struct IROperand *op);
 OCNode *OCFind(struct IROperand op);
 void OCActivate(struct IROperand op);
 void OCDeactivate(struct IROperand op);

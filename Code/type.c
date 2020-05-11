@@ -47,6 +47,7 @@ void SEPrepare() {
   // Add READ and WRITE functions
   SEType *readType = (SEType *)malloc(sizeof(SEType));
   readType->kind = FUNCTION;
+  readType->size = 4;
   readType->function.defined = true;
   readType->function.node = NULL;
   readType->function.type = STATIC_TYPE_INT;
@@ -55,6 +56,7 @@ void SEPrepare() {
 
   SEType *writeType = (SEType *)malloc(sizeof(SEType));
   writeType->kind = FUNCTION;
+  writeType->size = 4;
   writeType->function.defined = true;
   writeType->function.node = NULL;
   writeType->function.type = STATIC_TYPE_INT;
@@ -349,7 +351,7 @@ void SEParseFunDec(STNode *fdec, SEType *type) {
   if (entry == NULL) {
     func = (SEType *)malloc(sizeof(SEType));
     func->kind = FUNCTION;
-    func->size = -1;
+    func->size = type->size;
     func->parent = func;
     func->function.node = fdec;
     func->function.defined = fdec->next->token != SEMI;

@@ -196,7 +196,7 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
       bool lval = false;
       if (e1->child->token == ID) {
         STEntry *entry = STSearch(e1->child->sval);
-        Assert(entry != NULL, "entry not found in ST");
+        Assert(entry != NULL, "entry %s not found in ST", e1->child->sval);
         lval = entry->type->kind == BASIC;
       }
 
@@ -748,6 +748,7 @@ IROperand IRNewVariableOperand(const char *name) {
 IROperand IRNewConstantOperand(int value) {
   IROperand op;
   op.kind = IR_OP_CONSTANT;
+  op.size = 4;
   op.ivalue = value;
   return op;
 }
@@ -756,14 +757,19 @@ IROperand IRNewConstantOperand(int value) {
 IROperand IRNewRelopOperand(enum ENUM_RELOP relop) {
   IROperand op;
   op.kind = IR_OP_RELOP;
+  op.size = 0;
   op.relop = relop;
   return op;
 }
 
 // Generate a new function operand.
 IROperand IRNewFunctionOperand(const char *name) {
+  STEntry *entry = STSearchFunc(name);
+  Assert(entry != NULL, "entry %s not found in ST", name);
   IROperand op;
   op.kind = IR_OP_FUNCTION;
+  op.size = entry->type->size;
+  Assert(op.size == 4, "invalid function return size");
   op.name = name;
   return op;
 }

@@ -190,31 +190,53 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
       return IRWrapPair(list, type, !deref);
     }
     case ASSIGNOP: {
+      IRCodePair pair; // return value
       IROperand t1 = IRNewTempOperand();
-      IRCodePair pair = IRTranslateExp(e3, t1, true);
 
-      IROperand var = IRNewNullOperand();
-      IRCode *code1 = NULL;
+      bool lval = false;
       if (e1->child->token == ID) {
-        // assign to local variable
-        var = IRNewVariableOperand(e1->child->sval);
-        if (var.size > 4) {
-          // copy memory area
+        STEntry *entry = STSearch(e1->child->sval);
+        Assert(entry != NULL, "entry not found in ST");
+        lval = entry->type->kind == BASIC;
+      }
+
+      if (lval) {
+        // assign to a variable
+        pair = IRTranslateExp(e3, t1, true);
+        IROperand var = IRNewVariableOperand(e1->child->sval);
+        IRCode *code = IRNewCode(IR_CODE_ASSIGN);
+        code->assign.left = var;
+        code->assign.right = t1;
+        pair.list = IRAppendCode(pair.list, code);
+      } else {
+        // assign to a address
+        IROperand addr = IRNewTempOperand();
+        pair = IRTranslateExp(e1, addr, false);
+
+        if (pair.type->size == 4) {
+          // we need the value stored in the memory
+          pair.list =
+              IRConcatLists(pair.list, IRTranslateExp(e3, t1, true).list);
+
+          IRCode *save = IRNewCode(IR_CODE_SAVE);
+          save->save.left = addr;
+          save->save.right = t1;
+          pair.list = IRAppendCode(pair.list, save);
+        } else {
+          // copy memory area, we don't care about the value
+          pair.list =
+              IRConcatLists(pair.list, IRTranslateExp(e3, t1, false).list);
           /**
            * iter = 0
-           * ptr1 = &val
-           * ptr2 = &t1
            * LABEL loop:
-           * temp = *ptr2
-           * *ptr1 = temp
-           * ptr1 += 4
-           * ptr2 += 4
+           * temp = *t1
+           * *addr = temp
+           * t1 += 4
+           * addr += 4
            * iter += 4
            * if iter < size GOTO loop
            */
           IROperand iter = IRNewTempOperand();
-          IROperand ptr1 = IRNewTempOperand();
-          IROperand ptr2 = IRNewTempOperand();
           IROperand temp = IRNewTempOperand();
           IROperand loop = IRNewLabelOperand();
 
@@ -223,28 +245,17 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
           init->assign.right = IRNewConstantOperand(0);
           pair.list = IRAppendCode(pair.list, init);
 
-          IRCode *pre1 = IRNewCode(var.kind == IR_OP_MEMBLOCK ? IR_CODE_REFER
-                                                              : IR_CODE_ASSIGN);
-          pre1->assign.left = ptr1;
-          pre1->assign.right = var;
-          pair.list = IRAppendCode(pair.list, pre1);
-
-          IRCode *pre2 = IRNewCode(IR_CODE_ASSIGN);
-          pre2->assign.left = ptr2;
-          pre2->assign.right = t1;
-          pair.list = IRAppendCode(pair.list, pre2);
-
           IRCode *label = IRNewCode(IR_CODE_LABEL);
           label->label.label = loop;
           pair.list = IRAppendCode(pair.list, label);
 
           IRCode *load = IRNewCode(IR_CODE_LOAD);
           load->load.left = temp;
-          load->load.right = ptr2;
+          load->load.right = t1;
           pair.list = IRAppendCode(pair.list, load);
 
           IRCode *save = IRNewCode(IR_CODE_SAVE);
-          save->save.left = ptr1;
+          save->save.left = addr;
           save->save.right = temp;
           pair.list = IRAppendCode(pair.list, save);
 
@@ -255,39 +266,25 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
           pair.list = IRAppendCode(pair.list, add_it);
 
           IRCode *add1 = IRNewCode(IR_CODE_ADD);
-          add1->binop.result = ptr1;
-          add1->binop.op1 = ptr1;
+          add1->binop.result = addr;
+          add1->binop.op1 = addr;
           add1->binop.op2 = IRNewConstantOperand(4);
           pair.list = IRAppendCode(pair.list, add1);
 
           IRCode *add2 = IRNewCode(IR_CODE_ADD);
-          add2->binop.result = ptr2;
-          add2->binop.op1 = ptr2;
+          add2->binop.result = t1;
+          add2->binop.op1 = t1;
           add2->binop.op2 = IRNewConstantOperand(4);
           pair.list = IRAppendCode(pair.list, add2);
 
           IRCode *jump = IRNewCode(IR_CODE_JUMP_COND);
           jump->jump_cond.op1 = iter;
-          jump->jump_cond.op2 = IRNewConstantOperand(var.size);
+          jump->jump_cond.op2 = IRNewConstantOperand(pair.type->size);
           jump->jump_cond.relop = IRNewRelopOperand(RELOP_LT);
           jump->jump_cond.dest = loop;
-          code1 = jump; // will be appended as the last IR code
-        } else {
-          // copy a single value
-          code1 = IRNewCode(IR_CODE_ASSIGN);
-          code1->assign.left = var;
-          code1->assign.right = t1;
+          pair.list = IRAppendCode(pair.list, jump);
         }
-      } else {
-        // assign to address (array/struct)
-        var = IRNewTempOperand();
-        pair.list =
-            IRConcatLists(pair.list, IRTranslateExp(e1, var, false).list);
-        code1 = IRNewCode(IR_CODE_SAVE);
-        code1->save.left = var;
-        code1->save.right = t1;
       }
-      pair.list = IRAppendCode(pair.list, code1);
 
       if (place.kind != IR_OP_NULL) {
         IRCode *code2 = IRNewCode(IR_CODE_ASSIGN);

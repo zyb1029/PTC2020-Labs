@@ -39,7 +39,7 @@ enum IRCodeType {
   IR_CODE_SUB,
   IR_CODE_MUL,
   IR_CODE_DIV,
-  IR_CODE_DEREF,
+  IR_CODE_REFER,
   IR_CODE_LOAD,
   IR_CODE_SAVE,
   IR_CODE_JUMP,
@@ -55,6 +55,7 @@ enum IRCodeType {
 
 typedef struct IROperand {
   enum IROperandType kind;
+  size_t size; // size of memory used by operand
   union {
     unsigned int number;
     int ivalue;

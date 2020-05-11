@@ -213,16 +213,18 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
            * if iter < size GOTO loop
            */
           IROperand iter = IRNewTempOperand();
-          IROperand temp = IRNewTempOperand();
           IROperand ptr1 = IRNewTempOperand();
           IROperand ptr2 = IRNewTempOperand();
+          IROperand temp = IRNewTempOperand();
           IROperand loop = IRNewLabelOperand();
+
           IRCode *init = IRNewCode(IR_CODE_ASSIGN);
           init->assign.left = iter;
           init->assign.right = IRNewConstantOperand(0);
           pair.list = IRAppendCode(pair.list, init);
 
-          IRCode *pre1 = IRNewCode(IR_CODE_ASSIGN);
+          IRCode *pre1 = IRNewCode(var.kind == IR_OP_MEMBLOCK ? IR_CODE_REFER
+                                                              : IR_CODE_ASSIGN);
           pre1->assign.left = ptr1;
           pre1->assign.right = var;
           pair.list = IRAppendCode(pair.list, pre1);
@@ -246,6 +248,12 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
           save->save.right = temp;
           pair.list = IRAppendCode(pair.list, save);
 
+          IRCode *add_it = IRNewCode(IR_CODE_ADD);
+          add_it->binop.result = iter;
+          add_it->binop.op1 = iter;
+          add_it->binop.op2 = IRNewConstantOperand(4);
+          pair.list = IRAppendCode(pair.list, add_it);
+
           IRCode *add1 = IRNewCode(IR_CODE_ADD);
           add1->binop.result = ptr1;
           add1->binop.op1 = ptr1;
@@ -257,12 +265,6 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
           add2->binop.op1 = ptr2;
           add2->binop.op2 = IRNewConstantOperand(4);
           pair.list = IRAppendCode(pair.list, add2);
-
-          IRCode *add_it = IRNewCode(IR_CODE_ADD);
-          add_it->binop.result = iter;
-          add_it->binop.op1 = iter;
-          add_it->binop.op2 = IRNewConstantOperand(4);
-          pair.list = IRAppendCode(pair.list, add_it);
 
           IRCode *jump = IRNewCode(IR_CODE_JUMP_COND);
           jump->jump_cond.op1 = iter;

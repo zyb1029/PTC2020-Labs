@@ -29,6 +29,7 @@ void optimize() {
     }
     case IR_CODE_ASSIGN: {
       OCCreate(code->assign.left);
+      OCInvalid(code->assign.left);
       OCReplace(&code->assign.right);
       if (code->assign.right.kind == IR_OP_CONSTANT) {
         OCInsert(code->assign.left, code->assign.right.ivalue);
@@ -39,8 +40,8 @@ void optimize() {
     case IR_CODE_SUB:
     case IR_CODE_MUL:
     case IR_CODE_DIV: {
-      IROperand res = code->binop.result;
       OCCreate(code->binop.result);
+      OCInvalid(code->binop.result);
       OCReplace(&code->binop.op1);
       OCReplace(&code->binop.op2);
       if (code->binop.op1.kind == IR_OP_CONSTANT &&
@@ -65,33 +66,70 @@ void optimize() {
             Panic("should not reach here");
           }
           code->kind = IR_CODE_ASSIGN;
-          code->assign.left = res;
+          code->assign.left = code->binop.result;
           code->assign.right = IRNewConstantOperand(val);
-          OCInsert(res, val);
-          break;
+          OCInsert(code->binop.result, val);
         }
       }
       break;
     }
-    case IR_CODE_JUMP_COND: {
-      OCReplace(&code->jump_cond.op1);
-      OCReplace(&code->jump_cond.op2);
+    case IR_CODE_REFER: {
+      OCCreate(code->addr.left);
+      OCInvalid(code->addr.left);
       break;
     }
     case IR_CODE_LOAD: {
       OCCreate(code->load.left);
+      OCInvalid(code->load.left);
       break;
     }
-    case IR_CODE_WRITE: {
-      OCReplace(&code->write.variable);
+    case IR_CODE_SAVE: {
+      OCCreate(code->save.left);
+      OCInvalid(code->save.left);
+      OCReplace(&code->save.right);
+      break;
+    }
+    case IR_CODE_JUMP:
+      break;
+    case IR_CODE_JUMP_COND: {
+      OCReplace(&code->jump_cond.op1);
+      OCReplace(&code->jump_cond.op2);
       break;
     }
     case IR_CODE_RETURN: {
       OCReplace(&code->ret.value);
       break;
     }
-    default:
+    case IR_CODE_DEC: {
+      OCCreate(code->dec.variable);
+      OCInvalid(code->dec.variable);
       break;
+    }
+    case IR_CODE_ARG: {
+      OCReplace(&code->arg.variable);
+      break;
+    }
+    case IR_CODE_CALL: {
+      OCCreate(code->call.result);
+      OCInvalid(code->call.result);
+      break;
+    }
+    case IR_CODE_PARAM: {
+      OCCreate(code->param.variable);
+      OCInvalid(code->param.variable);
+      break;
+    }
+    case IR_CODE_READ: {
+      OCCreate(code->read.variable);
+      OCInvalid(code->read.variable);
+      break;
+    }
+    case IR_CODE_WRITE: {
+      OCReplace(&code->write.variable);
+      break;
+    }
+    default:
+      Panic("should not reach here");
     }
   }
   return;
@@ -211,7 +249,9 @@ void optimize() {
 // Optimize an operand with constant value if possible.
 // Return true if the operand is replaced by a constant.
 bool OCReplace(IROperand *op) {
-  if (op->kind == IR_OP_TEMP || op->kind == IR_OP_VARIABLE) {
+  if (op->kind == IR_OP_CONSTANT) {
+    return true;
+  } else if (op->kind == IR_OP_TEMP || op->kind == IR_OP_VARIABLE) {
     OCNode *node = OCFind(*op);
     if (node != NULL && node->timestamp >= valid_ts) {
       *op = IRNewConstantOperand(node->value);
@@ -219,36 +259,6 @@ bool OCReplace(IROperand *op) {
     }
   }
   return false;
-}
-
-// Find the constant from the RB tree.
-OCNode *OCFind(IROperand op) {
-  if (op.kind == IR_OP_TEMP || op.kind == IR_OP_VARIABLE) {
-    OCNode node;
-    node.is_var = op.kind == IR_OP_VARIABLE;
-    node.number = op.number;
-    RBNode *target = RBSearch(&OCRoot, &node, OCComp);
-    if (target != NULL) {
-      return OCComp(target->value, &node) == 0 ? target->value : NULL;
-    }
-  }
-  return NULL;
-}
-
-// Set an operand as active.
-void OCActivate(IROperand op) {
-  OCNode *node = OCFind(op);
-  if (node != NULL) {
-    node->active = true;
-  }
-}
-
-// Set an operand as inactive.
-void OCDeactivate(IROperand op) {
-  OCNode *node = OCFind(op);
-  if (node != NULL) {
-    node->active = false;
-  }
 }
 
 // Create a new operand in RB and set invalid.
@@ -283,6 +293,44 @@ void OCInsert(IROperand op, int value) {
       node->active = false;
       RBInsert(&OCRoot, node, OCComp);
     }
+  }
+}
+
+// Find the constant from the RB tree.
+OCNode *OCFind(IROperand op) {
+  if (op.kind == IR_OP_TEMP || op.kind == IR_OP_VARIABLE) {
+    OCNode node;
+    node.is_var = op.kind == IR_OP_VARIABLE;
+    node.number = op.number;
+    RBNode *target = RBSearch(&OCRoot, &node, OCComp);
+    if (target != NULL) {
+      return OCComp(target->value, &node) == 0 ? target->value : NULL;
+    }
+  }
+  return NULL;
+}
+
+// Set an constant as invalid.
+void OCInvalid(IROperand op) {
+  OCNode *node = OCFind(op);
+  if (node != NULL) {
+    node->timestamp = -1;
+  }
+}
+
+// Set an operand as active.
+void OCActivate(IROperand op) {
+  OCNode *node = OCFind(op);
+  if (node != NULL) {
+    node->active = true;
+  }
+}
+
+// Set an operand as inactive.
+void OCDeactivate(IROperand op) {
+  OCNode *node = OCFind(op);
+  if (node != NULL) {
+    node->active = false;
   }
 }
 

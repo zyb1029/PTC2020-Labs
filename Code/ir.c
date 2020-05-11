@@ -202,9 +202,9 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
 
       if (lval) {
         // assign to a variable
-        pair = IRTranslateExp(e3, t1, true);
         IROperand var = IRNewVariableOperand(e1->child->sval);
         IRCode *code = IRNewCode(IR_CODE_ASSIGN);
+        pair = IRTranslateExp(e3, t1, true);
         code->assign.left = var;
         code->assign.right = t1;
         pair.list = IRAppendCode(pair.list, code);
@@ -215,17 +215,19 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
 
         if (pair.type->size == 4) {
           // we need the value stored in the memory
-          pair.list =
-              IRConcatLists(pair.list, IRTranslateExp(e3, t1, true).list);
+          IRCodePair pair2 = IRTranslateExp(e3, t1, true);
+          pair.list = IRConcatLists(pair.list, pair2.list);
 
           IRCode *save = IRNewCode(IR_CODE_SAVE);
           save->save.left = addr;
           save->save.right = t1;
           pair.list = IRAppendCode(pair.list, save);
+          pair.type = pair2.type;
+          pair.addr = false;
         } else {
           // copy memory area, we don't care about the value
-          pair.list =
-              IRConcatLists(pair.list, IRTranslateExp(e3, t1, false).list);
+          IRCodePair pair2 = IRTranslateExp(e3, t1, false);
+          pair.list = IRConcatLists(pair.list, pair2.list);
           /**
            * iter = 0
            * LABEL loop:

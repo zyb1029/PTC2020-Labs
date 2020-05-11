@@ -30,8 +30,7 @@ void optimize() {
     case IR_CODE_ASSIGN: {
       OCCreate(code->assign.left);
       OCInvalid(code->assign.left);
-      OCReplace(&code->assign.right);
-      if (code->assign.right.kind == IR_OP_CONSTANT) {
+      if (OCReplace(&code->assign.right)) {
         OCInsert(code->assign.left, code->assign.right.ivalue);
       }
       break;
@@ -42,13 +41,11 @@ void optimize() {
     case IR_CODE_DIV: {
       OCCreate(code->binop.result);
       OCInvalid(code->binop.result);
-      OCReplace(&code->binop.op1);
-      OCReplace(&code->binop.op2);
-      if (code->binop.op1.kind == IR_OP_CONSTANT &&
-          code->binop.op2.kind == IR_OP_CONSTANT) {
+      if (OCReplace(&code->binop.op1) && OCReplace(&code->binop.op2)) {
         if (code->kind != IR_CODE_DIV || code->binop.op2.ivalue != 0) {
           // do not handle dividing by zero
           int val = 0;
+          IROperand result = code->binop.result;
           switch (code->kind) {
           case IR_CODE_ADD:
             val = code->binop.op1.ivalue + code->binop.op2.ivalue;
@@ -57,18 +54,18 @@ void optimize() {
             val = code->binop.op1.ivalue - code->binop.op2.ivalue;
             break;
           case IR_CODE_MUL:
-            val = code->binop.op1.ivalue + code->binop.op2.ivalue;
+            val = code->binop.op1.ivalue * code->binop.op2.ivalue;
             break;
           case IR_CODE_DIV:
-            val = code->binop.op1.ivalue + code->binop.op2.ivalue;
+            val = code->binop.op1.ivalue / code->binop.op2.ivalue;
             break;
           default:
             Panic("should not reach here");
           }
           code->kind = IR_CODE_ASSIGN;
-          code->assign.left = code->binop.result;
+          code->assign.left = result;
           code->assign.right = IRNewConstantOperand(val);
-          OCInsert(code->binop.result, val);
+          OCInsert(result, val);
         }
       }
       break;

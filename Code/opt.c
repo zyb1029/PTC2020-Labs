@@ -2,7 +2,7 @@
 #include "ir.h"
 #include "rbtree.h"
 
-#define DEBUG // <- optimizer debugging switch
+// #define DEBUG // <- optimizer debugging switch
 #include "debug.h"
 
 extern IRCodeList irlist;
@@ -30,7 +30,8 @@ void optimize() {
       OCReplace(&code->assign.right);
       OCInvalid(code->assign.left);
       if (code->assign.right.kind == IR_OP_CONSTANT) {
-        Log("operand updated, type %d, number %d", code->assign.left.kind, code->assign.left.number);
+        Log("operand updated, type %d, number %d", code->assign.left.kind,
+            code->assign.left.number);
         OCUpdate(code->assign.left, code->assign.right.ivalue);
       }
       break;
@@ -40,7 +41,8 @@ void optimize() {
     case IR_CODE_MUL:
     case IR_CODE_DIV: {
       OCCreate(code->binop.result);
-      Log("left: type %d, number %d", code->binop.op1.kind, code->binop.op1.number);
+      Log("left: type %d, number %d", code->binop.op1.kind,
+          code->binop.op1.number);
       Log("replace op1: %d", OCReplace(&code->binop.op1));
       Log("replace op2: %d", OCReplace(&code->binop.op2));
       OCInvalid(code->binop.result);
@@ -394,10 +396,6 @@ void optimize() {
       Panic("should not reach here");
     }
   }
-
-  // Step 5: extra manual handling
-  Log("optimization step 5");
-  // TODO
 }
 
 // Optimize an operand with constant value if possible.

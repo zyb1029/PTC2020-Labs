@@ -41,10 +41,8 @@ void optimize() {
     case IR_CODE_MUL:
     case IR_CODE_DIV: {
       OCCreate(code->binop.result);
-      Log("left: type %d, number %d", code->binop.op1.kind,
-          code->binop.op1.number);
-      Log("replace op1: %d", OCReplace(&code->binop.op1));
-      Log("replace op2: %d", OCReplace(&code->binop.op2));
+      OCReplace(&code->binop.op1);
+      OCReplace(&code->binop.op2);
       OCInvalid(code->binop.result);
       // special case: do not handle dividing by zero
       if (code->binop.op1.kind == IR_OP_CONSTANT &&
@@ -75,12 +73,8 @@ void optimize() {
       }
       break;
     }
-    case IR_CODE_REFER: {
-      OCCreate(code->addr.left);
-      OCInvalid(code->addr.left);
-      break;
-    }
     case IR_CODE_LOAD: {
+      // do not optimize address
       OCCreate(code->load.left);
       OCInvalid(code->load.left);
       break;
@@ -152,10 +146,16 @@ void optimize() {
       OCInvalid(code->assign.left);
       if (code->assign.right.kind == IR_OP_TEMP) {
         Log("operand updated, TEM, number %d", code->assign.left.number);
-        OCUpdate(code->assign.left, code->assign.right.number);
+        OCUpdate2(code->assign.left, code->assign.right.number, TEM);
       } else if (code->assign.right.kind == IR_OP_VARIABLE) {
         Log("operand updated, VAR, number %d", code->assign.left.number);
-        OCUpdate(code->assign.left, -code->assign.right.number);
+        OCUpdate2(code->assign.left, code->assign.right.number, VAR);
+      } else if (code->assign.right.kind == IR_OP_VADDRESS) {
+        Log("operand updated, ADD, number %d", code->assign.left.number);
+        OCUpdate2(code->assign.left, code->assign.right.number, ADD);
+      } else if (code->assign.right.kind == IR_OP_MEMBLOCK) {
+        Log("operand updated, MEM, number %d", code->assign.left.number);
+        OCUpdate2(code->assign.left, code->assign.right.number, MEM);
       }
       break;
     }
@@ -168,12 +168,9 @@ void optimize() {
       OCInvalid(code->binop.result);
       break;
     }
-    case IR_CODE_REFER: {
-      OCReplace2(&code->addr.right);
-      break;
-    }
     case IR_CODE_LOAD: {
-      OCReplace2(&code->load.right);
+      // do not optimize address
+      OCInvalid(code->load.left);
       break;
     }
     case IR_CODE_SAVE: {
@@ -237,8 +234,6 @@ void optimize() {
       }
       break;
     }
-    case IR_CODE_REFER:
-      break;
     case IR_CODE_LOAD: {
       OCImportant(code->load.right);
       break;
@@ -325,19 +320,6 @@ void optimize() {
       }
       break;
     }
-    case IR_CODE_REFER: {
-      OCNode *node = OCFind(code->addr.left);
-      bool delete = node != NULL && !node->important && !node->active;
-      OCDeactivate(code->addr.left);
-      if (delete) {
-        Log("remove REFER");
-        IRRemoveCode(irlist, code);
-        free(code);
-      } else {
-        OCActivate(code->addr.right);
-      }
-      break;
-    }
     case IR_CODE_LOAD: {
       OCNode *node = OCFind(code->load.left);
       bool delete = node != NULL && !node->important && !node->active;
@@ -403,7 +385,8 @@ void optimize() {
 bool OCReplace(IROperand *op) {
   if (op->kind == IR_OP_CONSTANT) {
     return true;
-  } else if (op->kind == IR_OP_TEMP || op->kind == IR_OP_VARIABLE) {
+  } else if (op->kind == IR_OP_TEMP || op->kind == IR_OP_VARIABLE ||
+             op->kind == IR_OP_VADDRESS) {
     OCNode *node = OCFind(*op);
     if (node != NULL && node->timestamp >= valid_ts) {
       *op = IRNewConstantOperand(node->value);
@@ -416,10 +399,26 @@ bool OCReplace(IROperand *op) {
 // Optimize an operand with another variable if possible.
 // Return true if the operand is replaced by a variable.
 bool OCReplace2(IROperand *op) {
-  if (op->kind == IR_OP_TEMP || op->kind == IR_OP_VARIABLE) {
+  if (op->kind == IR_OP_TEMP || op->kind == IR_OP_VARIABLE ||
+      op->kind == IR_OP_VADDRESS) {
     OCNode *node = OCFind(*op);
     if (node != NULL && node->timestamp >= valid_ts) {
-      op->kind = node->value > 0 ? IR_OP_TEMP : IR_OP_VARIABLE;
+      switch (node->reserved) {
+      case TEM:
+        op->kind = IR_OP_TEMP;
+        break;
+      case VAR:
+        op->kind = IR_OP_VARIABLE;
+        break;
+      case ADD:
+        op->kind = IR_OP_VADDRESS;
+        break;
+      case MEM:
+        op->kind = IR_OP_MEMBLOCK;
+        break;
+      default:
+        Panic("should not reach here");
+      }
       op->number = node->value > 0 ? node->value : -node->value;
       return true;
     }
@@ -429,11 +428,12 @@ bool OCReplace2(IROperand *op) {
 
 // Create a new operand in RB and set invalid.
 void OCCreate(IROperand op) {
-  if (op.kind == IR_OP_TEMP || op.kind == IR_OP_VARIABLE) {
+  if (op.kind == IR_OP_TEMP || op.kind == IR_OP_VARIABLE ||
+      op.kind == IR_OP_VADDRESS) {
     OCNode *target = OCFind(op);
     if (target == NULL) {
       OCNode *node = (OCNode *)malloc(sizeof(OCNode));
-      node->is_var = op.kind == IR_OP_VARIABLE;
+      node->is_var = op.kind != IR_OP_TEMP;
       node->number = op.number;
       node->value = 0;
       node->timestamp = -1;
@@ -446,7 +446,8 @@ void OCCreate(IROperand op) {
 
 // Update a value of node in RB tree.
 void OCUpdate(IROperand op, int value) {
-  if (op.kind == IR_OP_TEMP || op.kind == IR_OP_VARIABLE) {
+  if (op.kind == IR_OP_TEMP || op.kind == IR_OP_VARIABLE ||
+      op.kind == IR_OP_VADDRESS) {
     OCNode *target = OCFind(op);
     if (target != NULL) {
       target->value = value;
@@ -455,11 +456,24 @@ void OCUpdate(IROperand op, int value) {
   }
 }
 
+// Update a value of node with reserved field in RB tree.
+void OCUpdate2(IROperand op, int value, int reserved) {
+  if (op.kind == IR_OP_TEMP || op.kind == IR_OP_VARIABLE) {
+    OCNode *target = OCFind(op);
+    if (target != NULL) {
+      target->value = value;
+      target->reserved = reserved;
+      target->timestamp = timestamp;
+    }
+  }
+}
+
 // Find the constant from the RB tree.
 OCNode *OCFind(IROperand op) {
-  if (op.kind == IR_OP_TEMP || op.kind == IR_OP_VARIABLE) {
+  if (op.kind == IR_OP_TEMP || op.kind == IR_OP_VARIABLE ||
+      op.kind == IR_OP_VADDRESS) {
     OCNode node;
-    node.is_var = op.kind == IR_OP_VARIABLE;
+    node.is_var = op.kind != IR_OP_TEMP;
     node.number = op.number;
     RBNode *target = RBSearch(&OCRoot, &node, OCComp);
     if (target != NULL) {

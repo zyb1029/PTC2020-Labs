@@ -53,8 +53,7 @@ IRCodePair IRTranslateExp(STNode *exp, IROperand place, bool deref) {
     if (e2 == NULL) {
       if (place.kind != IR_OP_NULL) {
         IROperand var = IRNewVariableOperand(e1->sval);
-        IRCode *code = IRNewCode(var.kind == IR_OP_MEMBLOCK ? IR_CODE_REFER
-                                                            : IR_CODE_ASSIGN);
+        IRCode *code = IRNewCode(IR_CODE_ASSIGN);
         code->assign.left = place;
         code->assign.right = var;
         return IRWrapPair(IRWrapCode(code), type, type->kind != BASIC);
@@ -799,8 +798,9 @@ size_t IRParseOperand(char *s, IROperand *op) {
   }
   case IR_OP_VARIABLE:
   case IR_OP_VADDRESS:
-  case IR_OP_MEMBLOCK:
     return sprintf(s, "v%u", op->number);
+  case IR_OP_MEMBLOCK:
+    return sprintf(s, "&v%u", op->number);
   case IR_OP_CONSTANT:
     return sprintf(s, "#%d", op->ivalue);
   case IR_OP_FUNCTION:
@@ -860,12 +860,6 @@ size_t IRParseCode(char *s, IRCode *code) {
     s += IRParseOperand(s, &code->binop.op2);
     break;
   }
-  case IR_CODE_REFER: {
-    s += IRParseOperand(s, &code->addr.left);
-    s += sprintf(s, " := &");
-    s += IRParseOperand(s, &code->addr.right);
-    break;
-  }
   case IR_CODE_LOAD: {
     s += IRParseOperand(s, &code->load.left);
     s += sprintf(s, " := *");
@@ -901,9 +895,12 @@ size_t IRParseCode(char *s, IRCode *code) {
     break;
   }
   case IR_CODE_DEC: {
+    Assert(code->dec.variable.kind == IR_OP_MEMBLOCK, "var is not memblock");
     Assert(code->dec.size.kind == IR_OP_CONSTANT, "size if not constant");
     s += sprintf(s, "DEC ");
+    code->dec.variable.kind = IR_OP_VADDRESS;
     s += IRParseOperand(s, &code->dec.variable);
+    code->dec.variable.kind = IR_OP_MEMBLOCK;
     s += sprintf(s, " %u", code->dec.size.ivalue); // special case
     break;
   }

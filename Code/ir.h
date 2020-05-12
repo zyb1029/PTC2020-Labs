@@ -39,7 +39,6 @@ enum IRCodeType {
   IR_CODE_SUB,
   IR_CODE_MUL,
   IR_CODE_DIV,
-  IR_CODE_REFER,
   IR_CODE_LOAD,
   IR_CODE_SAVE,
   IR_CODE_JUMP,
@@ -77,7 +76,7 @@ typedef struct IRCode {
     } assign, addr, load, save;
     struct {
       struct IROperand result, op1, op2;
-    } binop;
+    } binop, addr_offset;
     struct {
       struct IROperand dest;
     } jump;

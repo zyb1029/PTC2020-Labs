@@ -11,7 +11,8 @@ typedef struct OCNode {
   int number;
   int value;
   int timestamp;
-  bool active;
+  bool important; // important jump_cond and its dependencies
+  bool active;    // whether the value is used afterwards
 } OCNode;
 
 void optimize();
@@ -22,6 +23,7 @@ void OCCreate(struct IROperand op);
 void OCInsert(struct IROperand op, int value);
 OCNode *OCFind(struct IROperand op);
 void OCInvalid(struct IROperand op);
+void OCImportant(struct IROperand op);
 void OCActivate(struct IROperand op);
 void OCDeactivate(struct IROperand op);
 int OCComp(const void *a, const void *b);

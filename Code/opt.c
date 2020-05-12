@@ -41,32 +41,33 @@ void optimize() {
     case IR_CODE_DIV: {
       OCCreate(code->binop.result);
       OCInvalid(code->binop.result);
-      if (OCReplace(&code->binop.op1) && OCReplace(&code->binop.op2)) {
-        if (code->kind != IR_CODE_DIV || code->binop.op2.ivalue != 0) {
-          // do not handle dividing by zero
-          int val = 0;
-          IROperand result = code->binop.result;
-          switch (code->kind) {
-          case IR_CODE_ADD:
-            val = code->binop.op1.ivalue + code->binop.op2.ivalue;
-            break;
-          case IR_CODE_SUB:
-            val = code->binop.op1.ivalue - code->binop.op2.ivalue;
-            break;
-          case IR_CODE_MUL:
-            val = code->binop.op1.ivalue * code->binop.op2.ivalue;
-            break;
-          case IR_CODE_DIV:
-            val = code->binop.op1.ivalue / code->binop.op2.ivalue;
-            break;
-          default:
-            Panic("should not reach here");
-          }
-          code->kind = IR_CODE_ASSIGN;
-          code->assign.left = result;
-          code->assign.right = IRNewConstantOperand(val);
-          OCInsert(result, val);
+      bool is_constant = true; // avoid short circuit
+      is_constant &= OCReplace(&code->binop.op1);
+      is_constant &= OCReplace(&code->binop.op2);
+      if (is_constant && // do not handle dividing by zero
+          (code->kind != IR_CODE_DIV || code->binop.op2.ivalue != 0)) {
+        int val = 0;
+        IROperand result = code->binop.result;
+        switch (code->kind) {
+        case IR_CODE_ADD:
+          val = code->binop.op1.ivalue + code->binop.op2.ivalue;
+          break;
+        case IR_CODE_SUB:
+          val = code->binop.op1.ivalue - code->binop.op2.ivalue;
+          break;
+        case IR_CODE_MUL:
+          val = code->binop.op1.ivalue * code->binop.op2.ivalue;
+          break;
+        case IR_CODE_DIV:
+          val = code->binop.op1.ivalue / code->binop.op2.ivalue;
+          break;
+        default:
+          Panic("should not reach here");
         }
+        code->kind = IR_CODE_ASSIGN;
+        code->assign.left = result;
+        code->assign.right = IRNewConstantOperand(val);
+        OCInsert(result, val);
       }
       break;
     }
@@ -129,10 +130,85 @@ void optimize() {
       Panic("should not reach here");
     }
   }
-  return;
+
+  // Step 2: mark all important variables
+  Log("optimization step 2");
+  for (IRCode *code = irlist.tail, *prev = NULL; code != NULL; code = prev) {
+    prev = code->prev;
+    switch (code->kind) {
+    case IR_CODE_LABEL:
+    case IR_CODE_FUNCTION:
+      break;
+    case IR_CODE_ASSIGN: {
+      OCNode *node = OCFind(code->assign.left);
+      if (node->important) {
+        OCImportant(code->assign.right);
+      }
+      break;
+    }
+    case IR_CODE_ADD:
+    case IR_CODE_SUB:
+    case IR_CODE_MUL:
+    case IR_CODE_DIV: {
+      OCNode *node = OCFind(code->binop.result);
+      if (node->important) {
+        OCImportant(code->binop.op1);
+        OCImportant(code->binop.op2);
+      }
+      break;
+    }
+    case IR_CODE_REFER:
+      break;
+    case IR_CODE_LOAD: {
+      OCImportant(code->load.right);
+      break;
+    }
+    case IR_CODE_SAVE: {
+      OCImportant(code->save.left);
+      OCImportant(code->save.right);
+      break;
+    }
+    case IR_CODE_JUMP:
+      break;
+    case IR_CODE_JUMP_COND: {
+      OCImportant(code->jump_cond.op1);
+      OCImportant(code->jump_cond.op2);
+      break;
+    }
+    case IR_CODE_RETURN: {
+      OCImportant(code->ret.value);
+      break;
+    }
+    case IR_CODE_DEC: {
+      OCImportant(code->dec.variable);
+      break;
+    }
+    case IR_CODE_ARG: {
+      OCImportant(code->arg.variable);
+      break;
+    }
+    case IR_CODE_CALL:
+      break;
+    case IR_CODE_PARAM: {
+      OCImportant(code->param.variable);
+      break;
+    }
+    case IR_CODE_READ: {
+      OCImportant(code->read.variable);
+      break;
+    }
+    case IR_CODE_WRITE: {
+      OCImportant(code->write.variable);
+      break;
+    }
+    default:
+      break;
+      Panic("should not reach here");
+    }
+  }
 
   // Step 2: delete all inactive variables
-  Log("optimization step 2");
+  Log("optimization step 3");
   for (IRCode *code = irlist.tail, *prev = NULL; code != NULL; code = prev) {
     Log("line %d", line--);
     prev = code->prev;
@@ -142,7 +218,7 @@ void optimize() {
       break;
     case IR_CODE_ASSIGN: {
       OCNode *node = OCFind(code->assign.left);
-      bool delete = node != NULL && !node->active;
+      bool delete = node != NULL && !node->important && !node->active;
       OCDeactivate(code->assign.left);
       if (delete) {
         Log("remove ASSIGN");
@@ -158,7 +234,7 @@ void optimize() {
     case IR_CODE_MUL:
     case IR_CODE_DIV: {
       OCNode *node = OCFind(code->binop.result);
-      bool delete = node != NULL && !node->active;
+      bool delete = node != NULL && !node->important && !node->active;
       OCDeactivate(code->binop.result);
       if (delete) {
         Log("remove BINOP");
@@ -172,7 +248,7 @@ void optimize() {
     }
     case IR_CODE_REFER: {
       OCNode *node = OCFind(code->addr.left);
-      bool delete = node != NULL && !node->active;
+      bool delete = node != NULL && !node->important && !node->active;
       OCDeactivate(code->addr.left);
       if (delete) {
         Log("remove REFER");
@@ -185,7 +261,7 @@ void optimize() {
     }
     case IR_CODE_LOAD: {
       OCNode *node = OCFind(code->load.left);
-      bool delete = node != NULL && !node->active;
+      bool delete = node != NULL && !node->important && !node->active;
       OCDeactivate(code->load.left);
       if (delete) {
         Log("remove LOAD");
@@ -196,10 +272,9 @@ void optimize() {
       }
       break;
     }
-
     case IR_CODE_SAVE: {
       // cannot delete SAVE
-      OCDeactivate(code->save.left);
+      OCActivate(code->save.left);
       OCActivate(code->save.right);
       break;
     }
@@ -222,14 +297,15 @@ void optimize() {
       OCActivate(code->arg.variable);
       break;
     }
-    case IR_CODE_CALL:
+    case IR_CODE_CALL: {
+      OCDeactivate(code->call.result);
       break;
+    }
     case IR_CODE_PARAM: {
       OCDeactivate(code->param.variable);
       break;
     }
     case IR_CODE_READ: {
-      // Cannot delete read
       OCDeactivate(code->read.variable);
       break;
     }
@@ -268,6 +344,7 @@ void OCCreate(IROperand op) {
       node->number = op.number;
       node->value = 0;
       node->timestamp = -1;
+      node->important = false;
       node->active = false;
       RBInsert(&OCRoot, node, OCComp);
     }
@@ -287,6 +364,7 @@ void OCInsert(IROperand op, int value) {
       node->number = op.number;
       node->value = value;
       node->timestamp = timestamp;
+      node->important = false;
       node->active = false;
       RBInsert(&OCRoot, node, OCComp);
     }
@@ -312,6 +390,14 @@ void OCInvalid(IROperand op) {
   OCNode *node = OCFind(op);
   if (node != NULL) {
     node->timestamp = -1;
+  }
+}
+
+// Set an constant as important.
+void OCImportant(IROperand op) {
+  OCNode *node = OCFind(op);
+  if (node != NULL) {
+    node->important = true;
   }
 }
 

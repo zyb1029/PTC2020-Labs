@@ -18,9 +18,10 @@ typedef struct OCNode {
 void optimize();
 
 bool OCReplace(struct IROperand *op);
+bool OCReplace2(struct IROperand *op);
 
 void OCCreate(struct IROperand op);
-void OCInsert(struct IROperand op, int value);
+void OCUpdate(struct IROperand op, int value);
 OCNode *OCFind(struct IROperand op);
 void OCInvalid(struct IROperand op);
 void OCImportant(struct IROperand op);

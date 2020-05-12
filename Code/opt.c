@@ -2,7 +2,7 @@
 #include "ir.h"
 #include "rbtree.h"
 
-// #define DEBUG // <- optimizer debugging switch
+#define DEBUG // <- optimizer debugging switch
 #include "debug.h"
 
 extern IRCodeList irlist;
@@ -28,10 +28,13 @@ void optimize() {
       break;
     }
     case IR_CODE_ASSIGN: {
+      Log("assign");
       OCCreate(code->assign.left);
+      OCReplace(&code->assign.right);
       OCInvalid(code->assign.left);
-      if (OCReplace(&code->assign.right)) {
-        OCInsert(code->assign.left, code->assign.right.ivalue);
+      if (code->assign.right.kind == IR_OP_CONSTANT) {
+        Log("operand updated, type %d, number %d", code->assign.left.kind, code->assign.left.number);
+        OCUpdate(code->assign.left, code->assign.right.ivalue);
       }
       break;
     }
@@ -40,11 +43,13 @@ void optimize() {
     case IR_CODE_MUL:
     case IR_CODE_DIV: {
       OCCreate(code->binop.result);
+      Log("left: type %d, number %d", code->binop.op1.kind, code->binop.op1.number);
+      Log("replace op1: %d", OCReplace(&code->binop.op1));
+      Log("replace op2: %d", OCReplace(&code->binop.op2));
       OCInvalid(code->binop.result);
-      bool is_constant = true; // avoid short circuit
-      is_constant &= OCReplace(&code->binop.op1);
-      is_constant &= OCReplace(&code->binop.op2);
-      if (is_constant && // do not handle dividing by zero
+      // special case: do not handle dividing by zero
+      if (code->binop.op1.kind == IR_OP_CONSTANT &&
+          code->binop.op2.kind == IR_OP_CONSTANT &&
           (code->kind != IR_CODE_DIV || code->binop.op2.ivalue != 0)) {
         int val = 0;
         IROperand result = code->binop.result;
@@ -67,7 +72,7 @@ void optimize() {
         code->kind = IR_CODE_ASSIGN;
         code->assign.left = result;
         code->assign.right = IRNewConstantOperand(val);
-        OCInsert(result, val);
+        OCUpdate(result, val);
       }
       break;
     }
@@ -83,8 +88,8 @@ void optimize() {
     }
     case IR_CODE_SAVE: {
       OCCreate(code->save.left);
-      OCInvalid(code->save.left);
       OCReplace(&code->save.right);
+      OCInvalid(code->save.left);
       break;
     }
     case IR_CODE_JUMP:
@@ -131,8 +136,85 @@ void optimize() {
     }
   }
 
-  // Step 2: mark all important variables
+  // Step 2: replace all values with variables if possible
   Log("optimization step 2");
+  valid_ts = ++timestamp;
+  for (IRCode *code = irlist.head, *next = NULL; code != NULL; code = next) {
+    Log("line %d", ++line);
+    next = code->next;
+    switch (code->kind) {
+    case IR_CODE_LABEL:
+    case IR_CODE_FUNCTION: {
+      // invalid all variables
+      valid_ts = ++timestamp;
+      break;
+    }
+    case IR_CODE_ASSIGN: {
+      OCCreate(code->assign.left);
+      OCInvalid(code->assign.left);
+      if (code->assign.right.kind == IR_OP_TEMP) {
+        OCUpdate(code->assign.left, code->assign.right.number);
+      } else if (code->assign.right.kind == IR_OP_VARIABLE) {
+        OCUpdate(code->assign.left, -code->assign.right.number);
+      }
+      break;
+    }
+    case IR_CODE_ADD:
+    case IR_CODE_SUB:
+    case IR_CODE_MUL:
+    case IR_CODE_DIV: {
+      OCCreate(code->binop.result);
+      OCInvalid(code->binop.result);
+      OCReplace2(&code->binop.op1);
+      OCReplace2(&code->binop.op2);
+      break;
+    }
+    case IR_CODE_REFER: {
+      OCReplace2(&code->addr.right);
+      break;
+    }
+    case IR_CODE_LOAD: {
+      OCReplace2(&code->load.right);
+      break;
+    }
+    case IR_CODE_SAVE: {
+      OCCreate(code->save.left);
+      OCInvalid(code->save.left);
+      OCReplace2(&code->save.right);
+      break;
+    }
+    case IR_CODE_JUMP:
+      break;
+    case IR_CODE_JUMP_COND: {
+      OCReplace2(&code->jump_cond.op1);
+      OCReplace2(&code->jump_cond.op2);
+      break;
+    }
+    case IR_CODE_RETURN: {
+      OCReplace2(&code->ret.value);
+      break;
+    }
+    case IR_CODE_DEC:
+      break;
+    case IR_CODE_ARG: {
+      OCReplace2(&code->arg.variable);
+      break;
+    }
+    case IR_CODE_CALL:
+    case IR_CODE_PARAM:
+    case IR_CODE_READ:
+      break;
+    case IR_CODE_WRITE: {
+      OCReplace2(&code->write.variable);
+      break;
+    }
+    default:
+      Panic("should not reach here");
+    }
+  }
+
+  // Step 3: mark all important variables
+  Log("optimization step 3");
   for (IRCode *code = irlist.tail, *prev = NULL; code != NULL; code = prev) {
     prev = code->prev;
     switch (code->kind) {
@@ -207,8 +289,8 @@ void optimize() {
     }
   }
 
-  // Step 2: delete all inactive variables
-  Log("optimization step 3");
+  // Step 4: delete all inactive variables
+  Log("optimization step 4");
   for (IRCode *code = irlist.tail, *prev = NULL; code != NULL; code = prev) {
     Log("line %d", line--);
     prev = code->prev;
@@ -334,6 +416,20 @@ bool OCReplace(IROperand *op) {
   return false;
 }
 
+// Optimize an operand with another variable if possible.
+// Return true if the operand is replaced by a variable.
+bool OCReplace2(IROperand *op) {
+  if (op->kind == IR_OP_TEMP || op->kind == IR_OP_VARIABLE) {
+    OCNode *node = OCFind(*op);
+    if (node != NULL && node->timestamp >= valid_ts) {
+      op->kind = node->number > 0 ? IR_OP_TEMP : IR_OP_VARIABLE;
+      op->number = node->number;
+      return true;
+    }
+  }
+  return false;
+}
+
 // Create a new operand in RB and set invalid.
 void OCCreate(IROperand op) {
   if (op.kind == IR_OP_TEMP || op.kind == IR_OP_VARIABLE) {
@@ -351,22 +447,13 @@ void OCCreate(IROperand op) {
   }
 }
 
-// Insert a new or update a constant into RB tree.
-void OCInsert(IROperand op, int value) {
+// Update a value of node in RB tree.
+void OCUpdate(IROperand op, int value) {
   if (op.kind == IR_OP_TEMP || op.kind == IR_OP_VARIABLE) {
     OCNode *target = OCFind(op);
     if (target != NULL) {
       target->value = value;
       target->timestamp = timestamp;
-    } else {
-      OCNode *node = (OCNode *)malloc(sizeof(OCNode));
-      node->is_var = op.kind == IR_OP_VARIABLE;
-      node->number = op.number;
-      node->value = value;
-      node->timestamp = timestamp;
-      node->important = false;
-      node->active = false;
-      RBInsert(&OCRoot, node, OCComp);
     }
   }
 }

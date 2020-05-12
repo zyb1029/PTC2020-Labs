@@ -27,6 +27,7 @@ void optimize() {
     case IR_CODE_ASSIGN: {
       Log("assign");
       OCCreate(code->assign.left);
+      OCCreate(code->assign.right);
       OCReplace(&code->assign.right);
       OCInvalid(code->assign.left);
       if (code->assign.right.kind == IR_OP_CONSTANT) {
@@ -41,6 +42,8 @@ void optimize() {
     case IR_CODE_MUL:
     case IR_CODE_DIV: {
       OCCreate(code->binop.result);
+      OCCreate(code->binop.op1);
+      OCCreate(code->binop.op2);
       OCReplace(&code->binop.op1);
       OCReplace(&code->binop.op2);
       OCInvalid(code->binop.result);
@@ -71,8 +74,18 @@ void optimize() {
         code->assign.right = IRNewConstantOperand(val);
         OCUpdate(result, val);
       } else if (code->kind == IR_CODE_ADD || code->kind == IR_CODE_SUB) {
-        if (code->binop.op2.kind == IR_OP_CONSTANT &&
-            code->binop.op2.ivalue == 0) {
+        if (code->kind == IR_CODE_ADD &&
+            code->binop.op1.kind == IR_OP_CONSTANT &&
+            code->binop.op1.ivalue == 0) {
+          // 0 + something
+          IROperand res = code->binop.result;
+          IROperand op2 = code->binop.op2;
+          code->kind = IR_CODE_ASSIGN;
+          code->assign.left = res;
+          code->assign.right = op2;
+        } else if (code->binop.op2.kind == IR_OP_CONSTANT &&
+                   code->binop.op2.ivalue == 0) {
+          // something + 0 or something - 0
           IROperand res = code->binop.result;
           IROperand op1 = code->binop.op1;
           code->kind = IR_CODE_ASSIGN;
@@ -80,8 +93,21 @@ void optimize() {
           code->assign.right = op1;
         }
       } else if (code->kind == IR_CODE_MUL) {
-        if (code->binop.op2.kind == IR_OP_CONSTANT &&
-            code->binop.op2.ivalue == 0) {
+        // 0 * something or something * 0
+        if ((code->binop.op1.kind == IR_OP_CONSTANT &&
+             code->binop.op1.ivalue == 0) ||
+            (code->binop.op2.kind == IR_OP_CONSTANT &&
+             code->binop.op2.ivalue == 0)) {
+          IROperand res = code->binop.result;
+          code->kind = IR_CODE_ASSIGN;
+          code->assign.left = res;
+          code->assign.right = IRNewConstantOperand(0);
+          OCUpdate(res, 0);
+        }
+      } else if (code->kind == IR_CODE_DIV) {
+        // 0 / something, do not handle dividing zero
+        if ((code->binop.op1.kind == IR_OP_CONSTANT &&
+             code->binop.op1.ivalue == 0)) {
           IROperand res = code->binop.result;
           code->kind = IR_CODE_ASSIGN;
           code->assign.left = res;
@@ -94,11 +120,13 @@ void optimize() {
     case IR_CODE_LOAD: {
       // do not optimize address
       OCCreate(code->load.left);
+      OCCreate(code->load.right);
       OCInvalid(code->load.left);
       break;
     }
     case IR_CODE_SAVE: {
       OCCreate(code->save.left);
+      OCCreate(code->save.right);
       OCReplace(&code->save.right);
       OCInvalid(code->save.left);
       break;
@@ -106,11 +134,14 @@ void optimize() {
     case IR_CODE_JUMP:
       break;
     case IR_CODE_JUMP_COND: {
+      OCCreate(code->jump_cond.op1);
+      OCCreate(code->jump_cond.op2);
       OCReplace(&code->jump_cond.op1);
       OCReplace(&code->jump_cond.op2);
       break;
     }
     case IR_CODE_RETURN: {
+      OCCreate(code->ret.value);
       OCReplace(&code->ret.value);
       break;
     }
@@ -120,6 +151,7 @@ void optimize() {
       break;
     }
     case IR_CODE_ARG: {
+      OCCreate(code->arg.variable);
       OCReplace(&code->arg.variable);
       break;
     }
@@ -139,6 +171,7 @@ void optimize() {
       break;
     }
     case IR_CODE_WRITE: {
+      OCCreate(code->write.variable);
       OCReplace(&code->write.variable);
       break;
     }

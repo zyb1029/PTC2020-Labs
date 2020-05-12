@@ -70,6 +70,24 @@ void optimize() {
         code->assign.left = result;
         code->assign.right = IRNewConstantOperand(val);
         OCUpdate(result, val);
+      } else if (code->kind == IR_CODE_ADD || code->kind == IR_CODE_SUB) {
+        if (code->binop.op2.kind == IR_OP_CONSTANT &&
+            code->binop.op2.ivalue == 0) {
+          IROperand res = code->binop.result;
+          IROperand op1 = code->binop.op1;
+          code->kind = IR_CODE_ASSIGN;
+          code->assign.left = res;
+          code->assign.right = op1;
+        }
+      } else if (code->kind == IR_CODE_MUL) {
+        if (code->binop.op2.kind == IR_OP_CONSTANT &&
+            code->binop.op2.ivalue == 0) {
+          IROperand res = code->binop.result;
+          code->kind = IR_CODE_ASSIGN;
+          code->assign.left = res;
+          code->assign.right = IRNewConstantOperand(0);
+          OCUpdate(res, 0);
+        }
       }
       break;
     }

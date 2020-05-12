@@ -254,24 +254,16 @@ void optimize() {
       OCImportant(code->ret.value);
       break;
     }
-    case IR_CODE_DEC: {
-      OCImportant(code->dec.variable);
+    case IR_CODE_DEC:
       break;
-    }
     case IR_CODE_ARG: {
       OCImportant(code->arg.variable);
       break;
     }
     case IR_CODE_CALL:
+    case IR_CODE_PARAM:
+    case IR_CODE_READ:
       break;
-    case IR_CODE_PARAM: {
-      OCImportant(code->param.variable);
-      break;
-    }
-    case IR_CODE_READ: {
-      OCImportant(code->read.variable);
-      break;
-    }
     case IR_CODE_WRITE: {
       OCImportant(code->write.variable);
       break;

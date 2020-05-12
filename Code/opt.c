@@ -378,6 +378,38 @@ void optimize() {
       Panic("should not reach here");
     }
   }
+
+  // Step 5 - manual optimization
+  Log("optimization step 5");
+  for (IRCode *code = irlist.head, *next = NULL; code != NULL; code = next) {
+    next = code->next;
+    if (code != NULL && next != NULL) {
+      if (code->kind == IR_CODE_ASSIGN) {
+        if (code->assign.left.kind == IR_OP_TEMP ||
+            code->assign.left.kind == IR_OP_VARIABLE ||
+            code->assign.left.kind == IR_OP_VADDRESS) {
+          if (next->kind == IR_CODE_ASSIGN) {
+            if (code->assign.left.kind == next->assign.left.kind &&
+                code->assign.left.number == next->assign.left.number) {
+              IRRemoveCode(irlist, code);
+            }
+          } else if (next->kind == IR_CODE_ADD || next->kind == IR_CODE_SUB ||
+                     next->kind == IR_CODE_MUL || next->kind == IR_CODE_DIV) {
+            if (code->assign.left.kind == next->binop.result.kind &&
+                code->assign.left.number == next->binop.result.number) {
+              if (code->assign.left.kind != next->binop.op1.kind ||
+                  code->assign.left.number != next->binop.op1.number) {
+                if (code->assign.left.kind != next->binop.op2.kind ||
+                    code->assign.left.number != next->binop.op2.number) {
+                  IRRemoveCode(irlist, code);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 // Optimize an operand with constant value if possible.

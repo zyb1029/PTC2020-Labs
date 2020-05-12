@@ -54,6 +54,7 @@ int main(int argc, char *argv[]) {
 
   // do not teardown until all work is done!
   teardownSyntaxTree(stroot);
+  IRDestroyList(irlist);
 
   return 0;
 }

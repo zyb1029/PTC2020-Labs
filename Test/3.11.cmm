@@ -1,0 +1,13 @@
+int main() {
+    int x = 3;
+    int y = 4;
+    int z;
+    write(x);
+    write(y);
+    z = x;
+    x = y;
+    y = z;
+    write(x);
+    write(z);
+    return 0;
+}

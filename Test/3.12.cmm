@@ -1,0 +1,18 @@
+int swap(int x[2]) {
+    int z = x[0];
+    x[0] = x[1];
+    x[1] = z;
+    return 0;
+}
+
+int main() {
+    int a[2];
+    a[0] = 3;
+    a[1] = 4;
+    write(a[0]);
+    write(a[1]);
+    swap(a);
+    write(a[1]);
+    write(a[0]);
+    return 0;
+}

@@ -13,12 +13,9 @@ RBNode *OCRoot = NULL;
 
 // Optimize the constants.
 void optimize() {
-  int line = 0;
-
   // Step 1: replace all values with constants if possible
   Log("optimization step 1");
   for (IRCode *code = irlist.head, *next = NULL; code != NULL; code = next) {
-    Log("line %d", ++line);
     next = code->next;
     switch (code->kind) {
     case IR_CODE_LABEL:
@@ -140,7 +137,6 @@ void optimize() {
   Log("optimization step 2");
   valid_ts = ++timestamp;
   for (IRCode *code = irlist.head, *next = NULL; code != NULL; code = next) {
-    Log("line %d", ++line);
     next = code->next;
     switch (code->kind) {
     case IR_CODE_LABEL:
@@ -150,11 +146,13 @@ void optimize() {
       break;
     }
     case IR_CODE_ASSIGN: {
-      OCCreate(code->assign.left);
+      OCReplace2(&code->assign.right);
       OCInvalid(code->assign.left);
       if (code->assign.right.kind == IR_OP_TEMP) {
+        Log("operand updated, TEM, number %d", code->assign.left.number);
         OCUpdate(code->assign.left, code->assign.right.number);
       } else if (code->assign.right.kind == IR_OP_VARIABLE) {
+        Log("operand updated, VAR, number %d", code->assign.left.number);
         OCUpdate(code->assign.left, -code->assign.right.number);
       }
       break;
@@ -163,10 +161,9 @@ void optimize() {
     case IR_CODE_SUB:
     case IR_CODE_MUL:
     case IR_CODE_DIV: {
-      OCCreate(code->binop.result);
-      OCInvalid(code->binop.result);
       OCReplace2(&code->binop.op1);
       OCReplace2(&code->binop.op2);
+      OCInvalid(code->binop.result);
       break;
     }
     case IR_CODE_REFER: {
@@ -178,9 +175,8 @@ void optimize() {
       break;
     }
     case IR_CODE_SAVE: {
-      OCCreate(code->save.left);
-      OCInvalid(code->save.left);
       OCReplace2(&code->save.right);
+      OCInvalid(code->save.left);
       break;
     }
     case IR_CODE_JUMP:
@@ -292,7 +288,6 @@ void optimize() {
   // Step 4: delete all inactive variables
   Log("optimization step 4");
   for (IRCode *code = irlist.tail, *prev = NULL; code != NULL; code = prev) {
-    Log("line %d", line--);
     prev = code->prev;
     switch (code->kind) {
     case IR_CODE_LABEL:
@@ -399,6 +394,10 @@ void optimize() {
       Panic("should not reach here");
     }
   }
+
+  // Step 5: extra manual handling
+  Log("optimization step 5");
+  // TODO
 }
 
 // Optimize an operand with constant value if possible.
@@ -422,8 +421,8 @@ bool OCReplace2(IROperand *op) {
   if (op->kind == IR_OP_TEMP || op->kind == IR_OP_VARIABLE) {
     OCNode *node = OCFind(*op);
     if (node != NULL && node->timestamp >= valid_ts) {
-      op->kind = node->number > 0 ? IR_OP_TEMP : IR_OP_VARIABLE;
-      op->number = node->number;
+      op->kind = node->value > 0 ? IR_OP_TEMP : IR_OP_VARIABLE;
+      op->number = node->value > 0 ? node->value : -node->value;
       return true;
     }
   }

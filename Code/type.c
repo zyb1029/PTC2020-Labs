@@ -118,6 +118,19 @@ SEType *SEParseExp(STNode *exp) {
         if (!SECompareField(entry->type->function.signature, signature)) {
           throwErrorS(SE_MISMATCHED_SIGNATURE, e1->line, e1->sval);
         }
+        {
+          // memory leak fixed: manually free the allocated list
+          // do not call SEDestroyField because it frees types
+          if (signature != &STATIC_FIELD_VOID) {
+            SEField *field = signature;
+            SEField *next = NULL;
+            while (field != NULL) {
+              next = field->next;
+              free(field);
+              field = next;
+            }
+          }
+        }
         return entry->type->function.type;
       }
       break;

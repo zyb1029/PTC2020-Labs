@@ -343,7 +343,6 @@ void optimize() {
       if (delete) {
         Log("remove ASSIGN");
         irlist = IRRemoveCode(irlist, code);
-        free(code);
       } else {
         OCActivate(code->assign.right);
       }
@@ -359,7 +358,6 @@ void optimize() {
       if (delete) {
         Log("remove BINOP");
         irlist = IRRemoveCode(irlist, code);
-        free(code);
       } else {
         OCActivate(code->binop.op1);
         OCActivate(code->binop.op2);
@@ -373,7 +371,6 @@ void optimize() {
       if (delete) {
         Log("remove LOAD");
         irlist = IRRemoveCode(irlist, code);
-        free(code);
       } else {
         OCActivate(code->load.right);
       }

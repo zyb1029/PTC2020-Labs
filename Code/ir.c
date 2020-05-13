@@ -998,7 +998,7 @@ IRCodeList IRRemoveCode(IRCodeList list, IRCode *code) {
     code->prev->next = code->next;
     code->next->prev = code->prev;
   }
-  code->prev = code->next = NULL;
+  free(code);
   return list;
 }
 

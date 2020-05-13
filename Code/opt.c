@@ -339,7 +339,7 @@ void optimize() {
       OCDeactivate(code->assign.left);
       if (delete) {
         Log("remove ASSIGN");
-        IRRemoveCode(irlist, code);
+        irlist = IRRemoveCode(irlist, code);
         free(code);
       } else {
         OCActivate(code->assign.right);
@@ -355,7 +355,7 @@ void optimize() {
       OCDeactivate(code->binop.result);
       if (delete) {
         Log("remove BINOP");
-        IRRemoveCode(irlist, code);
+        irlist = IRRemoveCode(irlist, code);
         free(code);
       } else {
         OCActivate(code->binop.op1);
@@ -369,7 +369,7 @@ void optimize() {
       OCDeactivate(code->load.left);
       if (delete) {
         Log("remove LOAD");
-        IRRemoveCode(irlist, code);
+        irlist = IRRemoveCode(irlist, code);
         free(code);
       } else {
         OCActivate(code->load.right);
@@ -434,7 +434,7 @@ void optimize() {
           if (next->kind == IR_CODE_ASSIGN) {
             if (code->assign.left.kind == next->assign.left.kind &&
                 code->assign.left.number == next->assign.left.number) {
-              IRRemoveCode(irlist, code);
+              irlist = IRRemoveCode(irlist, code);
             }
           } else if (next->kind == IR_CODE_ADD || next->kind == IR_CODE_SUB ||
                      next->kind == IR_CODE_MUL || next->kind == IR_CODE_DIV) {
@@ -444,7 +444,7 @@ void optimize() {
                   code->assign.left.number != next->binop.op1.number) {
                 if (code->assign.left.kind != next->binop.op2.kind ||
                     code->assign.left.number != next->binop.op2.number) {
-                  IRRemoveCode(irlist, code);
+                  irlist = IRRemoveCode(irlist, code);
                 }
               }
             }

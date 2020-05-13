@@ -269,7 +269,7 @@ void optimize() {
       break;
     case IR_CODE_ASSIGN: {
       OCNode *node = OCFind(code->assign.left);
-      if (node->important) {
+      if (node == NULL || node->important) {
         OCImportant(code->assign.right);
       }
       break;
@@ -279,14 +279,17 @@ void optimize() {
     case IR_CODE_MUL:
     case IR_CODE_DIV: {
       OCNode *node = OCFind(code->binop.result);
-      if (node->important) {
+      if (node == NULL || node->important) {
         OCImportant(code->binop.op1);
         OCImportant(code->binop.op2);
       }
       break;
     }
     case IR_CODE_LOAD: {
-      OCImportant(code->load.right);
+      OCNode *node = OCFind(code->load.left);
+      if (node == NULL || node->important) {
+        OCImportant(code->load.right);
+      }
       break;
     }
     case IR_CODE_SAVE: {

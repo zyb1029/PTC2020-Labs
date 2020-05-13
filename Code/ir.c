@@ -686,6 +686,12 @@ void IRTranslateFunc(const char *name, STNode *comp) {
       .head = comp->ir.head,
       .tail = comp->ir.tail,
   };
+
+  // Add a fail-safe return statement
+  IRCode *ret = IRNewCode(IR_CODE_RETURN);
+  ret->ret.value = IRNewConstantOperand(0);
+  list = IRAppendCode(list, ret);
+
   irlist = IRConcatLists(irlist, list);
 }
 

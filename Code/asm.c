@@ -24,9 +24,11 @@ const char *_header =
   "    .globl main\n"
   "\n"
   "read:\n"
+#ifndef DEBUG // do not prompt when debugging
   "    li      $v0,4\n"
   "    la      $a0,_prompt\n"
   "    syscall\n"
+#endif
   "    li      $v0,5\n"
   "    syscall\n"
   "    jr      $ra\n"

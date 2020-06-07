@@ -65,6 +65,9 @@ void ASTranslateList(FILE *file, IRCodeList list) {
 
 // Translate a single code to MIPS assembly.
 void ASTranslateCode(FILE *file, IRCode *code) {
+  if (code->kind == IR_CODE_FUNCTION) {
+    fprintf(file, "\n");
+  }
 #ifdef DEBUG
   fprintf(file, "# ");
   IRWriteCode(file, code);
@@ -166,7 +169,7 @@ void ASTranslateCode(FILE *file, IRCode *code) {
   }
   case IR_CODE_ARG: {
     ASLoadRegister(file, _t0, code->arg.variable);
-    fprintf(file, "    subiu   $sp,$sp,4\n");
+    fprintf(file, "    addiu   $sp,$sp,-4\n");
     fprintf(file, "    sw      %s,0($sp)\n", _t0);
     pushed += 4;
     break;
@@ -175,6 +178,7 @@ void ASTranslateCode(FILE *file, IRCode *code) {
     fprintf(file, "    jal     %s\n", code->call.function.name);
     ASSaveRegister(file, _v0, code->call.result);
     fprintf(file, "    addiu   $sp,$sp,%lu\n", pushed);
+    pushed = 0; // clear pushed arguments size
     break;
   case IR_CODE_READ:
     fprintf(file, "    jal     read\n");
@@ -218,42 +222,45 @@ size_t ASPrepareFunction(IRCode *func, RBNode **root) {
   for (IRCode *code = func->next; code != NULL && code->kind != IR_CODE_FUNCTION; code = code->next) {
     code->parent = func;
     switch (code->kind) {
-      case IR_CODE_ASSIGN:
-        size += ASRegisterVariable(&code->assign.left, root, size);
-        size += ASRegisterVariable(&code->assign.right, root, size);
-        break;
-      case IR_CODE_ADD:
-      case IR_CODE_SUB:
-      case IR_CODE_MUL:
-      case IR_CODE_DIV:
-        size += ASRegisterVariable(&code->binop.result, root, size);
-        size += ASRegisterVariable(&code->binop.op1, root, size);
-        size += ASRegisterVariable(&code->binop.op2, root, size);
-        break;
-      case IR_CODE_LOAD:
-        size += ASRegisterVariable(&code->load.left, root, size);
-        size += ASRegisterVariable(&code->load.right, root, size);
-        break;
-      case IR_CODE_SAVE:
-        size += ASRegisterVariable(&code->save.left, root, size);
-        size += ASRegisterVariable(&code->save.right, root, size);
-        break;
-      case IR_CODE_JUMP_COND:
-        size += ASRegisterVariable(&code->jump_cond.op1, root, size);
-        size += ASRegisterVariable(&code->jump_cond.op2, root, size);
-        break;
-      case IR_CODE_RETURN:
-        size += ASRegisterVariable(&code->ret.value, root, size);
-        break;
-      case IR_CODE_DEC:
-        size += ASRegisterVariable(&code->dec.variable, root, size);
-        break;
-      case IR_CODE_READ:
-        size += ASRegisterVariable(&code->read.variable, root, size);
-        break;
-      case IR_CODE_WRITE:
-        size += ASRegisterVariable(&code->write.variable, root, size);
-        break;
+    case IR_CODE_ASSIGN:
+      size += ASRegisterVariable(&code->assign.left, root, size);
+      size += ASRegisterVariable(&code->assign.right, root, size);
+      break;
+    case IR_CODE_ADD:
+    case IR_CODE_SUB:
+    case IR_CODE_MUL:
+    case IR_CODE_DIV:
+      size += ASRegisterVariable(&code->binop.result, root, size);
+      size += ASRegisterVariable(&code->binop.op1, root, size);
+      size += ASRegisterVariable(&code->binop.op2, root, size);
+      break;
+    case IR_CODE_LOAD:
+      size += ASRegisterVariable(&code->load.left, root, size);
+      size += ASRegisterVariable(&code->load.right, root, size);
+      break;
+    case IR_CODE_SAVE:
+      size += ASRegisterVariable(&code->save.left, root, size);
+      size += ASRegisterVariable(&code->save.right, root, size);
+      break;
+    case IR_CODE_JUMP_COND:
+      size += ASRegisterVariable(&code->jump_cond.op1, root, size);
+      size += ASRegisterVariable(&code->jump_cond.op2, root, size);
+      break;
+    case IR_CODE_RETURN:
+      size += ASRegisterVariable(&code->ret.value, root, size);
+      break;
+    case IR_CODE_DEC:
+      size += ASRegisterVariable(&code->dec.variable, root, size);
+      break;
+    case IR_CODE_ARG:
+      size += ASRegisterVariable(&code->arg.variable, root, size);
+      break;
+    case IR_CODE_READ:
+      size += ASRegisterVariable(&code->read.variable, root, size);
+      break;
+    case IR_CODE_WRITE:
+      size += ASRegisterVariable(&code->write.variable, root, size);
+      break;
     default:
       break;
     }

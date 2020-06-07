@@ -84,10 +84,16 @@ void ASTranslateCode(FILE *file, IRCode *code) {
     fprintf(file, "    mflo  %s\n", _t0);
     ASSaveRegister(file, _t0, code->binop.result);
     break;
-  /*
-  IR_CODE_LOAD,
-  IR_CODE_SAVE,
-  */
+  case IR_CODE_LOAD:
+    ASLoadRegister(file, _t1, code->load.right);
+    fprintf(file, "    lw    %s,0(%s)\n", _t0, _t1);
+    ASSaveRegister(file, _t0, code->load.left);
+    break;
+  case IR_CODE_SAVE:
+    ASLoadRegister(file, _t0, code->save.right);
+    ASLoadRegister(file, _t1, code->save.left);
+    fprintf(file, "    sw    %s,0(%s)", _t0, _t1);
+    break;
   case IR_CODE_JUMP:
     fprintf(file, "    j     label%d\n", code->jump.dest.number);
     break;

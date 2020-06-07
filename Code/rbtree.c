@@ -322,7 +322,7 @@ void RBDestroy(RBNode **root, void (*destroy)(void *)) {
   if (!root || !*root) return;
   if ((*root)->left)  RBDestroy(&((*root)->left),  destroy);
   if ((*root)->right) RBDestroy(&((*root)->right), destroy);
-  destroy((*root)->value);
+  if (destroy != NULL) destroy((*root)->value);
   free(*root);
   *root = NULL;
 }

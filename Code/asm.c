@@ -255,6 +255,9 @@ size_t ASPrepareFunction(IRCode *func, RBNode **root) {
     case IR_CODE_ARG:
       size += ASRegisterVariable(&code->arg.variable, root, size);
       break;
+    case IR_CODE_CALL:
+      size += ASRegisterVariable(&code->call.result, root, size);
+      break;
     case IR_CODE_READ:
       size += ASRegisterVariable(&code->read.variable, root, size);
       break;

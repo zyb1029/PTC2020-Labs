@@ -203,7 +203,9 @@ void ASLoadRegister(FILE *file, const char *reg, IROperand var) {
   if (var.kind == IR_OP_CONSTANT) {
     fprintf(file, "    li      %s,%d\n", reg, var.ivalue);
   } else {
-    fprintf(file, "    lw      %s,-%lu($fp)\n", reg, var.offset);
+    // Parameter is stored above $fp.
+    // Local variable is stored below $fp.
+    fprintf(file, "    lw      %s,%s%lu($fp)\n", reg, var.offset & _MSB ? "" : "-", var.offset & _MASK);
   }
 }
 
@@ -218,7 +220,9 @@ size_t ASPrepareFunction(IRCode *func, RBNode **root) {
     return 0;
   }
 
+  Log("prepare function %s", func->function.function.name);
   size_t size = 8; // 4 for $ra, 4 for $fp
+  size_t args = 0;
   for (IRCode *code = func->next; code != NULL && code->kind != IR_CODE_FUNCTION; code = code->next) {
     code->parent = func;
     switch (code->kind) {
@@ -257,6 +261,14 @@ size_t ASPrepareFunction(IRCode *func, RBNode **root) {
       break;
     case IR_CODE_CALL:
       size += ASRegisterVariable(&code->call.result, root, size);
+      break;
+    case IR_CODE_PARAM:
+      // Register the variable only.
+      // Arguments are stored in a differenct direction.
+      ASRegisterVariable(&code->param.variable, root, 0);
+      code->param.variable.offset = _MSB | args;
+      args += code->param.variable.size;
+      Log("transformed to param, real offset %lu", code->param.variable.offset & _MASK);
       break;
     case IR_CODE_READ:
       size += ASRegisterVariable(&code->read.variable, root, size);

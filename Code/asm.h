@@ -16,6 +16,9 @@ extern const char *registers[];
 #define _t1   registers[9]
 // no more registers are used now
 
+#define _MSB  0x80000000 // used to mark a positive offset
+#define _MASK 0x7fffffff // get the absolute offset from $fp
+
 void assemble(FILE *file);
 
 void ASTranslateList(FILE *file, IRCodeList list);

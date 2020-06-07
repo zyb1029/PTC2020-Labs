@@ -1,3 +1,4 @@
+#include "asm.h"
 #include "ir.h"
 #include "opt.h"
 #include "semantics.h"
@@ -47,10 +48,14 @@ int main(int argc, char *argv[]) {
     return 4;
   }
 
+  // Step 4: do IR optimization.
   optimize();
-  for (IRCode *code = irlist.head; code != NULL; code = code->next) {
-    IRWriteCode(fout, code);
-  }
+  //for (IRCode *code = irlist.head; code != NULL; code = code->next) {
+  //  IRWriteCode(fout, code);
+  //}
+
+  // Step 5: translate to ASM and output.
+  assemble(fout);
 
   // do not teardown until all work is done!
   teardownSyntaxTree(stroot);

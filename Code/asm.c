@@ -324,12 +324,11 @@ size_t ASRegisterVariable(IROperand *op, RBNode **root, size_t offset) {
 int ASComp(const void *a, const void *b) {
   const IROperand *op1 = (const IROperand *)a;
   const IROperand *op2 = (const IROperand *)b;
-  if (op1->kind == op2->kind && op1->number == op2->number) {
-    return 0;
-  } else if ((op1->kind == IR_OP_TEMP && op2->kind != IR_OP_TEMP) ||
-             (op1->kind == op2->kind && op1->number < op2->number)) {
+  if (op1->kind < op2->kind) {
     return -1;
-  } else {
+  } else if (op1->kind > op2->kind) {
     return 1;
+  } else {
+    return op1->number - op2->number;
   }
 }

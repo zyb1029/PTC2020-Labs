@@ -279,7 +279,7 @@ size_t ASPrepareFunction(IRCode *func, RBNode **root) {
       // Arguments are stored in a differenct direction.
       ASRegisterVariable(&code->param.variable, root, 0);
       code->param.variable.offset = _MSB | args;
-      args += code->param.variable.size;
+      args += 4; // pass by reference
       Log("transformed to param, real offset %lu", code->param.variable.offset & _MASK);
       break;
     case IR_CODE_READ:

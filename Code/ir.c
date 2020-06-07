@@ -666,6 +666,7 @@ void IRTranslateFunc(const char *name, STNode *comp) {
   IRCode *code = IRNewCode(IR_CODE_FUNCTION);
   code->function.function.kind = IR_OP_FUNCTION;
   code->function.function.name = name;
+  code->function.root = NULL; // used in asm.c
   irlist = IRAppendCode(irlist, code);
 
   // Traverse all parameters of the function

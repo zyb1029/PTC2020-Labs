@@ -286,6 +286,11 @@ void RBInsert(RBNode **root, void *value, int (*cmp)(const void *, const void *)
   }
 }
 
+bool RBContains(RBNode **root, void *value, int (*cmp)(const void *, const void *)) {
+  RBNode *node = RBSearch(root, value, cmp);
+  return node != NULL && cmp(value, node->value) == 0;
+}
+
 RBNode *RBSearch(RBNode **root, void *value, int (*cmp)(const void *, const void *)) {
   if (!root || !*root) return NULL;
   RBNode *cur = *root;

@@ -59,11 +59,32 @@ void ASTranslateCode(FILE *file, IRCode *code) {
     ASLoadRegister(file, _t0, code->assign.right);
     ASSaveRegister(file, _t0, code->assign.left);
     break;
+  case IR_CODE_ADD:
+    ASLoadRegister(file, _t0, code->binop.op1);
+    ASLoadRegister(file, _t1, code->binop.op2);
+    fprintf(file, "    add   %s,%s,%s\n", _t0, _t0, _t1);
+    ASSaveRegister(file, _t0, code->binop.result);
+    break;
+  case IR_CODE_SUB:
+    ASLoadRegister(file, _t0, code->binop.op1);
+    ASLoadRegister(file, _t1, code->binop.op2);
+    fprintf(file, "    sub   %s,%s,%s\n", _t0, _t0, _t1);
+    ASSaveRegister(file, _t0, code->binop.result);
+    break;
+  case IR_CODE_MUL:
+    ASLoadRegister(file, _t0, code->binop.op1);
+    ASLoadRegister(file, _t1, code->binop.op2);
+    fprintf(file, "    mul   %s,%s,%s\n", _t0, _t0, _t1);
+    ASSaveRegister(file, _t0, code->binop.result);
+    break;
+  case IR_CODE_DIV:
+    ASLoadRegister(file, _t0, code->binop.op1);
+    ASLoadRegister(file, _t1, code->binop.op2);
+    fprintf(file, "    div   %s,%s\n", _t0, _t1);
+    fprintf(file, "    mflo  %s\n", _t0);
+    ASSaveRegister(file, _t0, code->binop.result);
+    break;
   /*
-  IR_CODE_ADD,
-  IR_CODE_SUB,
-  IR_CODE_MUL,
-  IR_CODE_DIV,
   IR_CODE_LOAD,
   IR_CODE_SAVE,
   */

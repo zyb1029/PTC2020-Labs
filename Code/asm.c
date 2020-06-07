@@ -122,7 +122,7 @@ void ASTranslateCode(FILE *file, IRCode *code) {
   case IR_CODE_SAVE:
     ASLoadRegister(file, _t0, code->save.right);
     ASLoadRegister(file, _t1, code->save.left);
-    fprintf(file, "    sw      %s,0(%s)", _t0, _t1);
+    fprintf(file, "    sw      %s,0(%s)\n", _t0, _t1);
     break;
   case IR_CODE_JUMP:
     fprintf(file, "    j       label%d\n", code->jump.dest.number);
@@ -195,7 +195,7 @@ void ASTranslateCode(FILE *file, IRCode *code) {
 
 // Move value between registers.
 void ASMoveRegister(FILE *file, const char *to, const char *from) {
-  fprintf(file, "    move    %s,%s", to, from);
+  fprintf(file, "    move    %s,%s\n", to, from);
 }
 
 // Load value to register.

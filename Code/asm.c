@@ -5,13 +5,14 @@
 #define DEBUG // <- assembler debug switch
 #include "debug.h"
 
+size_t pushed = 0; // size of pushed values
 extern IRCodeList irlist;
 
 const char *registers[] = {
-  "zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
-  "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
-  "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
-  "t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra"
+  "$zero", "$at", "$v0", "$v1", "$a0", "$a1", "$a2", "$a3",
+  "$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7",
+  "$s0", "$s1", "$s2", "$s3", "$s4", "$s5", "$s6", "$s7",
+  "$t8", "$t9", "$k0", "$k1", "$gp", "$sp", "$fp", "$ra"
 };
 
 const char *_header =
@@ -163,18 +164,18 @@ void ASTranslateCode(FILE *file, IRCode *code) {
     fprintf(file, "    jr      $ra\n");
     break;
   }
-  /*
-  IR_CODE_DEC,
-  IR_CODE_ARG,
-  */
+  case IR_CODE_ARG: {
+    ASLoadRegister(file, _t0, code->arg.variable);
+    fprintf(file, "    subiu   $sp,$sp,4\n");
+    fprintf(file, "    sw      %s,0($sp)\n", _t0);
+    pushed += 4;
+    break;
+  }
   case IR_CODE_CALL:
     fprintf(file, "    jal     %s\n", code->call.function.name);
-    // ASMoveRegister(file, _) // DO NOT MOVE, just save it
     ASSaveRegister(file, _v0, code->call.result);
+    fprintf(file, "    addiu   $sp,$sp,%lu\n", pushed);
     break;
-  /*
-  IR_CODE_PARAM,
-  */
   case IR_CODE_READ:
     fprintf(file, "    jal     read\n");
     ASSaveRegister(file, _v0, code->read.variable);
@@ -190,21 +191,21 @@ void ASTranslateCode(FILE *file, IRCode *code) {
 
 // Move value between registers.
 void ASMoveRegister(FILE *file, const char *to, const char *from) {
-  fprintf(file, "    move    $%s,$%s", to, from);
+  fprintf(file, "    move    %s,%s", to, from);
 }
 
 // Load value to register.
 void ASLoadRegister(FILE *file, const char *reg, IROperand var) {
   if (var.kind == IR_OP_CONSTANT) {
-    fprintf(file, "    li      $%s,%d\n", reg, var.ivalue);
+    fprintf(file, "    li      %s,%d\n", reg, var.ivalue);
   } else {
-    fprintf(file, "    lw      $%s,-%lu($fp)\n", reg, var.offset);
+    fprintf(file, "    lw      %s,-%lu($fp)\n", reg, var.offset);
   }
 }
 
 // Save value to memory.
 void ASSaveRegister(FILE *file, const char *reg, IROperand var) {
-  fprintf(file, "    sw      $%s,-%lu($fp)\n", reg, var.offset);
+  fprintf(file, "    sw      %s,-%lu($fp)\n", reg, var.offset);
 }
 
 // Prepare function's variables and stack size.

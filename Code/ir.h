@@ -102,7 +102,8 @@ typedef struct IRCode {
       struct RBNode *root; // RB tree of local variables
     } function;
   };
-  struct IRCode *prev, *next, *parent /* used in asm.c */;
+  struct IRCode *prev, *next;
+  struct IRCode *parent; // used in asm.c
 } IRCode;
 
 typedef struct IRCodeList {

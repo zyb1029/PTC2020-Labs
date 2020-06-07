@@ -14,6 +14,31 @@ const char *registers[] = {
   "t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra"
 };
 
+const char *_header =
+  "    .data\n"
+  "_prompt: .asciiz \"Enter an integer:\"\n"
+  "_ret: .asciiz \"\\n\"\n"
+  "\n"
+  "    .text\n"
+  "    .globl main\n"
+  "\n"
+  "read:\n"
+  "    li    $v0,4\n"
+  "    la    $a0,_prompt\n"
+  "    syscall\n"
+  "    li    $v0,5\n"
+  "    syscall\n"
+  "    jr    $ra\n"
+  "\n"
+  "write:\n"
+  "    li    $v0,1\n"
+  "    syscall\n"
+  "    li    $v0,4\n"
+  "    la    $a0,_ret\n"
+  "    syscall\n"
+  "    move  $v0,$0\n"
+  "    jr    $ra\n\n";
+
 // External API to translate IR to MIPS.
 void assemble(FILE *file) {
   ASTranslateList(file, irlist);
@@ -26,6 +51,7 @@ void ASTranslateList(FILE *file, IRCodeList list) {
       code->function.function.size = ASPrepareFunction(code, &code->function.root);
     }
   }
+  fprintf(file, "%s", _header);
   for (IRCode *code = list.head; code != NULL; code = code->next) {
     ASTranslateCode(file, code);
   }
@@ -42,19 +68,19 @@ void ASTranslateCode(FILE *file, IRCode *code) {
   fprintf(file, "# ");
   IRWriteCode(file, code);
 #endif
-  size_t size = 0;
   switch (code->kind) {
   case IR_CODE_LABEL: 
     fprintf(file, "label%d:\n", code->label.label.number);
     break;
-  case IR_CODE_FUNCTION:
-    size = code->function.function.size;
+  case IR_CODE_FUNCTION: {
+    size_t size = code->function.function.size;
     fprintf(file, "%s:\n", code->function.function.name);
     fprintf(file, "    subu  $sp,$sp,%lu\n", size);
     fprintf(file, "    sw    $ra,%lu($sp)\n", size - 4);
     fprintf(file, "    sw    $fp,%lu($sp)\n", size - 8);
     fprintf(file, "    addiu $fp,$sp,%lu\n", size);
     break;
+  }
   case IR_CODE_ASSIGN:
     ASLoadRegister(file, _t0, code->assign.right);
     ASSaveRegister(file, _t0, code->assign.left);
@@ -97,12 +123,56 @@ void ASTranslateCode(FILE *file, IRCode *code) {
   case IR_CODE_JUMP:
     fprintf(file, "    j     label%d\n", code->jump.dest.number);
     break;
+  case IR_CODE_JUMP_COND: {
+    char command[8] = "";
+    switch (code->jump_cond.relop.relop) {
+    case RELOP_IV:
+      Panic("invalid relop RELOP_IV");
+      break;
+    case RELOP_LT:
+      sprintf(command, "blt");
+      break;
+    case RELOP_LE:
+      sprintf(command, "ble");
+      break;
+    case RELOP_GE:
+      sprintf(command, "bge");
+      break;
+    case RELOP_GT:
+      sprintf(command, "bgt");
+      break;
+    case RELOP_EQ:
+      sprintf(command, "beq");
+      break;
+    case RELOP_NE:
+      sprintf(command, "bne");
+      break;
+    }
+    ASLoadRegister(file, _t0, code->jump_cond.op1);
+    ASLoadRegister(file, _t1, code->jump_cond.op2);
+    fprintf(file, "    %s   %s,%s,label%d\n", command, _t0, _t1, code->jump_cond.dest.number);
+    break;
+  }
+  case IR_CODE_RETURN: {
+    Assert(code->parent != NULL, "code not belong to function");
+    size_t size = code->parent->function.function.size;
+    ASLoadRegister(file, _v0, code->ret.value);
+    fprintf(file, "    lw    $fp,%lu($sp)\n", size - 8);
+    fprintf(file, "    lw    $ra,%lu($sp)\n", size - 4);
+    fprintf(file, "    addiu $sp,$sp,%lu\n", size);
+    fprintf(file, "    jr    $ra\n");
+    break;
+  }
   /*
-  IR_CODE_JUMP_COND,
-  IR_CODE_RETURN,
   IR_CODE_DEC,
   IR_CODE_ARG,
-  IR_CODE_CALL,
+  */
+  case IR_CODE_CALL:
+    fprintf(file, "    jal %s\n", code->call.function.name);
+    // ASMoveRegister(file, _) // DO NOT MOVE, just save it
+    ASSaveRegister(file, _v0, code->call.result);
+    break;
+  /*
   IR_CODE_PARAM,
   IR_CODE_READ,
   IR_CODE_WRITE,
@@ -110,6 +180,11 @@ void ASTranslateCode(FILE *file, IRCode *code) {
   default:
     break;
   }
+}
+
+// Move value between registers.
+void ASMoveRegister(FILE *file, const char *to, const char *from) {
+  fprintf(file, "    move  $%s,$%s", to, from);
 }
 
 // Load value to register.
@@ -134,6 +209,7 @@ size_t ASPrepareFunction(IRCode *func, RBNode **root) {
 
   size_t size = 8; // 4 for $ra, 4 for $fp
   for (IRCode *code = func->next; code != NULL && code->kind != IR_CODE_FUNCTION; code = code->next) {
+    code->parent = func;
     switch (code->kind) {
       case IR_CODE_ASSIGN:
         size += ASRegisterVariable(&code->assign.left, root, size);

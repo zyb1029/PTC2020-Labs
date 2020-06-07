@@ -954,7 +954,7 @@ size_t IRWriteCode(FILE *f, IRCode *code) {
 IRCode *IRNewCode(enum IRCodeType kind) {
   IRCode *code = (IRCode *)malloc(sizeof(IRCode));
   code->kind = kind;
-  code->prev = code->next = NULL;
+  code->prev = code->next = code->parent = NULL;
   return code;
 }
 

@@ -21,6 +21,7 @@ void assemble(FILE *file);
 void ASTranslateList(FILE *file, IRCodeList list);
 void ASTranslateCode(FILE *file, IRCode *code);
 
+void ASMoveRegister(FILE *file, const char *to, const char *from);
 void ASLoadRegister(FILE *file, const char *reg, IROperand var);
 void ASSaveRegister(FILE *file, const char *reg, IROperand var);
 

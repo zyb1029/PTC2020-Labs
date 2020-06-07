@@ -427,6 +427,15 @@ void optimize() {
   for (IRCode *code = irlist.head, *next = NULL; code != NULL; code = next) {
     next = code->next;
     if (code != NULL && next != NULL) {
+      if (code->kind == IR_CODE_RETURN && next->kind == IR_CODE_RETURN) {
+        irlist = IRRemoveCode(irlist, next);
+        next = code->next;
+      }
+    }
+  }
+  for (IRCode *code = irlist.head, *next = NULL; code != NULL; code = next) {
+    next = code->next;
+    if (code != NULL && next != NULL) {
       if (code->kind == IR_CODE_ASSIGN) {
         if (code->assign.left.kind == IR_OP_TEMP ||
             code->assign.left.kind == IR_OP_VARIABLE ||

@@ -286,6 +286,11 @@ void RBInsert(RBNode **root, void *value, int (*cmp)(const void *, const void *)
   }
 }
 
+bool RBContains(RBNode **root, void *value, int (*cmp)(const void *, const void *)) {
+  RBNode *node = RBSearch(root, value, cmp);
+  return node != NULL && cmp(value, node->value) == 0;
+}
+
 RBNode *RBSearch(RBNode **root, void *value, int (*cmp)(const void *, const void *)) {
   if (!root || !*root) return NULL;
   RBNode *cur = *root;
@@ -322,7 +327,7 @@ void RBDestroy(RBNode **root, void (*destroy)(void *)) {
   if (!root || !*root) return;
   if ((*root)->left)  RBDestroy(&((*root)->left),  destroy);
   if ((*root)->right) RBDestroy(&((*root)->right), destroy);
-  destroy((*root)->value);
+  if (destroy != NULL) destroy((*root)->value);
   free(*root);
   *root = NULL;
 }

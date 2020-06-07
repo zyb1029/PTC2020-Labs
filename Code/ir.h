@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "token.h"
+#include "rbtree.h"
 
 #define IRDebug false // <- debug switch
 #if IRDebug
@@ -55,6 +56,7 @@ enum IRCodeType {
 typedef struct IROperand {
   enum IROperandType kind;
   size_t size; // size of memory used by operand
+  size_t offset; // offset in memory from $fp
   union {
     unsigned int number;
     int ivalue;
@@ -97,9 +99,11 @@ typedef struct IRCode {
     } fence, read, write, arg, param;
     struct {
       struct IROperand function;
+      struct RBNode *root; // RB tree of local variables
     } function;
   };
   struct IRCode *prev, *next;
+  struct IRCode *parent; // used in asm.c
 } IRCode;
 
 typedef struct IRCodeList {

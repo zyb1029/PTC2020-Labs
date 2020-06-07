@@ -213,7 +213,9 @@ void ASLoadRegister(FILE *file, const char *reg, IROperand var) {
   } else {
     // Parameter is stored above $fp.
     // Local variable is stored below $fp.
-    fprintf(file, "    lw      %s,%s%lu($fp)\n", reg, var.offset & _MSB ? "" : "-", var.offset & _MASK);
+    fprintf(file, "    %s      %s,%s%lu($fp)\n", 
+            var.kind == IR_OP_MEMBLOCK ? "la" : "lw",
+            reg, var.offset & _MSB ? "" : "-", var.offset & _MASK);
   }
 }
 
@@ -295,7 +297,9 @@ size_t ASPrepareFunction(IRCode *func, RBNode **root) {
 size_t ASRegisterVariable(IROperand *op, RBNode **root, size_t offset) {
   switch (op->kind) {
     case IR_OP_TEMP:
-    case IR_OP_VARIABLE: {
+    case IR_OP_VARIABLE:
+    case IR_OP_VADDRESS:
+    case IR_OP_MEMBLOCK: {
       if (!RBContains(root, op, ASComp)) {
         op->offset = offset + op->size;
         RBInsert(root, op, ASComp);
@@ -308,10 +312,6 @@ size_t ASRegisterVariable(IROperand *op, RBNode **root, size_t offset) {
         op->offset = ((const IROperand *)node->value)->offset;
       }
       break;
-    }
-    case IR_OP_MEMBLOCK: {
-      op->offset = offset + op->size;
-      return op->size;
     }
     default:
       break;

@@ -78,7 +78,11 @@ void ASTranslateCode(FILE *file, IRCode *code) {
     break;
   case IR_CODE_FUNCTION: {
     size_t size = code->function.function.size;
-    fprintf(file, "%s:\n", code->function.function.name);
+    if (!strcmp(code->function.function.name, "main")) {
+      fprintf(file, "main:\n");
+    } else {
+      fprintf(file, "func_%s:\n", code->function.function.name);
+    }
     fprintf(file, "    subu    $sp,$sp,%lu\n", size);
     fprintf(file, "    sw      $ra,%lu($sp)\n", size - 4);
     fprintf(file, "    sw      $fp,%lu($sp)\n", size - 8);
@@ -175,7 +179,11 @@ void ASTranslateCode(FILE *file, IRCode *code) {
     break;
   }
   case IR_CODE_CALL:
-    fprintf(file, "    jal     %s\n", code->call.function.name);
+    if (!strcmp(code->call.function.name, "main")) {
+      fprintf(file, "    jal     main\n");
+    } else {
+      fprintf(file, "    jal     func_%s\n", code->call.function.name);
+    }
     ASSaveRegister(file, _v0, code->call.result);
     fprintf(file, "    addiu   $sp,$sp,%lu\n", pushed);
     pushed = 0; // clear pushed arguments size

@@ -2,7 +2,7 @@
 #include "ir.h"
 #include "rbtree.h"
 
-#define DEBUG // <- assembler debug switch
+// #define DEBUG // <- assembler debug switch
 #include "debug.h"
 
 size_t pushed = 0; // size of pushed values
